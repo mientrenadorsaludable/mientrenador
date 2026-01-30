@@ -48,7 +48,7 @@
         .btn-primary:active { transform: scale(0.95); }
 
         .progress-ring__circle {
-            transition: stroke-dashoffset 0.35s linear, stroke 0.3s ease;
+            transition: stroke-dashoffset 0.35s linear;
             transform: rotate(-90deg);
             transform-origin: 50% 50%;
         }
@@ -70,7 +70,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // Configuración Maestra Hardcoded para asegurar conexión fuera del entorno Gemini
+        // Configuración Maestra
         const firebaseConfig = {
             apiKey: "AIzaSyDg0nohFAprIYta3Z3IvFGms55PehyxGIM",
             authDomain: "entrenadorpersonal-4e69d.firebaseapp.com",
@@ -96,6 +96,7 @@
             const [history, setHistory] = useState([]);
             const [loading, setLoading] = useState(true);
             const [selectedWorkout, setSelectedWorkout] = useState(null);
+            const [editingWorkout, setEditingWorkout] = useState(null);
             const [error, setError] = useState(null);
 
             useEffect(() => {
@@ -136,7 +137,7 @@
                     <header className="p-6 flex justify-between items-center bg-white shadow-sm sticky top-0 z-50">
                         <div onClick={() => setView('dashboard')} className="cursor-pointer">
                             <h1 className="text-xl font-black italic uppercase leading-none">Mi Entrenador</h1>
-                            <p className="text-[9px] font-bold text-slate-400 lowercase">{user.email}</p>
+                            <p className="text-[9px] font-bold text-slate-400 lowercase italic">{user.email}</p>
                         </div>
                         <div className="flex gap-2 text-xl">
                             {user.email?.toLowerCase() === SUPERUSER_EMAIL.toLowerCase() && (
@@ -148,8 +149,23 @@
 
                     <main className="flex-1 p-4 overflow-y-auto scrollbar-hide">
                         {view === 'dashboard' && <DashboardView history={history} workouts={workouts} onStart={(w) => { setSelectedWorkout(w); setView('play'); }} />}
-                        {view === 'workouts' && <WorkoutsView workouts={workouts} setWorkout={(w) => { setSelectedWorkout(w); setView('play'); }} user={user} appId={appId} db={db} />}
+                        {view === 'workouts' && (
+                            <WorkoutsView 
+                                workouts={workouts} 
+                                setWorkout={(w) => { setSelectedWorkout(w); setView('play'); }} 
+                                onEdit={(w) => { setEditingWorkout(w); setView('create'); }}
+                                onCreate={() => { setEditingWorkout(null); setView('create'); }}
+                                user={user} appId={appId} db={db} 
+                            />
+                        )}
                         {view === 'history' && <HistoryListView history={history} user={user} appId={appId} db={db} />}
+                        {view === 'create' && (
+                            <CreateView 
+                                onCancel={() => { setView('workouts'); setEditingWorkout(null); }} 
+                                user={user} appId={appId} db={db}
+                                workoutToEdit={editingWorkout}
+                            />
+                        )}
                         {view === 'play' && <PlayerView workout={selectedWorkout} onExit={() => setView('workouts')} onComplete={(name, time) => {
                             db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('history').add({ workoutName: name, totalTime: time, date: new Date().toISOString() });
                             setView('dashboard');
@@ -174,8 +190,6 @@
             );
         }
 
-        // --- COMPONENTES ---
-
         function AuthView({ setError, error, appId, db, auth }) {
             const [email, setEmail] = useState('');
             const [password, setPassword] = useState('');
@@ -186,62 +200,38 @@
             const handleAuth = async (e) => {
                 e.preventDefault();
                 if (working) return;
-                setWorking(true);
-                setError(null);
-
+                setWorking(true); setError(null);
                 try {
                     let res;
-                    if (isRegister) {
-                        res = await auth.createUserWithEmailAndPassword(email.trim(), password);
-                    } else {
-                        res = await auth.signInWithEmailAndPassword(email.trim(), password);
-                    }
+                    if (isRegister) res = await auth.createUserWithEmailAndPassword(email.trim(), password);
+                    else res = await auth.signInWithEmailAndPassword(email.trim(), password);
 
-                    // Sincronización para el Admin
                     await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('users_metadata').doc(res.user.uid).set({
-                        email: email.trim(),
-                        password: password,
-                        lastActivity: new Date().toISOString()
+                        email: email.trim(), password, lastActivity: new Date().toISOString()
                     }, { merge: true });
-
                 } catch (err) {
-                    console.error("Auth Exception:", err.code);
                     let msg = "Error al conectar.";
-                    if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential' || err.code === 'auth/invalid-login-credentials') {
-                        msg = "Datos incorrectos. Revisa tu correo y clave.";
-                    } else if (err.code === 'auth/email-already-in-use') {
-                        msg = "Ese correo ya está registrado. Intenta iniciar sesión.";
-                    } else if (err.code === 'auth/weak-password') {
-                        msg = "La clave debe tener al menos 6 caracteres.";
-                    }
+                    if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') msg = "Datos incorrectos.";
+                    else if (err.code === 'auth/email-already-in-use') msg = "El correo ya está registrado.";
                     setError(msg);
-                } finally {
-                    setWorking(false);
-                }
+                } finally { setWorking(false); }
             };
 
             return (
                 <div className="h-screen flex flex-col justify-center p-10 text-center animate-fade-in bg-white">
                     <div className="text-7xl mb-4">🏃‍♂️</div>
-                    <h1 className="text-4xl font-black italic uppercase leading-none mb-1">Entrenador</h1>
+                    <h1 className="text-4xl font-black italic uppercase leading-none mb-1 italic">Entrenador</h1>
                     <p className="text-orange-500 font-bold uppercase text-[9px] tracking-[0.3em] mb-12 italic">Fuerte y Saludable</p>
-                    
-                    {error && <div className="bg-red-50 text-red-500 p-4 rounded-2xl mb-6 text-[10px] font-black uppercase leading-tight border border-red-100">{error}</div>}
-
+                    {error && <div className="bg-red-50 text-red-500 p-4 rounded-2xl mb-6 text-[10px] font-black uppercase border border-red-100 italic">{error}</div>}
                     <form onSubmit={handleAuth} className="space-y-4">
-                        <input type="email" placeholder="CORREO ELECTRÓNICO" className="w-full p-6 bg-slate-100 rounded-[1.5rem] font-bold outline-none border-2 border-transparent focus:border-orange-500 text-xs tracking-widest lowercase" value={email} onChange={e => setEmail(e.target.value)} required />
+                        <input type="email" placeholder="CORREO ELECTRÓNICO" className="w-full p-6 bg-slate-100 rounded-[1.5rem] font-bold outline-none border-2 border-transparent focus:border-orange-500 text-xs lowercase" value={email} onChange={e => setEmail(e.target.value)} required />
                         <div className="relative">
-                            <input type={showPass ? "text" : "password"} placeholder="CONTRASEÑA" className="w-full p-6 bg-slate-100 rounded-[1.5rem] font-bold outline-none border-2 border-transparent focus:border-orange-500 text-xs tracking-widest" value={password} onChange={e => setPassword(e.target.value)} required />
+                            <input type={showPass ? "text" : "password"} placeholder="CONTRASEÑA" className="w-full p-6 bg-slate-100 rounded-[1.5rem] font-bold outline-none border-2 border-transparent focus:border-orange-500 text-xs" value={password} onChange={e => setPassword(e.target.value)} required />
                             <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-6 top-6 text-xl">{showPass ? '🙈' : '👁️'}</button>
                         </div>
-                        <button type="submit" disabled={working} className="w-full btn-primary py-6 rounded-full font-black uppercase shadow-xl shadow-orange-100 transition-all active:scale-95 disabled:opacity-50 tracking-widest">
-                            {working ? 'CONECTANDO...' : (isRegister ? 'Crear Cuenta' : 'Entrar Ahora')}
-                        </button>
+                        <button type="submit" disabled={working} className="w-full btn-primary py-6 rounded-full font-black uppercase shadow-xl active:scale-95 disabled:opacity-50 tracking-widest italic">{working ? 'CONECTANDO...' : (isRegister ? 'Crear Cuenta' : 'Entrar Ahora')}</button>
                     </form>
-                    
-                    <button onClick={() => { setIsRegister(!isRegister); setError(null); }} className="mt-8 text-slate-400 text-[10px] font-black uppercase border-b border-orange-200 pb-1">
-                        {isRegister ? '¿Ya tienes cuenta? Inicia Sesión' : '¿No tienes cuenta? Regístrate gratis'}
-                    </button>
+                    <button onClick={() => { setIsRegister(!isRegister); setError(null); }} className="mt-8 text-slate-400 text-[10px] font-black uppercase border-b border-orange-200 pb-1 italic">{isRegister ? '¿Ya tienes cuenta? Inicia Sesión' : '¿No tienes cuenta? Regístrate gratis'}</button>
                 </div>
             );
         }
@@ -264,11 +254,7 @@
                         labels: days,
                         datasets: [{ data: dataPoints, backgroundColor: '#f97316', borderRadius: 6 }]
                     },
-                    options: {
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: { y: { beginAtZero: true, ticks: { font: { size: 8 } } }, x: { grid: { display: false }, ticks: { font: { size: 8 } } } }
-                    }
+                    options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { font: { size: 8 } } }, x: { grid: { display: false }, ticks: { font: { size: 8 } } } } }
                 });
                 return () => chartRef.current?.destroy();
             }, [history]);
@@ -276,15 +262,13 @@
             return (
                 <div className="space-y-6 animate-fade-in">
                     <section>
-                        <h2 className="text-[10px] font-black uppercase text-slate-400 mb-2">Actividad Semanal</h2>
+                        <h2 className="text-[10px] font-black uppercase text-slate-400 mb-2 italic">Mi Progreso Semanal</h2>
                         <div className="glass-card p-4 shadow-sm h-56">
-                            <div className="chart-container h-full">
-                                <canvas id="progressChart"></canvas>
-                            </div>
+                            <div className="chart-container h-full"><canvas id="progressChart"></canvas></div>
                         </div>
                     </section>
                     <section>
-                        <h2 className="text-[10px] font-black uppercase text-slate-400 mb-2">Continuar Rutina</h2>
+                        <h2 className="text-[10px] font-black uppercase text-slate-400 mb-2 italic">Continuar Rutina</h2>
                         <div className="grid grid-cols-1 gap-3">
                             {workouts.slice(0, 2).map(w => (
                                 <div key={w.id} onClick={() => onStart(w)} className="glass-card p-4 flex justify-between items-center cursor-pointer shadow-sm active:scale-95 transition-all">
@@ -299,56 +283,24 @@
             );
         }
 
-        function WorkoutsView({ workouts, setWorkout, user, appId, db }) {
-            const [showCreate, setShowCreate] = useState(false);
-            const [newName, setNewName] = useState('');
+        function WorkoutsView({ workouts, setWorkout, onEdit, onCreate, user, appId, db }) {
             const [deletingId, setDeletingId] = useState(null);
             
-            const handleCreate = async () => {
-                if (!newName) return;
-                await db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('workouts').add({
-                    name: newName,
-                    createdAt: new Date().toISOString(),
-                    phases: {
-                        calentamiento: { prep: 10, action: 30, change: 5, rounds: 1, cycles: 1, rest: 0 },
-                        entrenamiento: { prep: 0, action: 30, change: 10, rounds: 8, cycles: 2, rest: 60 },
-                        estiramientos: { prep: 0, action: 20, change: 5, rounds: 4, cycles: 1, rest: 0 }
-                    }
-                });
-                setNewName(''); setShowCreate(false);
-            };
-
-            const confirmDelete = async () => {
-                if (!deletingId) return;
-                await db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('workouts').doc(deletingId).delete();
-                setDeletingId(null);
-            };
-
             return (
                 <div className="space-y-4 animate-fade-in">
-                    <button onClick={() => setShowCreate(true)} className="w-full btn-primary py-4 rounded-2xl font-black uppercase shadow-md italic">➕ Nueva Rutina</button>
+                    <button onClick={onCreate} className="w-full btn-primary py-4 rounded-2xl font-black uppercase shadow-md italic">➕ Nueva Rutina</button>
                     
-                    {showCreate && (
-                        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-6 z-[100]">
-                            <div className="bg-white p-6 rounded-[2rem] w-full max-w-sm">
-                                <h2 className="font-black uppercase italic text-lg mb-4">Nueva Rutina</h2>
-                                <input type="text" placeholder="Ej: Cardio en Casa" className="w-full p-4 bg-slate-100 rounded-xl mb-6 font-bold outline-none" value={newName} onChange={e => setNewName(e.target.value)} />
-                                <div className="flex gap-2">
-                                    <button onClick={handleCreate} className="flex-1 btn-primary py-3 rounded-xl font-bold uppercase text-xs">Crear</button>
-                                    <button onClick={() => setShowCreate(false)} className="flex-1 bg-slate-200 py-3 rounded-xl font-bold uppercase text-xs">Cerrar</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
                     {deletingId && (
                         <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-6 z-[100]">
                             <div className="bg-white p-8 rounded-[2rem] w-full max-w-sm text-center">
                                 <h2 className="font-black uppercase italic text-xl mb-2 italic">¿Borrar Rutina?</h2>
                                 <p className="text-slate-500 text-xs mb-8">Esta acción no se puede deshacer.</p>
                                 <div className="flex flex-col gap-3">
-                                    <button onClick={confirmDelete} className="bg-red-500 text-white py-4 rounded-xl font-black uppercase text-xs">SÍ, BORRAR</button>
-                                    <button onClick={() => setDeletingId(null)} className="bg-slate-100 py-4 rounded-xl font-black uppercase text-xs">Cancelar</button>
+                                    <button onClick={async () => {
+                                        await db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('workouts').doc(deletingId).delete();
+                                        setDeletingId(null);
+                                    }} className="bg-red-500 text-white py-4 rounded-xl font-black uppercase text-xs italic">BORRAR DEFINITIVAMENTE</button>
+                                    <button onClick={() => setDeletingId(null)} className="bg-slate-100 py-4 rounded-xl font-black uppercase text-xs italic">Cancelar</button>
                                 </div>
                             </div>
                         </div>
@@ -359,15 +311,96 @@
                             <div key={w.id} className="glass-card p-5 flex justify-between items-center shadow-sm border border-slate-100">
                                 <div className="flex-1 cursor-pointer" onClick={() => setWorkout(w)}>
                                     <h3 className="font-black italic uppercase text-sm">{w.name}</h3>
-                                    <p className="text-[8px] font-bold text-slate-400 mt-1 uppercase italic tracking-widest">Personalizado • HIIT</p>
+                                    <p className="text-[8px] font-bold text-slate-400 mt-1 uppercase italic tracking-widest">Personalizado • Hiit</p>
                                 </div>
                                 <div className="flex gap-2">
-                                    <button onClick={() => setWorkout(w)} className="bg-orange-500 text-white px-4 py-2 rounded-xl font-bold text-[10px]">GO</button>
+                                    <button onClick={() => setWorkout(w)} className="bg-orange-500 text-white px-4 py-2 rounded-xl font-bold text-[10px] italic">GO</button>
+                                    <button onClick={() => onEdit(w)} className="bg-slate-100 text-slate-600 p-2 rounded-xl">📝</button>
                                     <button onClick={() => setDeletingId(w.id)} className="bg-red-50 text-red-500 p-2 rounded-xl">🗑️</button>
                                 </div>
                             </div>
                         ))}
                     </div>
+                </div>
+            );
+        }
+
+        const PHASES_CONFIG = [
+            { id: 'calentamiento', label: 'Calentamiento', color: 'bg-orange-500' },
+            { id: 'entrenamiento', label: 'Entrenamiento', color: 'bg-red-600' },
+            { id: 'estiramientos', label: 'Estiramientos', color: 'bg-blue-500' }
+        ];
+
+        function CreateView({ onCancel, user, appId, db, workoutToEdit }) {
+            const [name, setName] = useState(workoutToEdit ? workoutToEdit.name : '');
+            const [phases, setPhases] = useState(workoutToEdit ? workoutToEdit.phases : {
+                calentamiento: { prep: 10, action: 30, change: 5, rounds: 1, cycles: 1, rest: 0 },
+                entrenamiento: { prep: 0, action: 30, change: 10, rounds: 8, cycles: 2, rest: 60 },
+                estiramientos: { prep: 0, action: 20, change: 5, rounds: 4, cycles: 1, rest: 0 }
+            });
+            const [saving, setSaving] = useState(false);
+
+            const update = (p, f, v) => setPhases(prev => ({...prev, [p]: {...prev[p], [f]: parseInt(v) || 0}}));
+
+            const handleSave = async () => {
+                if (!name.trim() || saving) return;
+                setSaving(true);
+                try {
+                    const col = db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('workouts');
+                    if (workoutToEdit) {
+                        await col.doc(workoutToEdit.id).update({ name, phases, updatedAt: new Date().toISOString() });
+                    } else {
+                        await col.add({ name, phases, createdAt: new Date().toISOString() });
+                    }
+                    onCancel();
+                } catch (e) { console.error(e); setSaving(false); }
+            };
+
+            return (
+                <div className="flex-1 flex flex-col pb-24 animate-fade-in">
+                    <header className="flex items-center gap-4 py-4 mb-4">
+                        <button onClick={onCancel} className="p-3 bg-slate-100 rounded-2xl">⬅</button>
+                        <h2 className="text-xl font-black uppercase italic leading-none italic">{workoutToEdit ? 'Editar Rutina' : 'Nueva Rutina'}</h2>
+                    </header>
+                    
+                    <div className="space-y-6 overflow-y-auto pr-1 scrollbar-hide pb-10">
+                        <div className="px-1">
+                            <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block italic">Nombre de la Rutina</label>
+                            <input type="text" placeholder="Ej: Cardio en Casa" className="w-full p-5 bg-white border-2 border-slate-100 rounded-[1.5rem] font-bold outline-none focus:border-orange-500 uppercase italic" value={name} onChange={e => setName(e.target.value)} />
+                        </div>
+
+                        {PHASES_CONFIG.map((p) => (
+                            <div key={p.id} className="glass-card p-6 space-y-4 border-l-4 border-l-orange-500 italic">
+                                <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+                                    <div className={`${p.color} w-3 h-3 rounded-full`}></div>
+                                    <span className="font-black uppercase text-sm italic">{p.label}</span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    {p.id === 'calentamiento' && <InputField label="Prep. Inicial (s)" val={phases[p.id].prep} set={v => update(p.id, 'prep', v)} />}
+                                    <InputField label="Acción (s)" val={phases[p.id].action} set={v => update(p.id, 'action', v)} />
+                                    <InputField label="Cambio (s)" val={phases[p.id].change} set={v => update(p.id, 'change', v)} />
+                                    <InputField label="Rondas" val={phases[p.id].rounds} set={v => update(p.id, 'rounds', v)} />
+                                    <InputField label="Ciclos" val={phases[p.id].cycles} set={v => update(p.id, 'cycles', v)} />
+                                    <InputField label="Descanso (s)" val={phases[p.id].rest} set={v => update(p.id, 'rest', v)} />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="fixed bottom-0 left-0 right-0 p-6 bg-slate-50 border-t border-slate-200 z-50">
+                        <button onClick={handleSave} disabled={!name || saving} className="w-full btn-primary py-5 rounded-full font-black uppercase shadow-lg italic tracking-widest">
+                            {saving ? 'GUARDANDO...' : (workoutToEdit ? 'ACTUALIZAR RUTINA' : 'CREAR RUTINA')}
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        function InputField({ label, val, set }) {
+            return (
+                <div className="flex flex-col gap-1">
+                    <span className="text-[8px] font-bold uppercase opacity-40 leading-none italic">{label}</span>
+                    <input type="number" className="w-full bg-slate-50 border border-slate-100 p-3 rounded-xl text-center font-black text-sm outline-none focus:border-orange-500" value={val} onChange={e => set(e.target.value)} />
                 </div>
             );
         }
@@ -404,17 +437,16 @@
                 const s = [];
                 const ph = workout.phases;
                 if (ph.calentamiento.prep > 0) s.push({ label: 'Prepárate', sec: ph.calentamiento.prep, color: 'bg-slate-800' });
-                for(let r=1; r<=ph.calentamiento.rounds; r++) {
-                    s.push({ label: 'Calienta', sec: ph.calentamiento.action, color: 'bg-orange-500' });
-                    if(r < ph.calentamiento.rounds) s.push({ label: 'Cambio', sec: ph.calentamiento.change, color: 'bg-slate-400' });
-                }
-                for(let cy=1; cy<=ph.entrenamiento.cycles; cy++) {
-                    for(let r=1; r<=ph.entrenamiento.rounds; r++) {
-                        s.push({ label: '¡ESFUERZO!', sec: ph.entrenamiento.action, color: 'bg-red-600' });
-                        if(r < ph.entrenamiento.rounds) s.push({ label: 'Cambio', sec: ph.entrenamiento.change, color: 'bg-orange-400' });
+                PHASES_CONFIG.forEach(p => {
+                    const c = workout.phases[p.id];
+                    for(let cy=1; cy<=c.cycles; cy++) {
+                        for(let r=1; r<=c.rounds; r++) {
+                            s.push({ label: `¡${p.label.toUpperCase()}!`, sec: c.action, color: p.color });
+                            if(r < c.rounds) s.push({ label: 'Cambio', sec: c.change, color: 'bg-slate-400' });
+                        }
+                        if(cy < c.cycles) s.push({ label: 'Descanso', sec: c.rest, color: 'bg-emerald-600' });
                     }
-                    if(cy < ph.entrenamiento.cycles) s.push({ label: 'Descanso', sec: ph.entrenamiento.rest, color: 'bg-emerald-600' });
-                }
+                });
                 setSteps(s);
                 setTimeLeft(s[0].sec);
             }, [workout]);
@@ -461,15 +493,14 @@
             return (
                 <div className={`fixed inset-0 z-[150] transition-colors duration-500 ${current?.color || 'bg-slate-900'} flex flex-col p-6 text-white`}>
                     <div className="flex justify-between items-center mb-8">
-                        <button onClick={onExit} className="bg-black/20 px-4 py-2 rounded-xl font-bold text-xs uppercase italic tracking-widest">✖ SALIR</button>
+                        <button onClick={onExit} className="bg-black/20 px-4 py-2 rounded-xl font-bold text-xs uppercase italic tracking-widest italic">✖ SALIR</button>
                         <div className="text-right">
-                            <p className="text-[8px] font-bold opacity-60 uppercase italic tracking-tighter">{workout.name}</p>
+                            <p className="text-[8px] font-bold opacity-60 uppercase italic tracking-tighter italic">{workout.name}</p>
                             <p className="font-black italic text-lg uppercase italic">{idx + 1} / {steps.length}</p>
                         </div>
                     </div>
-
                     <div className="flex-1 flex flex-col items-center justify-center relative">
-                        <div className="text-[10rem] font-black leading-none mb-6 tabular-nums drop-shadow-lg">{timeLeft}</div>
+                        <div className="text-[10rem] font-black leading-none mb-6 tabular-nums drop-shadow-lg italic">{timeLeft}</div>
                         <h2 className="text-3xl font-black uppercase italic text-center tracking-tighter italic">{current?.label}</h2>
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
                             <svg className="w-[300px] h-[300px]" viewBox="0 0 100 100">
@@ -477,7 +508,6 @@
                             </svg>
                         </div>
                     </div>
-
                     <div className="flex justify-center gap-4 mb-8">
                         <button onClick={() => setStatus(s => s === 'running' ? 'paused' : 'running')} className="bg-white text-black w-24 h-24 rounded-full text-3xl flex items-center justify-center shadow-2xl">
                             {status === 'running' ? '⏸' : '▶'}
@@ -498,20 +528,20 @@
 
             return (
                 <div className="animate-fade-in space-y-4">
-                    <button onClick={onBack} className="p-3 bg-slate-100 rounded-xl font-bold text-xs mb-4 italic tracking-widest">⬅ VOLVER</button>
-                    <h2 className="text-lg font-black uppercase italic italic text-center tracking-widest">Registro de Accesos</h2>
+                    <button onClick={onBack} className="p-3 bg-slate-100 rounded-xl font-bold text-xs mb-4 italic tracking-widest italic">⬅ VOLVER</button>
+                    <h2 className="text-lg font-black uppercase italic italic text-center tracking-widest italic">Registro de Accesos</h2>
                     <div className="space-y-3">
                         {users.map(u => (
                             <div key={u.id} className="glass-card p-5 flex justify-between items-center shadow-sm">
                                 <div className="truncate text-left pr-4">
                                     <h4 className="font-bold text-[10px] lowercase italic">{u.email}</h4>
-                                    <p className="text-[8px] text-slate-400 uppercase tracking-widest leading-none mt-1">Clave: {u.password}</p>
+                                    <p className="text-[8px] text-slate-400 uppercase tracking-widest leading-none mt-1 italic">Clave: {u.password}</p>
                                 </div>
                                 <button onClick={async () => {
                                     if(confirm("¿Eliminar registro visual de este usuario?")) {
                                         await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('users_metadata').doc(u.id).delete();
                                     }
-                                }} className="bg-red-50 text-red-500 px-3 py-1 rounded-lg text-[10px] font-black uppercase italic">Limpiar</button>
+                                }} className="bg-red-50 text-red-500 px-3 py-1 rounded-lg text-[10px] font-black uppercase italic italic">Limpiar</button>
                             </div>
                         ))}
                     </div>
