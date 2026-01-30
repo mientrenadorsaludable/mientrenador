@@ -3,47 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Fuerte y Saludable</title>
-    <!-- Bibliotecas de Diseño y Lógica -->
+    <title>Fuerte y Saludable | Trainer Pro</title>
+    <!-- Tailwind CSS para Diseño -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & Babel -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Chart.js para Visualización -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
+        
+        :root {
+            --bg-main: #f8fafc;
+            --accent: #f97316;
+            --dark: #0f172a;
+        }
+
         body { 
             font-family: 'Inter', sans-serif; 
-            background-color: #020617; 
-            color: white; 
+            background-color: var(--bg-main); 
+            color: var(--dark); 
             margin: 0; 
             padding: 0; 
-            overflow-x: hidden; 
-            -webkit-tap-highlight-color: transparent; 
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .animate-fade { animation: fadeIn 0.4s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        input:focus { border-color: #f97316 !important; }
-        button:active { transform: scale(0.96); transition: transform 0.1s; }
-        
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(15, 23, 42, 0.05);
+            border-radius: 1.5rem;
+        }
+
+        .btn-primary {
+            background-color: var(--accent);
+            color: white;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:active { transform: scale(0.95); }
+
         .progress-ring__circle {
             transition: stroke-dashoffset 0.35s linear, stroke 0.3s ease;
             transform: rotate(-90deg);
             transform-origin: 50% 50%;
-            filter: drop-shadow(0 0 15px rgba(249, 115, 22, 0.7));
         }
 
-        .glass-panel {
-            background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
-    <!-- Firebase SDK -->
+    <!-- Firebase SDK (Modo Compatibilidad) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -51,6 +70,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
+        // Configuración Maestra Hardcoded para asegurar conexión fuera del entorno Gemini
         const firebaseConfig = {
             apiKey: "AIzaSyDg0nohFAprIYta3Z3IvFGms55PehyxGIM",
             authDomain: "entrenadorpersonal-4e69d.firebaseapp.com",
@@ -67,523 +87,431 @@
         const appId = "mientrenador-v3";
         const SUPERUSER_EMAIL = "cumorahnet@gmail.com";
 
-        // Colección de Iconos SVG
-        const Icons = {
-            Activity: ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>,
-            History: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l4 2"></path></svg>,
-            Logout: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>,
-            Trash: ({size=18}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>,
-            Plus: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>,
-            ChevronLeft: ({size=24}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>,
-            X: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>,
-            Timer: ({size=14}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>,
-            Skip: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>,
-            Shield: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>,
-            Key: () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3L15.5 7.5z"></path></svg>,
-            Info: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>,
-            Maximize: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>,
-            Minimize: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 14h6m0 0v6m0-6l-7 7m17-11h-6m0 0V4m0 6l7-7"></path></svg>,
-            Play: ({fill="currentColor"}) => <svg width="24" height="24" viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>,
-            Pause: ({fill="currentColor"}) => <svg width="24" height="24" viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>,
-            Eye: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>,
-            EyeOff: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>,
-            Dumbbell: ({size=40}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6.5 6.5 11 11"></path><path d="m21 21-1-1"></path><path d="m3 3 1 1"></path><path d="m18 22 4-4"></path><path d="m2 6 4-4"></path><path d="m3 10 8-8"></path><path d="m14 22 8-8"></path></svg>,
-            Flame: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>,
-            Stretch: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m13.1 17.1 2-2"></path><path d="m3.9 3.9 4.6 4.6"></path><path d="m13.8 5.2 4 4"></path><path d="m15.8 7.2 3-3"></path><path d="m9.6 13.2 4.6 4.6"></path></svg>,
-            UserX: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="18" y1="8" x2="23" y2="13"></line><line x1="23" y1="8" x2="18" y2="13"></line></svg>
-        };
-
-        const PHASES = [
-            { id: 'calentamiento', label: 'Calentamiento', icon: <Icons.Flame />, color: 'bg-orange-500' },
-            { id: 'entrenamiento', label: 'Entrenamiento', icon: <Icons.Activity size={20} />, color: 'bg-red-600' },
-            { id: 'estiramientos', label: 'Estiramiento', icon: <Icons.Stretch />, color: 'bg-blue-500' }
-        ];
-
-        const DEFAULT_PARAMS = {
-            calentamiento: { prep: 20, action: 30, change: 5, rounds: 1, cycles: 1, rest: 0 },
-            entrenamiento: { prep: 0, action: 30, change: 5, rounds: 9, cycles: 4, rest: 60 },
-            estiramientos: { prep: 0, action: 30, change: 5, rounds: 15, cycles: 1, rest: 0 }
-        };
-
-        const speak = (text) => {
-            if (!window.speechSynthesis) return;
-            window.speechSynthesis.cancel();
-            const msg = new SpeechSynthesisUtterance(text);
-            msg.lang = 'es-ES';
-            msg.rate = 1.1;
-            window.speechSynthesis.speak(msg);
-        };
-
         const formatTime = (s) => `${Math.floor(s / 60)}:${((s || 0) % 60).toString().padStart(2, '0')}`;
 
         function App() {
             const [user, setUser] = useState(null);
+            const [view, setView] = useState('dashboard');
             const [workouts, setWorkouts] = useState([]);
             const [history, setHistory] = useState([]);
-            const [view, setView] = useState('home');
-            const [selectedWorkout, setSelectedWorkout] = useState(null);
             const [loading, setLoading] = useState(true);
+            const [selectedWorkout, setSelectedWorkout] = useState(null);
             const [error, setError] = useState(null);
-            const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-            const [isFullscreen, setIsFullscreen] = useState(false);
 
             useEffect(() => {
-                const unsubscribe = auth.onAuthStateChanged(async (u) => { 
-                    if (u) {
-                        try {
-                            const blacklisted = await db.collection(`artifacts/${appId}/public/data/blacklist`).doc(u.uid).get();
-                            if (blacklisted.exists) {
-                                await auth.signOut();
-                                setUser(null);
-                                setError("ESTA CUENTA HA SIDO ELIMINADA POR EL ADMINISTRADOR.");
-                            } else {
-                                setUser(u);
-                                setError(null);
-                            }
-                        } catch (e) { setUser(u); }
-                    } else { setUser(null); }
-                    setTimeout(() => setLoading(false), 800); 
+                const unsubscribe = auth.onAuthStateChanged((u) => {
+                    setUser(u && !u.isAnonymous ? u : null);
+                    setLoading(false);
                 });
                 return () => unsubscribe();
             }, []);
 
-            const updateUserData = async (uid, email, password) => {
-                if (!uid || email.toLowerCase() === SUPERUSER_EMAIL.toLowerCase()) return;
-                try {
-                    const bl = await db.collection(`artifacts/${appId}/public/data/blacklist`).doc(uid).get();
-                    if (bl.exists) return;
-                    const metaRef = db.collection(`artifacts/${appId}/public/data/users_metadata`).doc(uid);
-                    await metaRef.set({ email, password, lastActivity: new Date().toISOString() }, { merge: true });
-                } catch (e) { console.log("Metadata error"); }
-            };
-
             useEffect(() => {
                 if (!user) return;
-                const path = `artifacts/${appId}/users/${user.uid}`;
-                const unsubW = db.collection(path + '/workouts').onSnapshot(s => setWorkouts(s.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt))));
-                const unsubH = db.collection(path + '/history').onSnapshot(s => setHistory(s.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => new Date(b.completedAt) - new Date(a.completedAt))));
+                const pathBase = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
+                
+                const unsubW = pathBase.collection('workouts').onSnapshot(
+                    s => setWorkouts(s.docs.map(d => ({id: d.id, ...d.data()}))),
+                    err => console.error("Error Workouts:", err)
+                );
+                
+                const unsubH = pathBase.collection('history').onSnapshot(
+                    s => setHistory(s.docs.map(d => ({id: d.id, ...d.data()}))),
+                    err => console.error("Error History:", err)
+                );
+
                 return () => { unsubW(); unsubH(); };
             }, [user]);
 
-            const onSave = async (name, phases) => {
-                try {
-                    await db.collection(`artifacts/${appId}/users/${user.uid}/workouts`).add({ name, phases, createdAt: new Date().toISOString() });
-                } catch (err) { setError("No se pudo guardar la rutina."); }
-            };
+            if (loading) return (
+                <div className="h-screen flex flex-col items-center justify-center bg-slate-900">
+                    <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+            );
 
-            const onDone = async (name, time) => {
-                try {
-                    await db.collection(`artifacts/${appId}/users/${user.uid}/history`).add({ workoutName: name, totalTime: time, completedAt: new Date().toISOString() });
-                } catch (err) { console.error(err); }
-            };
+            if (!user) return <AuthView setError={setError} error={error} appId={appId} db={db} auth={auth} />;
 
-            const deleteAccount = async () => {
-                if (!user) return;
-                try {
-                    setLoading(true);
-                    const path = `artifacts/${appId}/users/${user.uid}`;
-                    const wSnap = await db.collection(path + '/workouts').get(); wSnap.forEach(d => d.ref.delete());
-                    const hSnap = await db.collection(path + '/history').get(); hSnap.forEach(d => d.ref.delete());
-                    await db.collection(`artifacts/${appId}/public/data/users_metadata`).doc(user.uid).delete();
-                    await user.delete();
-                    auth.signOut();
-                } catch (err) { setError("Error al eliminar la cuenta."); }
-                finally { setLoading(false); setShowDeleteConfirm(false); }
-            };
+            return (
+                <div className="min-h-screen max-w-lg mx-auto flex flex-col relative pb-20 bg-slate-50">
+                    <header className="p-6 flex justify-between items-center bg-white shadow-sm sticky top-0 z-50">
+                        <div onClick={() => setView('dashboard')} className="cursor-pointer">
+                            <h1 className="text-xl font-black italic uppercase leading-none">Mi Entrenador</h1>
+                            <p className="text-[9px] font-bold text-slate-400 lowercase">{user.email}</p>
+                        </div>
+                        <div className="flex gap-2 text-xl">
+                            {user.email?.toLowerCase() === SUPERUSER_EMAIL.toLowerCase() && (
+                                <button onClick={() => setView('admin')} className="p-2 bg-slate-100 rounded-xl">🛡️</button>
+                            )}
+                            <button onClick={() => auth.signOut()} className="p-2 bg-red-50 rounded-xl text-red-500 font-bold">🚪</button>
+                        </div>
+                    </header>
 
-            const toggleFullscreen = () => {
-                if (!document.fullscreenElement) {
-                    document.documentElement.requestFullscreen().then(() => setIsFullscreen(true)).catch(e => console.log("Fullscreen error"));
-                } else {
-                    document.exitFullscreen().then(() => setIsFullscreen(false));
+                    <main className="flex-1 p-4 overflow-y-auto scrollbar-hide">
+                        {view === 'dashboard' && <DashboardView history={history} workouts={workouts} onStart={(w) => { setSelectedWorkout(w); setView('play'); }} />}
+                        {view === 'workouts' && <WorkoutsView workouts={workouts} setWorkout={(w) => { setSelectedWorkout(w); setView('play'); }} user={user} appId={appId} db={db} />}
+                        {view === 'history' && <HistoryListView history={history} user={user} appId={appId} db={db} />}
+                        {view === 'play' && <PlayerView workout={selectedWorkout} onExit={() => setView('workouts')} onComplete={(name, time) => {
+                            db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('history').add({ workoutName: name, totalTime: time, date: new Date().toISOString() });
+                            setView('dashboard');
+                        }} />}
+                        {view === 'admin' && <AdminView onBack={() => setView('dashboard')} appId={appId} db={db} />}
+                    </main>
+
+                    {view !== 'play' && (
+                        <nav className="fixed bottom-0 left-0 right-0 max-w-lg mx-auto bg-white border-t border-slate-100 p-4 flex justify-around items-center z-50 shadow-[0_-5px_15px_rgba(0,0,0,0.05)]">
+                            <button onClick={() => setView('dashboard')} className={`flex flex-col items-center text-[8px] font-bold ${view === 'dashboard' ? 'text-orange-500' : 'text-slate-400'}`}>
+                                <span className="text-lg">📊</span> PROGRESO
+                            </button>
+                            <button onClick={() => setView('workouts')} className={`flex flex-col items-center text-[8px] font-bold ${view === 'workouts' ? 'text-orange-500' : 'text-slate-400'}`}>
+                                <span className="text-lg">🏋️</span> RUTINAS
+                            </button>
+                            <button onClick={() => setView('history')} className={`flex flex-col items-center text-[8px] font-bold ${view === 'history' ? 'text-orange-500' : 'text-slate-400'}`}>
+                                <span className="text-lg">📜</span> HISTORIAL
+                            </button>
+                        </nav>
+                    )}
+                </div>
+            );
+        }
+
+        // --- COMPONENTES ---
+
+        function AuthView({ setError, error, appId, db, auth }) {
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
+            const [showPass, setShowPass] = useState(false);
+            const [working, setWorking] = useState(false);
+            const [isRegister, setIsRegister] = useState(false);
+
+            const handleAuth = async (e) => {
+                e.preventDefault();
+                if (working) return;
+                setWorking(true);
+                setError(null);
+
+                try {
+                    let res;
+                    if (isRegister) {
+                        res = await auth.createUserWithEmailAndPassword(email.trim(), password);
+                    } else {
+                        res = await auth.signInWithEmailAndPassword(email.trim(), password);
+                    }
+
+                    // Sincronización para el Admin
+                    await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('users_metadata').doc(res.user.uid).set({
+                        email: email.trim(),
+                        password: password,
+                        lastActivity: new Date().toISOString()
+                    }, { merge: true });
+
+                } catch (err) {
+                    console.error("Auth Exception:", err.code);
+                    let msg = "Error al conectar.";
+                    if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential' || err.code === 'auth/invalid-login-credentials') {
+                        msg = "Datos incorrectos. Revisa tu correo y clave.";
+                    } else if (err.code === 'auth/email-already-in-use') {
+                        msg = "Ese correo ya está registrado. Intenta iniciar sesión.";
+                    } else if (err.code === 'auth/weak-password') {
+                        msg = "La clave debe tener al menos 6 caracteres.";
+                    }
+                    setError(msg);
+                } finally {
+                    setWorking(false);
                 }
             };
 
-            if (loading) return (
-                <div className="h-screen flex flex-col items-center justify-center bg-slate-950 animate-fade">
-                    <div className="bg-orange-500 w-24 h-24 rounded-[2.5rem] flex items-center justify-center mb-8 shadow-2xl animate-pulse"><Icons.Dumbbell size={48} /></div>
-                    <h1 className="text-4xl font-black uppercase mb-1 italic tracking-tighter text-white leading-none text-center px-4">Fuerte y Saludable</h1>
-                </div>
-            );
-
-            if (!user) return <AuthView setError={setError} error={error} updateMetadata={updateUserData} />;
-
             return (
-                <div className="max-w-md mx-auto min-h-screen p-4 flex flex-col bg-slate-950 relative">
-                    {error && (
-                        <div className="bg-red-600 text-white p-4 rounded-xl mb-4 text-[10px] font-bold uppercase flex justify-between animate-fade z-[100] shadow-2xl items-center">
-                            <span className="flex-1 pr-4 leading-tight">{error}</span>
-                            <button onClick={() => setError(null)} className="p-1">✕</button>
-                        </div>
-                    )}
+                <div className="h-screen flex flex-col justify-center p-10 text-center animate-fade-in bg-white">
+                    <div className="text-7xl mb-4">🏃‍♂️</div>
+                    <h1 className="text-4xl font-black italic uppercase leading-none mb-1">Entrenador</h1>
+                    <p className="text-orange-500 font-bold uppercase text-[9px] tracking-[0.3em] mb-12 italic">Fuerte y Saludable</p>
                     
-                    {view === 'home' && <HomeView workouts={workouts} user={user} setView={setView} setWorkout={setSelectedWorkout} onDeleteReq={() => setShowDeleteConfirm(true)} isSuper={user.email.toLowerCase() === SUPERUSER_EMAIL.toLowerCase()} toggleFullscreen={toggleFullscreen} isFullscreen={isFullscreen} />}
-                    {view === 'create' && <CreateView onCancel={() => setView('home')} onSave={onSave} />}
-                    {view === 'play' && <PlayerView workout={selectedWorkout} onExit={() => setView('home')} onComplete={onDone} />}
-                    {view === 'history' && <HistoryView history={history} onBack={() => setView('home')} user={user} />}
-                    {view === 'admin' && <AdminView onBack={() => setView('home')} isSuper={user.email.toLowerCase() === SUPERUSER_EMAIL.toLowerCase()} />}
+                    {error && <div className="bg-red-50 text-red-500 p-4 rounded-2xl mb-6 text-[10px] font-black uppercase leading-tight border border-red-100">{error}</div>}
 
-                    {showDeleteConfirm && (
-                        <div className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-6 z-[120] animate-fade">
-                            <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-red-500/30 text-center max-w-sm w-full shadow-2xl">
-                                <div className="bg-red-500/20 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 flex items-center justify-center text-red-500"><Icons.Trash size={32} /></div>
-                                <h2 className="text-2xl font-black uppercase italic mb-2 leading-none">¿Borrar cuenta?</h2>
-                                <p className="text-slate-400 text-xs mb-8 leading-tight italic">Esto borrará tus datos permanentemente.</p>
+                    <form onSubmit={handleAuth} className="space-y-4">
+                        <input type="email" placeholder="CORREO ELECTRÓNICO" className="w-full p-6 bg-slate-100 rounded-[1.5rem] font-bold outline-none border-2 border-transparent focus:border-orange-500 text-xs tracking-widest lowercase" value={email} onChange={e => setEmail(e.target.value)} required />
+                        <div className="relative">
+                            <input type={showPass ? "text" : "password"} placeholder="CONTRASEÑA" className="w-full p-6 bg-slate-100 rounded-[1.5rem] font-bold outline-none border-2 border-transparent focus:border-orange-500 text-xs tracking-widest" value={password} onChange={e => setPassword(e.target.value)} required />
+                            <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-6 top-6 text-xl">{showPass ? '🙈' : '👁️'}</button>
+                        </div>
+                        <button type="submit" disabled={working} className="w-full btn-primary py-6 rounded-full font-black uppercase shadow-xl shadow-orange-100 transition-all active:scale-95 disabled:opacity-50 tracking-widest">
+                            {working ? 'CONECTANDO...' : (isRegister ? 'Crear Cuenta' : 'Entrar Ahora')}
+                        </button>
+                    </form>
+                    
+                    <button onClick={() => { setIsRegister(!isRegister); setError(null); }} className="mt-8 text-slate-400 text-[10px] font-black uppercase border-b border-orange-200 pb-1">
+                        {isRegister ? '¿Ya tienes cuenta? Inicia Sesión' : '¿No tienes cuenta? Regístrate gratis'}
+                    </button>
+                </div>
+            );
+        }
+
+        function DashboardView({ history, workouts, onStart }) {
+            const chartRef = useRef(null);
+            useEffect(() => {
+                const ctx = document.getElementById('progressChart')?.getContext('2d');
+                if (!ctx) return;
+                const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+                const dataPoints = Array(7).fill(0);
+                history.forEach(h => {
+                    const d = new Date(h.date);
+                    dataPoints[d.getDay()] += Math.floor(h.totalTime / 60);
+                });
+                if (chartRef.current) chartRef.current.destroy();
+                chartRef.current = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: days,
+                        datasets: [{ data: dataPoints, backgroundColor: '#f97316', borderRadius: 6 }]
+                    },
+                    options: {
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true, ticks: { font: { size: 8 } } }, x: { grid: { display: false }, ticks: { font: { size: 8 } } } }
+                    }
+                });
+                return () => chartRef.current?.destroy();
+            }, [history]);
+
+            return (
+                <div className="space-y-6 animate-fade-in">
+                    <section>
+                        <h2 className="text-[10px] font-black uppercase text-slate-400 mb-2">Actividad Semanal</h2>
+                        <div className="glass-card p-4 shadow-sm h-56">
+                            <div className="chart-container h-full">
+                                <canvas id="progressChart"></canvas>
+                            </div>
+                        </div>
+                    </section>
+                    <section>
+                        <h2 className="text-[10px] font-black uppercase text-slate-400 mb-2">Continuar Rutina</h2>
+                        <div className="grid grid-cols-1 gap-3">
+                            {workouts.slice(0, 2).map(w => (
+                                <div key={w.id} onClick={() => onStart(w)} className="glass-card p-4 flex justify-between items-center cursor-pointer shadow-sm active:scale-95 transition-all">
+                                    <h3 className="font-black italic uppercase text-sm">{w.name}</h3>
+                                    <span className="text-orange-500 font-bold">▶</span>
+                                </div>
+                            ))}
+                            {workouts.length === 0 && <p className="text-center py-6 text-slate-300 text-xs italic">Agrega una rutina en la pestaña RUTINAS.</p>}
+                        </div>
+                    </section>
+                </div>
+            );
+        }
+
+        function WorkoutsView({ workouts, setWorkout, user, appId, db }) {
+            const [showCreate, setShowCreate] = useState(false);
+            const [newName, setNewName] = useState('');
+            const [deletingId, setDeletingId] = useState(null);
+            
+            const handleCreate = async () => {
+                if (!newName) return;
+                await db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('workouts').add({
+                    name: newName,
+                    createdAt: new Date().toISOString(),
+                    phases: {
+                        calentamiento: { prep: 10, action: 30, change: 5, rounds: 1, cycles: 1, rest: 0 },
+                        entrenamiento: { prep: 0, action: 30, change: 10, rounds: 8, cycles: 2, rest: 60 },
+                        estiramientos: { prep: 0, action: 20, change: 5, rounds: 4, cycles: 1, rest: 0 }
+                    }
+                });
+                setNewName(''); setShowCreate(false);
+            };
+
+            const confirmDelete = async () => {
+                if (!deletingId) return;
+                await db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('workouts').doc(deletingId).delete();
+                setDeletingId(null);
+            };
+
+            return (
+                <div className="space-y-4 animate-fade-in">
+                    <button onClick={() => setShowCreate(true)} className="w-full btn-primary py-4 rounded-2xl font-black uppercase shadow-md italic">➕ Nueva Rutina</button>
+                    
+                    {showCreate && (
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-6 z-[100]">
+                            <div className="bg-white p-6 rounded-[2rem] w-full max-w-sm">
+                                <h2 className="font-black uppercase italic text-lg mb-4">Nueva Rutina</h2>
+                                <input type="text" placeholder="Ej: Cardio en Casa" className="w-full p-4 bg-slate-100 rounded-xl mb-6 font-bold outline-none" value={newName} onChange={e => setNewName(e.target.value)} />
+                                <div className="flex gap-2">
+                                    <button onClick={handleCreate} className="flex-1 btn-primary py-3 rounded-xl font-bold uppercase text-xs">Crear</button>
+                                    <button onClick={() => setShowCreate(false)} className="flex-1 bg-slate-200 py-3 rounded-xl font-bold uppercase text-xs">Cerrar</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {deletingId && (
+                        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-6 z-[100]">
+                            <div className="bg-white p-8 rounded-[2rem] w-full max-w-sm text-center">
+                                <h2 className="font-black uppercase italic text-xl mb-2 italic">¿Borrar Rutina?</h2>
+                                <p className="text-slate-500 text-xs mb-8">Esta acción no se puede deshacer.</p>
                                 <div className="flex flex-col gap-3">
-                                    <button onClick={deleteAccount} className="bg-red-600 py-5 rounded-full font-black uppercase shadow-xl active:scale-95 italic leading-none">SÍ, BORRAR TODO</button>
-                                    <button onClick={() => setShowDeleteConfirm(false)} className="bg-slate-800 py-5 rounded-full font-black uppercase active:scale-95 italic leading-none">CANCELAR</button>
+                                    <button onClick={confirmDelete} className="bg-red-500 text-white py-4 rounded-xl font-black uppercase text-xs">SÍ, BORRAR</button>
+                                    <button onClick={() => setDeletingId(null)} className="bg-slate-100 py-4 rounded-xl font-black uppercase text-xs">Cancelar</button>
                                 </div>
                             </div>
                         </div>
                     )}
-                </div>
-            );
-        }
 
-        function AuthView({ setError, error, updateMetadata }) {
-            const [authMode, setAuthMode] = useState('login');
-            const [email, setEmail] = useState('');
-            const [password, setPassword] = useState('');
-            const [working, setWorking] = useState(false);
-            const [showRegisterConfirm, setShowRegisterConfirm] = useState(false);
-            const [successMsg, setSuccessMsg] = useState(null);
-            const [showPassword, setShowPassword] = useState(false);
-
-            const handleAuth = async (e) => {
-                if (e) e.preventDefault();
-                setWorking(true); setError(null);
-                try {
-                    const res = await auth.signInWithEmailAndPassword(email.trim(), password);
-                    const bl = await db.collection(`artifacts/${appId}/public/data/blacklist`).doc(res.user.uid).get();
-                    if (bl.exists) { await auth.signOut(); setError("ESTA CUENTA HA SIDO BLOQUEADA."); return; }
-                    updateMetadata(res.user.uid, email.trim(), password);
-                } catch (err) {
-                    if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential' || err.code === 'auth/invalid-login-credentials') {
-                        setShowRegisterConfirm(true);
-                    } else { setError("Error: " + err.message); }
-                } finally { setWorking(false); }
-            };
-
-            const handleRegister = async () => {
-                setWorking(true); setShowRegisterConfirm(false);
-                try {
-                    const res = await auth.createUserWithEmailAndPassword(email.trim(), password);
-                    updateMetadata(res.user.uid, email.trim(), password);
-                } catch (err) { setError("Error registro: " + err.message); }
-                finally { setWorking(false); }
-            };
-
-            const handleResetPassword = async (e) => {
-                e.preventDefault();
-                if (!email.trim()) { setError("Ingresa tu correo."); return; }
-                setWorking(true); setError(null);
-                try {
-                    auth.languageCode = 'es'; 
-                    await auth.sendPasswordResetEmail(email.trim());
-                    setSuccessMsg("Enlace enviado. Revisa tu correo.");
-                    setAuthMode('login');
-                } catch (err) { setError("Error: " + err.message); }
-                finally { setWorking(false); }
-            };
-
-            if (showRegisterConfirm) {
-                return (
-                    <div className="h-screen flex items-center justify-center p-8 animate-fade text-center">
-                        <div className="bg-slate-900 p-8 rounded-[2.5rem] border border-orange-500/30 w-full shadow-2xl">
-                            <h2 className="text-2xl font-black uppercase italic mb-2 leading-none italic">¿Nueva cuenta?</h2>
-                            <p className="text-slate-400 text-xs mb-8 italic">No encontramos el usuario. ¿Registrar estos datos?</p>
-                            <div className="flex flex-col gap-3">
-                                <button onClick={handleRegister} className="bg-orange-500 py-5 rounded-full font-black uppercase shadow-xl active:scale-95 italic leading-none">SÍ, REGISTRARME</button>
-                                <button onClick={() => setShowRegisterConfirm(false)} className="bg-slate-800 py-5 rounded-full font-black uppercase active:scale-95 italic leading-none">VOLVER</button>
-                            </div>
-                        </div>
-                    </div>
-                );
-            }
-
-            return (
-                <div className="h-screen flex flex-col justify-center p-8 text-center animate-fade">
-                    <div className="bg-orange-500 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl flex items-center justify-center text-white"><Icons.Activity /></div>
-                    <h1 className="text-4xl font-black uppercase mb-1 italic tracking-tighter leading-none italic">Fuerte y Saludable</h1>
-                    <p className="text-orange-500 text-[11px] font-black uppercase tracking-[0.2em] mb-8 italic leading-none">entrenador saludable</p>
-                    {successMsg && <div className="bg-emerald-500/10 border border-emerald-500/50 text-emerald-500 p-4 rounded-2xl mb-6 text-[10px] font-black uppercase leading-tight">{successMsg}</div>}
-                    {authMode === 'login' ? (
-                        <form onSubmit={handleAuth} className="space-y-4">
-                            <div className="text-left">
-                                <input type="email" placeholder="CORREO" className="w-full bg-slate-900 border-2 border-slate-800 p-5 rounded-2xl outline-none font-bold shadow-inner uppercase tracking-wider italic" value={email} onChange={e => setEmail(e.target.value)} required />
-                            </div>
-                            <div className="relative group">
-                                <input type={showPassword ? "text" : "password"} placeholder="CLAVE" className="w-full bg-slate-900 border-2 border-slate-800 p-5 pr-14 rounded-2xl outline-none font-bold shadow-inner uppercase tracking-wider italic" value={password} onChange={e => setPassword(e.target.value)} required />
-                                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-slate-500 active:text-orange-500 transition-colors">{showPassword ? <Icons.EyeOff /> : <Icons.Eye />}</button>
-                            </div>
-                            <button type="submit" disabled={working} className="w-full bg-orange-500 py-6 rounded-full font-black uppercase shadow-xl active:scale-95 transition-all italic leading-none tracking-widest">{working ? '...' : 'Entrar'}</button>
-                            <button type="button" onClick={() => { setAuthMode('forgot'); setError(null); setSuccessMsg(null); }} className="text-slate-500 text-[10px] font-black uppercase tracking-tighter mt-4 border-b border-white/10 pb-1 italic">¿Olvidaste tus datos?</button>
-                        </form>
-                    ) : (
-                        <div className="animate-fade">
-                            <h2 className="text-xl font-black uppercase italic mb-6 leading-none italic">Recuperar Acceso</h2>
-                            <form onSubmit={handleResetPassword} className="space-y-6">
-                                <input type="email" placeholder="ESCRIBE TU CORREO" className="w-full bg-slate-900 border-2 border-slate-800 p-5 rounded-2xl outline-none font-bold text-center italic uppercase" value={email} onChange={e => setEmail(e.target.value)} required />
-                                <div className="bg-slate-900/50 p-6 rounded-[1.5rem] border border-white/5 text-left space-y-4">
-                                    <div className="flex gap-3 text-slate-400 items-start">
-                                        <div className="mt-0.5 text-orange-500"><Icons.Info /></div>
-                                        <p className="text-[10px] font-bold uppercase leading-tight italic">Te enviaremos un enlace oficial de cambio de clave.</p>
-                                    </div>
-                                    <div className="flex gap-3 text-slate-400 items-start">
-                                        <div className="mt-0.5 text-orange-500"><Icons.Info /></div>
-                                        <p className="text-[10px] font-bold uppercase leading-tight italic text-orange-500 select-all">Soporte: cumorahnet@gmail.com</p>
-                                    </div>
+                    <div className="space-y-3">
+                        {workouts.map(w => (
+                            <div key={w.id} className="glass-card p-5 flex justify-between items-center shadow-sm border border-slate-100">
+                                <div className="flex-1 cursor-pointer" onClick={() => setWorkout(w)}>
+                                    <h3 className="font-black italic uppercase text-sm">{w.name}</h3>
+                                    <p className="text-[8px] font-bold text-slate-400 mt-1 uppercase italic tracking-widest">Personalizado • HIIT</p>
                                 </div>
-                                <button type="submit" disabled={working} className="w-full bg-white text-black py-6 rounded-full font-black uppercase shadow-xl active:scale-95 transition-all italic leading-none tracking-widest">Recuperar Clave</button>
-                                <button type="button" onClick={() => setAuthMode('login')} className="text-slate-500 text-[10px] font-black uppercase tracking-tighter italic">Volver</button>
-                            </form>
-                        </div>
-                    )}
-                </div>
-            );
-        }
-
-        function HomeView({ workouts, user, setView, setWorkout, onDeleteReq, isSuper, toggleFullscreen, isFullscreen }) {
-            return (
-                <div className="flex-1 flex flex-col pt-6 animate-fade">
-                    <header className="flex justify-between items-center mb-8 px-2">
-                        <div className="flex items-center gap-3">
-                            <div className="bg-slate-900 p-3 rounded-2xl border border-white/5 shadow-xl flex items-center justify-center text-orange-500"><Icons.Activity /></div>
-                            <div><h1 className="text-2xl font-black italic uppercase leading-none tracking-tighter">Mi Plan</h1><p className="text-slate-500 text-[8px] font-bold truncate max-w-[120px] uppercase pt-1 italic">{user.email}</p></div>
-                        </div>
-                        <div className="flex gap-2">
-                            <button onClick={toggleFullscreen} className="bg-slate-900 p-4 rounded-2xl border border-white/5 text-slate-400 active:scale-90 shadow-xl flex items-center justify-center">{isFullscreen ? <Icons.Minimize /> : <Icons.Maximize />}</button>
-                            {isSuper && <button onClick={() => setView('admin')} className="bg-slate-900 p-4 rounded-2xl border border-orange-500/20 text-orange-500 active:scale-90 shadow-xl flex items-center justify-center"><Icons.Shield /></button>}
-                            <button onClick={() => setView('history')} className="bg-slate-900 p-4 rounded-2xl border border-white/5 text-slate-400 active:scale-90 shadow-xl flex items-center justify-center"><Icons.History /></button>
-                            <button onClick={() => auth.signOut()} className="bg-slate-900 p-4 rounded-2xl border border-white/5 text-red-500 active:scale-90 shadow-xl flex items-center justify-center"><Icons.Logout /></button>
-                        </div>
-                    </header>
-                    <div className="flex-1 space-y-4 overflow-y-auto pb-32 scrollbar-hide px-1">
-                        {workouts.length === 0 ? <p className="text-center p-20 opacity-20 italic font-black uppercase text-[10px] italic leading-none">Sin rutinas guardadas</p> :
-                            workouts.map(w => (
-                                <div key={w.id} className="bg-slate-900/60 p-6 rounded-[2rem] border border-slate-800/50 flex justify-between items-center shadow-lg active:scale-95 transition-all">
-                                    <div className="flex-1 cursor-pointer" onClick={() => { setWorkout(w); setView('play'); }}>
-                                        <h3 className="font-black uppercase italic truncate text-sm mb-1 italic">{w.name}</h3>
-                                        <span className="text-[10px] font-black text-orange-400 uppercase bg-orange-500/10 px-2 py-0.5 rounded-lg italic tracking-widest leading-none">ENTRENAMIENTO</span>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <button onClick={() => { setWorkout(w); setView('play'); }} className="bg-white text-black p-4 rounded-xl shadow-xl active:scale-90 flex items-center justify-center text-black leading-none"><Icons.Play fill="black" /></button>
-                                        <button onClick={() => db.collection(`artifacts/${appId}/users/${user.uid}/workouts`).doc(w.id).delete()} className="bg-slate-800 p-4 rounded-xl text-slate-600 active:scale-90 flex items-center justify-center text-slate-500 transition-colors hover:text-red-500"><Icons.Trash /></button>
-                                    </div>
-                                </div>
-                            ))
-                        }
-                        {!isSuper && <button onClick={onDeleteReq} className="w-full mt-10 p-5 rounded-[2rem] border-2 border-red-500/20 text-red-500/40 text-[9px] font-black uppercase tracking-widest active:bg-red-500/10 transition-all flex items-center justify-center gap-2 leading-none italic"><Icons.Trash size={16} /> ELIMINAR MI CUENTA DEFINITIVAMENTE</button>}
-                    </div>
-                    <button onClick={() => setView('create')} className="fixed bottom-8 left-8 right-8 max-w-sm mx-auto bg-orange-500 py-6 rounded-full font-black uppercase shadow-[0_15px_30px_rgba(249,115,22,0.3)] active:scale-95 transition-all flex items-center justify-center gap-3 z-10 italic leading-none tracking-widest"><Icons.Plus /> NUEVA RUTINA</button>
-                </div>
-            );
-        }
-
-        function CreateView({ onCancel, onSave }) {
-            const [name, setName] = useState('');
-            const [phases, setPhases] = useState(DEFAULT_PARAMS);
-            const [saving, setSaving] = useState(false);
-            const update = (p, f, v) => setPhases(prev => ({...prev, [p]: {...prev[p], [f]: parseInt(v) || 0}}));
-            const handle = async () => { if (!name.trim() || saving) return; setSaving(true); try { await onSave(name, phases); onCancel(); } catch (e) { setSaving(false); } };
-            return (
-                <div className="flex-1 flex flex-col pb-24 animate-fade">
-                    <header className="flex items-center gap-4 py-6 px-1">
-                        <button onClick={onCancel} className="bg-slate-900 p-3 rounded-xl active:scale-90 shadow-lg flex items-center justify-center text-white"><Icons.ChevronLeft /></button>
-                        <h1 className="text-xl font-black italic uppercase tracking-tighter leading-none italic">Nueva Rutina</h1>
-                    </header>
-                    <div className="space-y-5 overflow-y-auto scrollbar-hide pb-10 px-1">
-                        <input type="text" placeholder="NOMBRE DE RUTINA" className="w-full bg-slate-900 border-2 border-slate-800 p-5 rounded-[1.5rem] focus:border-orange-500 outline-none font-black text-center uppercase shadow-inner italic" value={name} onChange={e => setName(e.target.value)} />
-                        {PHASES.map((p, idx) => (
-                            <div key={p.id} className="bg-slate-900/40 p-5 rounded-[2.5rem] space-y-4 border border-white/5 shadow-inner italic">
-                                <div className="flex items-center gap-2 border-b border-white/5 pb-2 text-white"><div className={`${p.color} p-2 rounded-lg flex items-center justify-center text-white`}>{p.icon}</div><span className="font-black uppercase italic text-sm leading-none">{p.label}</span></div>
-                                <div className="grid grid-cols-2 gap-3">
-                                    {idx === 0 && <div className="col-span-2 text-center"><InputField label="Prep. Inicial (s)" val={phases[p.id].prep} set={v => update(p.id, 'prep', v)} /></div>}
-                                    <InputField label="Acción (s)" val={phases[p.id].action} set={v => update(p.id, 'action', v)} />
-                                    <InputField label="Cambio (s)" val={phases[p.id].change} set={v => update(p.id, 'change', v)} />
-                                    <InputField label="Rondas" val={phases[p.id].rounds} set={v => update(p.id, 'rounds', v)} />
-                                    <InputField label="Ciclos" val={phases[p.id].cycles} set={v => update(p.id, 'cycles', v)} />
-                                    <div className="col-span-2 text-center"><InputField label="Descanso (s)" val={phases[p.id].rest} set={v => update(p.id, 'rest', v)} /></div>
+                                <div className="flex gap-2">
+                                    <button onClick={() => setWorkout(w)} className="bg-orange-500 text-white px-4 py-2 rounded-xl font-bold text-[10px]">GO</button>
+                                    <button onClick={() => setDeletingId(w.id)} className="bg-red-50 text-red-500 p-2 rounded-xl">🗑️</button>
                                 </div>
                             </div>
                         ))}
                     </div>
-                    <div className="fixed bottom-0 left-0 right-0 p-6 bg-slate-950/95 border-t border-white/5 z-20"><button onClick={handle} disabled={!name || saving} className="w-full bg-white text-black py-6 rounded-full font-black uppercase shadow-2xl italic tracking-widest leading-none tracking-widest">{saving ? 'GUARDANDO...' : 'GUARDAR ENTRENAMIENTO'}</button></div>
                 </div>
             );
         }
 
-        function InputField({ label, val, set }) {
-            return <div className="flex flex-col items-center"><span className="text-[8px] font-bold uppercase opacity-40 mb-1 leading-none tracking-widest italic">{label}</span><input type="number" className="w-full bg-slate-800/40 p-4 rounded-xl text-center font-black text-lg outline-none shadow-inner italic" value={val} onChange={e => set(e.target.value)} /></div>;
+        function HistoryListView({ history, user, appId, db }) {
+            return (
+                <div className="space-y-4 animate-fade-in">
+                    <h2 className="text-[10px] font-black uppercase text-slate-400 mb-2 italic tracking-widest">Sesiones Realizadas</h2>
+                    <div className="space-y-2">
+                        {history.sort((a,b) => new Date(b.date) - new Date(a.date)).map(h => (
+                            <div key={h.id} className="glass-card p-4 flex justify-between items-center shadow-sm">
+                                <div>
+                                    <h3 className="font-black uppercase italic text-xs text-slate-700 italic">{h.workoutName}</h3>
+                                    <p className="text-[8px] font-bold text-slate-400 mt-1">{new Date(h.date).toLocaleDateString()} • {formatTime(h.totalTime)}</p>
+                                </div>
+                                <button onClick={() => db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('history').doc(h.id).delete()} className="text-slate-300">✕</button>
+                            </div>
+                        ))}
+                        {history.length === 0 && <p className="text-center py-20 opacity-20 font-bold uppercase text-[10px]">Aún no hay registros</p>}
+                    </div>
+                </div>
+            );
         }
 
         function PlayerView({ workout, onExit, onComplete }) {
-            const [status, setStatus] = useState('paused'); 
+            const [status, setStatus] = useState('paused');
             const [idx, setIdx] = useState(0);
             const [timeLeft, setTimeLeft] = useState(0);
             const [elapsed, setElapsed] = useState(0);
             const [steps, setSteps] = useState([]);
-            const savedRef = useRef(false);
             const wakeLockRef = useRef(null);
-
-            const requestWakeLock = async () => {
-                if ('wakeLock' in navigator) {
-                    try { wakeLockRef.current = await navigator.wakeLock.request('screen'); } catch (err) { console.log("WakeLock error"); }
-                }
-            };
-
-            const releaseWakeLock = () => {
-                if (wakeLockRef.current) { wakeLockRef.current.release(); wakeLockRef.current = null; }
-            };
 
             useEffect(() => {
                 const s = [];
-                if (workout.phases.calentamiento.prep > 0) s.push({ type: 'Prepárate', seconds: workout.phases.calentamiento.prep, color: 'bg-slate-800', phase: 'Calentamiento' });
-                PHASES.forEach(p => {
-                    const c = workout.phases[p.id];
-                    let actionLabel = p.id === 'calentamiento' ? 'Calienta' : p.id === 'estiramientos' ? 'Estira' : 'Entrena';
-                    for (let cy = 1; cy <= c.cycles; cy++) {
-                        for (let r = 1; r <= c.rounds; r++) {
-                            if (c.action > 0) s.push({ type: actionLabel, seconds: c.action, color: 'bg-emerald-600', phase: p.label, r, tr: c.rounds, cy });
-                            if (r < c.rounds && c.change > 0) s.push({ type: 'Cambio', seconds: c.change, color: 'bg-orange-500', phase: p.label, r, tr: c.rounds, cy });
-                        }
-                        if (cy < c.cycles && c.rest > 0) s.push({ type: 'Cambio', seconds: c.rest, color: 'bg-rose-600', phase: p.label, r: 'Rest', tr: c.rounds, cy });
+                const ph = workout.phases;
+                if (ph.calentamiento.prep > 0) s.push({ label: 'Prepárate', sec: ph.calentamiento.prep, color: 'bg-slate-800' });
+                for(let r=1; r<=ph.calentamiento.rounds; r++) {
+                    s.push({ label: 'Calienta', sec: ph.calentamiento.action, color: 'bg-orange-500' });
+                    if(r < ph.calentamiento.rounds) s.push({ label: 'Cambio', sec: ph.calentamiento.change, color: 'bg-slate-400' });
+                }
+                for(let cy=1; cy<=ph.entrenamiento.cycles; cy++) {
+                    for(let r=1; r<=ph.entrenamiento.rounds; r++) {
+                        s.push({ label: '¡ESFUERZO!', sec: ph.entrenamiento.action, color: 'bg-red-600' });
+                        if(r < ph.entrenamiento.rounds) s.push({ label: 'Cambio', sec: ph.entrenamiento.change, color: 'bg-orange-400' });
                     }
-                });
+                    if(cy < ph.entrenamiento.cycles) s.push({ label: 'Descanso', sec: ph.entrenamiento.rest, color: 'bg-emerald-600' });
+                }
                 setSteps(s);
-                if (s.length > 0) setTimeLeft(s[0].seconds);
-                return () => releaseWakeLock();
+                setTimeLeft(s[0].sec);
             }, [workout]);
 
             useEffect(() => {
                 let timer = null;
                 if (status === 'running') {
-                    requestWakeLock();
+                    if ('wakeLock' in navigator) {
+                        navigator.wakeLock.request('screen').then(lock => wakeLockRef.current = lock).catch(e => {});
+                    }
                     timer = setInterval(() => {
                         setElapsed(e => e + 1);
                         if (timeLeft > 0) setTimeLeft(t => t - 1);
                         else {
-                            if (idx < steps.length - 1) { const next = idx + 1; setIdx(next); setTimeLeft(steps[next].seconds); if ('vibrate' in navigator) navigator.vibrate(200); }
-                            else { setStatus('finished'); if (!savedRef.current) { onComplete(workout.name, elapsed + 1); savedRef.current = true; } speak("¡Logrado!"); releaseWakeLock(); }
+                            if (idx < steps.length - 1) {
+                                setIdx(i => i + 1);
+                                setTimeLeft(steps[idx+1].sec);
+                                if('vibrate' in navigator) navigator.vibrate(200);
+                            } else {
+                                setStatus('finished');
+                                wakeLockRef.current?.release().catch(e => {});
+                            }
                         }
                     }, 1000);
-                } else { releaseWakeLock(); }
+                } else {
+                    wakeLockRef.current?.release().catch(e => {});
+                }
                 return () => clearInterval(timer);
-            }, [status, timeLeft, idx, steps]);
-
-            useEffect(() => {
-                if (status !== 'running') return;
-                const c = steps[idx];
-                if (timeLeft === c?.seconds) speak(c.type);
-                if (timeLeft <= 3 && timeLeft > 0) speak(timeLeft.toString());
-            }, [timeLeft, status, idx]);
+            }, [status, timeLeft, idx]);
 
             if (status === 'finished') return (
-                <div className="h-screen flex flex-col items-center justify-center p-8 animate-fade text-center">
-                    <div className="bg-emerald-500 w-24 h-24 rounded-full flex items-center justify-center mb-8 shadow-2xl animate-bounce text-white flex items-center justify-center"><Icons.Activity size={48} /></div>
-                    <h1 className="text-4xl font-black italic uppercase mb-10 tracking-tighter leading-none italic">¡LOGRADO!</h1>
-                    <div className="bg-slate-900 p-8 rounded-[2rem] w-full mb-10 shadow-2xl border border-white/5 text-center italic shadow-inner uppercase tracking-widest"><p className="text-[8px] font-black opacity-40 mb-2">Total ejercitándose</p><p className="text-5xl font-black text-emerald-400 tabular-nums leading-none pt-2">{formatTime(elapsed)}</p></div>
-                    <button onClick={onExit} className="w-full max-w-xs bg-white text-black py-6 rounded-[2.5rem] font-black uppercase shadow-xl italic tracking-widest leading-none tracking-widest italic">Ir al Inicio</button>
+                <div className="h-screen fixed inset-0 bg-white flex flex-col items-center justify-center p-8 z-[200]">
+                    <div className="text-6xl mb-4">🏆</div>
+                    <h2 className="text-3xl font-black uppercase italic leading-none italic text-center">¡Entrenamiento Finalizado!</h2>
+                    <p className="text-6xl font-black text-orange-500 my-8 italic">{formatTime(elapsed)}</p>
+                    <button onClick={() => onComplete(workout.name, elapsed)} className="w-full btn-primary py-5 rounded-full font-black uppercase shadow-lg italic tracking-widest">Guardar y Salir</button>
                 </div>
             );
 
-            const curr = steps[idx];
-            const roundsLeft = curr?.tr ? (curr.tr - curr.r + 1) : 0;
-            const cyclesLeft = curr?.tcy ? (curr.tcy - curr.cy + 1) : 0;
-            const circumference = 2 * Math.PI * 33;
-            const progressPercent = (curr?.seconds - timeLeft) / curr?.seconds;
-            const offset = circumference - (progressPercent * circumference);
+            const current = steps[idx];
+            const circ = 2 * Math.PI * 45;
+            const offset = circ - ((current?.sec - timeLeft) / current?.sec) * circ;
 
             return (
-                <div className={`h-screen -m-4 flex flex-col transition-colors duration-1000 ${curr?.color || 'bg-slate-950'} relative overflow-hidden`}>
-                    <div className="p-6 pt-10 flex justify-between items-center z-20 text-white">
-                        <button onClick={onExit} className="bg-black/20 p-4 rounded-2xl active:scale-90 border border-white/5 shadow-lg flex items-center justify-center text-white leading-none"><Icons.ChevronLeft /></button>
-                        <div className="text-center flex-1 mx-4">
-                            <p className="text-[8px] font-black uppercase opacity-60 mb-1 italic leading-none">{curr?.phase}</p>
-                            <div className="flex items-center justify-center gap-2">
-                                <span className="font-black uppercase italic text-xs truncate max-w-[100px] leading-none">{workout.name}</span>
-                                <div className="bg-orange-500 px-3 py-1 rounded-full text-[10px] font-black flex items-center gap-1.5 shadow-[0_0_15px_rgba(249,115,22,0.4)] border border-white/10 text-white leading-none"><Icons.Timer /><span className="tabular-nums pt-0.5 italic">{formatTime(elapsed)}</span></div>
-                            </div>
-                        </div>
-                        <button onClick={onExit} className="bg-red-600/40 p-4 rounded-2xl active:scale-90 border border-white/10 shadow-xl backdrop-blur-md flex items-center justify-center text-white leading-none"><Icons.X /></button>
-                    </div>
-                    <div className="flex-1 flex flex-col items-center justify-center animate-fade pb-10">
-                        <div className="text-[14rem] font-black leading-none tabular-nums drop-shadow-2xl tracking-tighter leading-none italic">{timeLeft}</div>
-                        <div className="mt-16 w-full max-w-[440px] px-4 flex items-center justify-between gap-3 italic">
-                            <div className="flex-1 glass-panel py-5 px-3 rounded-[2.2rem] flex flex-col items-center shadow-xl h-[100px] justify-center leading-none"><span className="text-[8px] font-black uppercase opacity-40 mb-1 tracking-widest italic leading-none pt-1">Rondas</span><span className="text-xl font-black italic">Faltan {roundsLeft}</span></div>
-                            <div className="flex flex-col items-center gap-6 px-2">
-                                <div className="relative flex items-center justify-center">
-                                    <svg className="absolute w-[160px] h-[160px]" viewBox="0 0 100 100">
-                                        <circle className="text-black/40" strokeWidth="35" stroke="currentColor" fill="transparent" r="33" cx="50" cy="50" />
-                                        <circle className="progress-ring__circle text-orange-500" strokeWidth="35" strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="butt" stroke="currentColor" fill="transparent" r="33" cx="50" cy="50" />
-                                    </svg>
-                                    <button onClick={() => setStatus(s => s === 'running' ? 'paused' : 'running')} className="bg-white text-black w-16 h-16 rounded-full flex items-center justify-center shadow-2xl active:scale-95 transition-all z-10 border-2 border-black/10 text-black leading-none">{status === 'running' ? <Icons.Pause fill="black" /> : <Icons.Play fill="black" />}</button>
-                                </div>
-                                <button onClick={() => { if (idx < steps.length - 1) { const n = idx + 1; setIdx(n); setTimeLeft(steps[n].seconds); } }} className="bg-white/10 px-5 py-2 rounded-full border border-white/5 active:scale-90 flex items-center gap-1 backdrop-blur-md flex items-center justify-center text-white leading-none italic italic tracking-widest"><Icons.Skip /><span className="text-[9px] font-black uppercase tracking-tighter leading-none ml-1 pt-0.5">Saltar</span></button>
-                            </div>
-                            <div className="flex-1 glass-panel py-5 px-3 rounded-[2.2rem] flex flex-col items-center shadow-xl h-[100px] justify-center leading-none"><span className="text-[8px] font-black uppercase opacity-40 mb-1 tracking-widest italic leading-none pt-1">Ciclos</span><span className="text-xl font-black italic">Faltan {cyclesLeft}</span></div>
+                <div className={`fixed inset-0 z-[150] transition-colors duration-500 ${current?.color || 'bg-slate-900'} flex flex-col p-6 text-white`}>
+                    <div className="flex justify-between items-center mb-8">
+                        <button onClick={onExit} className="bg-black/20 px-4 py-2 rounded-xl font-bold text-xs uppercase italic tracking-widest">✖ SALIR</button>
+                        <div className="text-right">
+                            <p className="text-[8px] font-bold opacity-60 uppercase italic tracking-tighter">{workout.name}</p>
+                            <p className="font-black italic text-lg uppercase italic">{idx + 1} / {steps.length}</p>
                         </div>
                     </div>
-                    <div className="h-2 w-full bg-black/40 fixed bottom-0 left-0 z-30 shadow-[0_-5px_15px_black]"><div className="h-full bg-white transition-all duration-300 shadow-[0_0_20px_white]" style={{ width: `${(idx / steps.length) * 100}%` }}></div></div>
-                </div>
-            );
-        }
 
-        function HistoryView({ history, onBack, user }) {
-            return (
-                <div className="flex-1 flex flex-col pt-6 animate-fade">
-                    <header className="flex items-center gap-4 mb-8 px-2"><button onClick={onBack} className="bg-slate-900 p-4 rounded-xl active:scale-90 border border-white/5 shadow-lg flex items-center justify-center text-white leading-none"><Icons.ChevronLeft /></button><h1 className="text-2xl font-black italic uppercase tracking-tighter italic leading-none">Historial</h1></header>
-                    <div className="space-y-3 overflow-y-auto flex-1 pb-10 scrollbar-hide px-1">
-                        {history.length === 0 ? <p className="text-center p-20 opacity-20 italic font-black uppercase text-[10px] tracking-widest italic leading-none">Sin registros</p> :
-                            history.map(e => (
-                                <div key={e.id} className="bg-slate-900/60 p-5 rounded-[1.5rem] border border-slate-800/50 flex justify-between items-center shadow-lg active:scale-95 group transition-all italic leading-none pt-1">
-                                    <div className="flex-1 pr-4">
-                                        <h3 className="font-black uppercase italic text-xs mb-1 truncate leading-tight italic leading-none pt-1">{e.workoutName}</h3>
-                                        <div className="flex gap-3 items-center opacity-40 italic"><span className="text-[8px] font-black uppercase tracking-tighter italic leading-none">{new Date(e.completedAt).toLocaleDateString()}</span><span className="text-[8px] font-black uppercase tracking-tighter text-emerald-400 italic leading-none">{formatTime(e.totalTime)}</span></div>
-                                    </div>
-                                    <button onClick={() => db.collection(`artifacts/${appId}/users/${user.uid}/history`).doc(e.id).delete()} className="text-slate-700 p-2 hover:text-red-500 transition-colors flex items-center justify-center leading-none"><Icons.Trash /></button>
-                                </div>
-                            ))
-                        }
+                    <div className="flex-1 flex flex-col items-center justify-center relative">
+                        <div className="text-[10rem] font-black leading-none mb-6 tabular-nums drop-shadow-lg">{timeLeft}</div>
+                        <h2 className="text-3xl font-black uppercase italic text-center tracking-tighter italic">{current?.label}</h2>
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
+                            <svg className="w-[300px] h-[300px]" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="45" stroke="white" strokeWidth="4" fill="none" className="progress-ring__circle" style={{ strokeDasharray: circ, strokeDashoffset: offset }} />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div className="flex justify-center gap-4 mb-8">
+                        <button onClick={() => setStatus(s => s === 'running' ? 'paused' : 'running')} className="bg-white text-black w-24 h-24 rounded-full text-3xl flex items-center justify-center shadow-2xl">
+                            {status === 'running' ? '⏸' : '▶'}
+                        </button>
+                        <button onClick={() => setTimeLeft(0)} className="bg-white/20 w-16 h-16 rounded-full text-xl flex items-center justify-center">⏭</button>
                     </div>
                 </div>
             );
         }
 
-        function AdminView({ onBack, isSuper }) {
+        function AdminView({ onBack, appId, db }) {
             const [users, setUsers] = useState([]);
-            const [cleaning, setCleaning] = useState(false);
             useEffect(() => {
-                if (!isSuper) return;
-                const unsub = db.collection(`artifacts/${appId}/public/data/users_metadata`).onSnapshot(s => setUsers(s.docs.map(d => ({uid: d.id, ...d.data()}))), err => console.error("Admin error"));
+                const unsub = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('users_metadata')
+                    .onSnapshot(s => setUsers(s.docs.map(d => ({id: d.id, ...d.data()}))), err => {});
                 return () => unsub();
-            }, [isSuper]);
-            const deleteAccountManually = async (uid) => {
-                if (cleaning || !isSuper) return;
-                setCleaning(uid);
-                try {
-                    const path = `artifacts/${appId}/users/${uid}`;
-                    const wSnap = await db.collection(path + '/workouts').get(); wSnap.forEach(d => d.ref.delete());
-                    const hSnap = await db.collection(path + '/history').get(); hSnap.forEach(d => d.ref.delete());
-                    await db.collection(`artifacts/${appId}/public/data/users_metadata`).doc(uid).delete();
-                    await db.collection(`artifacts/${appId}/public/data/blacklist`).doc(uid).set({ deletedAt: new Date().toISOString(), email: "Eliminado" });
-                } catch (e) { console.error(e); }
-                finally { setCleaning(false); }
-            };
+            }, []);
+
             return (
-                <div className="flex-1 flex flex-col pt-6 animate-fade">
-                    <header className="flex items-center gap-4 mb-8 px-2"><button onClick={onBack} className="bg-slate-900 p-4 rounded-xl active:scale-90 border border-orange-500/20 text-orange-500 flex items-center justify-center leading-none"><Icons.ChevronLeft /></button><h1 className="text-2xl font-black italic uppercase tracking-tighter text-orange-500 italic leading-none pt-1">Superusuario</h1></header>
-                    <div className="space-y-4 overflow-y-auto flex-1 pb-10 scrollbar-hide px-1">
+                <div className="animate-fade-in space-y-4">
+                    <button onClick={onBack} className="p-3 bg-slate-100 rounded-xl font-bold text-xs mb-4 italic tracking-widest">⬅ VOLVER</button>
+                    <h2 className="text-lg font-black uppercase italic italic text-center tracking-widest">Registro de Accesos</h2>
+                    <div className="space-y-3">
                         {users.map(u => (
-                            <div key={u.uid} className="bg-slate-900/60 p-5 rounded-[2rem] border border-slate-800/50 flex flex-col gap-3 shadow-lg transition-all italic">
-                                <div className="flex justify-between items-start">
-                                    <div className="flex-1">
-                                        <h3 className="font-black uppercase italic text-[12px] mb-1 truncate text-white italic leading-none pt-1">{u.email}</h3>
-                                        <div className="flex items-center gap-2 text-orange-400 mt-1"><Icons.Key /><span className="text-[10px] font-black uppercase tracking-widest italic leading-none">{u.password || '******'}</span></div>
-                                    </div>
-                                    <button onClick={() => deleteAccountManually(u.uid)} disabled={cleaning === u.uid} className="bg-red-600/20 text-red-500 p-3 rounded-2xl active:scale-90 flex items-center justify-center leading-none">{cleaning === u.uid ? '...' : <Icons.UserX />}</button>
+                            <div key={u.id} className="glass-card p-5 flex justify-between items-center shadow-sm">
+                                <div className="truncate text-left pr-4">
+                                    <h4 className="font-bold text-[10px] lowercase italic">{u.email}</h4>
+                                    <p className="text-[8px] text-slate-400 uppercase tracking-widest leading-none mt-1">Clave: {u.password}</p>
                                 </div>
-                                <div className="flex justify-between items-center border-t border-white/5 pt-3"><div className="flex flex-col leading-none"><span className="text-[8px] font-black uppercase text-slate-500 italic leading-none">Actividad</span><span className="text-[10px] font-black uppercase text-slate-300 italic leading-none pt-1.5">{u.lastActivity ? new Date(u.lastActivity).toLocaleDateString() : 'N/A'}</span></div></div>
+                                <button onClick={async () => {
+                                    if(confirm("¿Eliminar registro visual de este usuario?")) {
+                                        await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('users_metadata').doc(u.id).delete();
+                                    }
+                                }} className="bg-red-50 text-red-500 px-3 py-1 rounded-lg text-[10px] font-black uppercase italic">Limpiar</button>
                             </div>
                         ))}
                     </div>
