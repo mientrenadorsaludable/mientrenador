@@ -87,6 +87,16 @@
         const appId = "mientrenador-v3";
         const SUPERUSER_EMAIL = "cumorahnet@gmail.com";
 
+        // Función de Voz
+        const speak = (text) => {
+            if (!window.speechSynthesis) return;
+            window.speechSynthesis.cancel();
+            const msg = new SpeechSynthesisUtterance(text);
+            msg.lang = 'es-ES';
+            msg.rate = 1.1;
+            window.speechSynthesis.speak(msg);
+        };
+
         const formatTime = (s) => `${Math.floor(s / 60)}:${((s || 0) % 60).toString().padStart(2, '0')}`;
 
         function App() {
@@ -220,7 +230,7 @@
             return (
                 <div className="h-screen flex flex-col justify-center p-10 text-center animate-fade-in bg-white">
                     <div className="text-7xl mb-4">🏃‍♂️</div>
-                    <h1 className="text-4xl font-black italic uppercase leading-none mb-1">Entrenador</h1>
+                    <h1 className="text-4xl font-black italic uppercase leading-none mb-1 italic">Entrenador</h1>
                     <p className="text-orange-500 font-bold uppercase text-[9px] tracking-[0.3em] mb-12 italic">Fuerte y Saludable</p>
                     {error && <div className="bg-red-50 text-red-500 p-4 rounded-2xl mb-6 text-[10px] font-black uppercase border border-red-100 italic">{error}</div>}
                     <form onSubmit={handleAuth} className="space-y-4">
@@ -444,12 +454,29 @@
                             s.push({ label: `¡${p.label.toUpperCase()}!`, sec: c.action, color: p.color });
                             if(r < c.rounds) s.push({ label: 'Cambio', sec: c.change, color: 'bg-slate-400' });
                         }
-                        if(cy < c.cycles) s.push({ label: 'Descanso', sec: c.rest, color: 'bg-emerald-600' });
+                        if(cy < c.cycles && c.rest > 0) s.push({ label: 'Descanso', sec: c.rest, color: 'bg-emerald-600' });
                     }
                 });
                 setSteps(s);
-                setTimeLeft(s[0].sec);
+                if (s.length > 0) setTimeLeft(s[0].sec);
             }, [workout]);
+
+            // Efecto de Voz al cambiar de paso o cuenta final
+            useEffect(() => {
+                if (status !== 'running') return;
+                const current = steps[idx];
+                if (!current) return;
+
+                // Anunciar el inicio de la fase
+                if (timeLeft === current.sec) {
+                    speak(current.label);
+                }
+
+                // Cantar los últimos 3 segundos
+                if (timeLeft <= 3 && timeLeft > 0) {
+                    speak(timeLeft.toString());
+                }
+            }, [timeLeft, status, idx, steps]);
 
             useEffect(() => {
                 let timer = null;
@@ -487,7 +514,7 @@
             );
 
             const current = steps[idx];
-            const circ = 2 * Math.PI * 42; // Radio ligeramente menor para compensar el grosor
+            const circ = 2 * Math.PI * 42; 
             const offset = circ - ((current?.sec - timeLeft) / current?.sec) * circ;
 
             return (
@@ -501,20 +528,15 @@
                     </div>
 
                     <div className="flex-1 flex flex-col items-center justify-center relative">
-                        {/* Contenedor Único para el Anillo y el Tiempo (Asegura Centrado Perfecto) */}
                         <div className="relative flex items-center justify-center w-[340px] h-[340px]">
-                            {/* SVG del Anillo Grueso */}
                             <svg className="absolute w-full h-full" viewBox="0 0 100 100">
                                 <circle cx="50" cy="50" r="42" stroke="rgba(255,255,255,0.15)" strokeWidth="8" fill="none" />
                                 <circle cx="50" cy="50" r="42" stroke="white" strokeWidth="8" fill="none" className="progress-ring__circle" style={{ strokeDasharray: circ, strokeDashoffset: offset }} />
                             </svg>
-                            
-                            {/* Cronómetro Centrado en el Círculo */}
                             <div className="text-[10rem] font-black leading-none tabular-nums drop-shadow-lg italic z-10">
                                 {timeLeft}
                             </div>
                         </div>
-
                         <h2 className="mt-8 text-3xl font-black uppercase italic text-center tracking-tighter italic">{current?.label}</h2>
                     </div>
 
