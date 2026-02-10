@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
-    <!-- Configuración para Pantalla Completa (PWA) -->
+    <!-- Configuración para App Nativa (PWA) -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
@@ -12,7 +12,7 @@
     
     <title>Mi Entrenador | Fuerte y saludable</title>
     
-    <!-- Bibliotecas Externas -->
+    <!-- Recursos -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -34,19 +34,14 @@
             color: var(--dark); 
             margin: 0; 
             padding: 0; 
-            overflow-x: hidden;
+            overflow: hidden;
             -webkit-tap-highlight-color: transparent;
-            /* Evita el scroll elástico en iOS */
             position: fixed;
             width: 100%;
             height: 100%;
         }
 
-        #root {
-            height: 100%;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-        }
+        #root { height: 100%; width: 100%; }
 
         .glass-card {
             background: rgba(255, 255, 255, 0.8);
@@ -63,6 +58,7 @@
 
         .btn-primary:active { transform: scale(0.95); }
 
+        /* Anillo de progreso ultra grueso */
         .progress-ring__circle {
             transition: stroke-dashoffset 0.35s linear, stroke 0.3s ease;
             transform: rotate(-90deg);
@@ -76,12 +72,14 @@
         @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.05); } }
 
         .scrollbar-hide::-webkit-scrollbar { display: none; }
+        
+        /* Ocultar cursor en fullscreen si es necesario */
+        :fullscreen { background-color: black; }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
-    <!-- Firebase SDK (Modo Compatibilidad) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -104,7 +102,7 @@
         const db = firebase.firestore();
         const appId = "mientrenador-v3";
         const SUPERUSER_EMAIL = "cumorahnet@gmail.com";
-        const APP_VERSION = "3.8.0"; // Versión optimizada para FullScreen y Landscape
+        const APP_VERSION = "3.9.0"; 
 
         const speak = (text) => {
             if (!window.speechSynthesis) return;
@@ -125,7 +123,6 @@
             const [loading, setLoading] = useState(true);
             const [selectedWorkout, setSelectedWorkout] = useState(null);
             const [editingWorkout, setEditingWorkout] = useState(null);
-            const [error, setError] = useState(null);
 
             useEffect(() => {
                 const unsubscribe = auth.onAuthStateChanged((u) => {
@@ -143,28 +140,45 @@
                 return () => { unsubW(); unsubH(); };
             }, [user]);
 
+            // Función para iniciar entrenamiento con forzado de pantalla completa y rotación
+            const startWorkout = async (w) => {
+                setSelectedWorkout(w);
+                
+                try {
+                    // 1. Solicitar Pantalla Completa (Oculta barras de navegación/sistema)
+                    if (document.documentElement.requestFullscreen) {
+                        await document.documentElement.requestFullscreen();
+                    }
+                    
+                    // 2. Bloquear Orientación en Horizontal
+                    if (screen.orientation && screen.orientation.lock) {
+                        await screen.orientation.lock('landscape').catch(e => console.log("Bloqueo no soportado sin app instalada"));
+                    }
+                } catch (err) {
+                    console.log("No se pudo activar modo inmersivo automático.");
+                }
+                
+                setView('play');
+            };
+
             if (loading) return (
-                <div className="h-full w-full flex flex-col items-center justify-center bg-slate-950 text-white overflow-hidden">
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-orange-500/10 rounded-full blur-[100px]"></div>
-                    <div className="relative z-10 flex flex-col items-center animate-fade-in text-center px-6">
-                        <div className="text-8xl mb-8 drop-shadow-[0_0_30px_rgba(249,115,22,0.5)] animate-pulse-slow">🏋️‍♂️</div>
+                <div className="h-full w-full flex flex-col items-center justify-center bg-slate-950 text-white">
+                    <div className="relative z-10 flex flex-col items-center animate-fade-in text-center">
+                        <div className="text-8xl mb-8 animate-pulse-slow">🏋️‍♂️</div>
                         <h1 className="text-5xl font-black italic uppercase tracking-tighter mb-1">Mi Entrenador</h1>
                         <p className="text-orange-500 font-bold uppercase text-sm tracking-[0.2em] italic mb-10">Fuerte y saludable</p>
-                    </div>
-                    <div className="absolute bottom-16 flex flex-col items-center gap-4">
                         <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-                        <p className="text-slate-500 font-bold text-xs tracking-widest uppercase italic opacity-60">Versión {APP_VERSION}</p>
                     </div>
                 </div>
             );
 
-            if (!user) return <AuthView setError={setError} error={error} appId={appId} db={db} auth={auth} />;
+            if (!user) return <AuthView appId={appId} db={db} auth={auth} />;
 
             return (
-                <div className="min-h-full max-w-lg mx-auto flex flex-col relative pb-20 bg-slate-50">
+                <div className="h-full w-full max-w-lg mx-auto flex flex-col relative bg-slate-50 overflow-hidden">
                     {view !== 'play' && (
-                        <header className="p-6 flex justify-between items-center bg-white shadow-sm sticky top-0 z-50">
-                            <div onClick={() => setView('dashboard')} className="cursor-pointer">
+                        <header className="p-6 flex justify-between items-center bg-white shadow-sm shrink-0">
+                            <div>
                                 <h1 className="text-xl font-black italic uppercase leading-none">Mi Entrenador</h1>
                                 <p className="text-[9px] font-bold text-slate-400 lowercase italic">{user.email}</p>
                             </div>
@@ -177,27 +191,25 @@
                         </header>
                     )}
 
-                    <main className={`flex-1 overflow-y-auto scrollbar-hide ${view === 'play' ? 'p-0' : 'p-4'}`}>
-                        {view === 'dashboard' && <DashboardView history={history} workouts={workouts} onStart={(w) => { setSelectedWorkout(w); setView('play'); }} />}
+                    <main className={`flex-1 overflow-y-auto scrollbar-hide ${view === 'play' ? 'p-0 h-full w-full max-w-none' : 'p-4 pb-24'}`}>
+                        {view === 'dashboard' && <DashboardView history={history} workouts={workouts} onStart={startWorkout} />}
                         {view === 'workouts' && (
                             <WorkoutsView 
                                 workouts={workouts} 
-                                setWorkout={(w) => { setSelectedWorkout(w); setView('play'); }} 
+                                setWorkout={startWorkout} 
                                 onEdit={(w) => { setEditingWorkout(w); setView('create'); }}
                                 onCreate={() => { setEditingWorkout(null); setView('create'); }}
                                 user={user} appId={appId} db={db} 
                             />
                         )}
                         {view === 'history' && <HistoryListView history={history} user={user} appId={appId} db={db} />}
-                        {view === 'create' && (
-                            <CreateView 
-                                onCancel={() => { setView('workouts'); setEditingWorkout(null); }} 
-                                user={user} appId={appId} db={db}
-                                workoutToEdit={editingWorkout}
-                            />
-                        )}
-                        {view === 'play' && <PlayerView workout={selectedWorkout} onExit={() => setView('workouts')} onComplete={(name, time) => {
+                        {view === 'create' && <CreateView onCancel={() => { setView('workouts'); setEditingWorkout(null); }} user={user} appId={appId} db={db} workoutToEdit={editingWorkout} />}
+                        {view === 'play' && <PlayerView workout={selectedWorkout} onExit={() => {
+                            if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+                            setView('workouts');
+                        }} onComplete={(name, time) => {
                             db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('history').add({ workoutName: name, totalTime: time, date: new Date().toISOString() });
+                            if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
                             setView('dashboard');
                         }} />}
                         {view === 'admin' && <AdminView onBack={() => setView('dashboard')} appId={appId} db={db} />}
@@ -206,13 +218,13 @@
                     {view !== 'play' && (
                         <nav className="fixed bottom-0 left-0 right-0 max-w-lg mx-auto bg-white border-t border-slate-100 p-4 flex justify-around items-center z-50 shadow-[0_-5px_15px_rgba(0,0,0,0.05)]">
                             <button onClick={() => setView('dashboard')} className={`flex flex-col items-center text-[8px] font-bold ${view === 'dashboard' ? 'text-orange-500' : 'text-slate-400'}`}>
-                                <span className="text-lg">📊</span> PROGRESO
+                                <span className="text-xl">📊</span> PROGRESO
                             </button>
                             <button onClick={() => setView('workouts')} className={`flex flex-col items-center text-[8px] font-bold ${view === 'workouts' ? 'text-orange-500' : 'text-slate-400'}`}>
-                                <span className="text-lg">🏋️</span> RUTINAS
+                                <span className="text-xl">🏋️</span> RUTINAS
                             </button>
                             <button onClick={() => setView('history')} className={`flex flex-col items-center text-[8px] font-bold ${view === 'history' ? 'text-orange-500' : 'text-slate-400'}`}>
-                                <span className="text-lg">📜</span> HISTORIAL
+                                <span className="text-xl">📜</span> HISTORIAL
                             </button>
                         </nav>
                     )}
@@ -220,17 +232,16 @@
             );
         }
 
-        function AuthView({ setError, error, appId, db, auth }) {
+        function AuthView({ appId, db, auth }) {
             const [email, setEmail] = useState('');
             const [password, setPassword] = useState('');
             const [showPass, setShowPass] = useState(false);
-            const [working, setWorking] = useState(false);
             const [isRegister, setIsRegister] = useState(false);
+            const [error, setError] = useState(null);
 
             const handleAuth = async (e) => {
                 e.preventDefault();
-                if (working) return;
-                setWorking(true); setError(null);
+                setError(null);
                 try {
                     let res;
                     if (isRegister) res = await auth.createUserWithEmailAndPassword(email.trim(), password);
@@ -238,28 +249,25 @@
                     await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('users_metadata').doc(res.user.uid).set({
                         email: email.trim(), password, lastActivity: new Date().toISOString()
                     }, { merge: true });
-                } catch (err) {
-                    let msg = "Error al conectar.";
-                    if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') msg = "Datos incorrectos.";
-                    setError(msg);
-                } finally { setWorking(false); }
+                } catch (err) { setError("Datos incorrectos."); }
             };
 
             return (
-                <div className="h-full flex flex-col justify-center p-10 text-center animate-fade-in bg-white relative overflow-y-auto">
-                    <div className="text-7xl mb-4 animate-pulse-slow">🏃‍♂️</div>
-                    <h1 className="text-4xl font-black italic uppercase leading-none mb-1 italic">Mi Entrenador</h1>
+                <div className="h-full flex flex-col justify-center p-10 text-center animate-fade-in bg-white overflow-y-auto">
+                    <div className="text-7xl mb-4">🏃‍♂️</div>
+                    <h1 className="text-4xl font-black italic uppercase leading-none mb-1">MI ENTRENADOR</h1>
                     <p className="text-orange-500 font-bold uppercase text-[9px] tracking-[0.3em] mb-12 italic">Fuerte y Saludable</p>
-                    {error && <div className="bg-red-50 text-red-500 p-4 rounded-2xl mb-6 text-[10px] font-black uppercase border border-red-100 italic">{error}</div>}
                     <form onSubmit={handleAuth} className="space-y-4 max-w-sm mx-auto w-full">
-                        <input type="email" placeholder="CORREO ELECTRÓNICO" className="w-full p-6 bg-slate-100 rounded-[1.5rem] font-bold outline-none border-2 border-transparent focus:border-orange-500 text-xs lowercase" value={email} onChange={e => setEmail(e.target.value)} required />
+                        <input type="email" placeholder="EMAIL" className="w-full p-6 bg-slate-100 rounded-[1.5rem] font-bold outline-none border-2 border-transparent focus:border-orange-500 text-xs lowercase" value={email} onChange={e => setEmail(e.target.value)} required />
                         <div className="relative">
-                            <input type={showPass ? "text" : "password"} placeholder="CONTRASEÑA" className="w-full p-6 bg-slate-100 rounded-[1.5rem] font-bold outline-none border-2 border-transparent focus:border-orange-500 text-xs" value={password} onChange={e => setPassword(e.target.value)} required />
+                            <input type={showPass ? "text" : "password"} placeholder="PASSWORD" className="w-full p-6 bg-slate-100 rounded-[1.5rem] font-bold outline-none border-2 border-transparent focus:border-orange-500 text-xs" value={password} onChange={e => setPassword(e.target.value)} required />
                             <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-6 top-6 text-xl">{showPass ? '🙈' : '👁️'}</button>
                         </div>
-                        <button type="submit" disabled={working} className="w-full btn-primary py-6 rounded-full font-black uppercase shadow-xl active:scale-95 disabled:opacity-50 tracking-widest italic leading-none">{working ? 'CONECTANDO...' : (isRegister ? 'Crear Cuenta' : 'Entrar Ahora')}</button>
+                        <button type="submit" className="w-full btn-primary py-6 rounded-full font-black uppercase shadow-xl tracking-widest italic leading-none">ENTRAR</button>
                     </form>
-                    <button onClick={() => { setIsRegister(!isRegister); setError(null); }} className="mt-8 text-slate-400 text-[10px] font-black uppercase border-b border-orange-200 pb-1 italic mx-auto">{isRegister ? '¿Ya tienes cuenta? Inicia Sesión' : '¿No tienes cuenta? Regístrate gratis'}</button>
+                    <button onClick={() => setIsRegister(!isRegister)} className="mt-8 text-slate-400 text-[10px] font-black uppercase border-b border-orange-200 pb-1 mx-auto">
+                        {isRegister ? 'Ya tengo cuenta' : 'Regístrate gratis'}
+                    </button>
                     <p className="mt-10 text-slate-300 font-bold text-[8px] uppercase tracking-widest opacity-50">v{APP_VERSION}</p>
                 </div>
             );
@@ -283,20 +291,18 @@
             }, [history]);
 
             return (
-                <div className="space-y-6 animate-fade-in landscape:grid landscape:grid-cols-2 landscape:gap-6 landscape:space-y-0">
+                <div className="space-y-6 animate-fade-in">
                     <section>
-                        <h2 className="text-[10px] font-black uppercase text-slate-400 mb-2 italic">Mi Progreso Semanal</h2>
-                        <div className="glass-card p-4 shadow-sm h-56 landscape:h-64">
-                            <div className="chart-container h-full"><canvas id="progressChart"></canvas></div>
-                        </div>
+                        <h2 className="text-[10px] font-black uppercase text-slate-400 mb-2 italic">Progreso Semanal (Min)</h2>
+                        <div className="glass-card p-4 h-56"><canvas id="progressChart"></canvas></div>
                     </section>
                     <section>
-                        <h2 className="text-[10px] font-black uppercase text-slate-400 mb-2 italic">Continuar Rutina</h2>
+                        <h2 className="text-[10px] font-black uppercase text-slate-400 mb-2 italic">Rutinas Recientes</h2>
                         <div className="grid grid-cols-1 gap-3">
                             {workouts.slice(0, 3).map(w => (
                                 <div key={w.id} onClick={() => onStart(w)} className="glass-card p-4 flex justify-between items-center cursor-pointer shadow-sm active:scale-95 transition-all">
                                     <h3 className="font-black italic uppercase text-sm">{w.name}</h3>
-                                    <span className="text-orange-500 font-bold">▶</span>
+                                    <span className="text-orange-500">▶</span>
                                 </div>
                             ))}
                         </div>
@@ -313,25 +319,25 @@
                     {deletingId && (
                         <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-6 z-[100]">
                             <div className="bg-white p-8 rounded-[2rem] w-full max-w-sm text-center">
-                                <h2 className="font-black uppercase italic text-xl mb-2 italic">¿Borrar Rutina?</h2>
+                                <h2 className="font-black uppercase italic text-xl mb-2 italic">¿Borrar?</h2>
                                 <div className="flex flex-col gap-3 mt-8">
-                                    <button onClick={async () => { await db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('workouts').doc(deletingId).delete(); setDeletingId(null); }} className="bg-red-500 text-white py-4 rounded-xl font-black uppercase text-xs italic">SÍ, BORRAR</button>
-                                    <button onClick={() => setDeletingId(null)} className="bg-slate-100 py-4 rounded-xl font-black uppercase text-xs italic">Cancelar</button>
+                                    <button onClick={async () => { await db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('workouts').doc(deletingId).delete(); setDeletingId(null); }} className="bg-red-500 text-white py-4 rounded-xl font-black uppercase text-xs">ELIMINAR</button>
+                                    <button onClick={() => setDeletingId(null)} className="bg-slate-100 py-4 rounded-xl font-black uppercase text-xs">CANCELAR</button>
                                 </div>
                             </div>
                         </div>
                     )}
-                    <div className="grid grid-cols-1 landscape:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 gap-3">
                         {workouts.map(w => (
-                            <div key={w.id} className="glass-card p-5 flex justify-between items-center shadow-sm border border-slate-100">
+                            <div key={w.id} className="glass-card p-5 flex justify-between items-center">
                                 <div className="flex-1 cursor-pointer" onClick={() => setWorkout(w)}>
                                     <h3 className="font-black italic uppercase text-sm">{w.name}</h3>
-                                    <p className="text-[8px] font-bold text-slate-400 mt-1 uppercase italic tracking-widest leading-none">{formatTime(w.totalTime)} • HIIT</p>
+                                    <p className="text-[8px] font-bold text-slate-400 mt-1 uppercase italic tracking-widest">{formatTime(w.totalTime)} • HIIT</p>
                                 </div>
                                 <div className="flex gap-2">
                                     <button onClick={() => setWorkout(w)} className="bg-orange-500 text-white px-4 py-2 rounded-xl font-bold text-[10px] italic">GO</button>
-                                    <button onClick={() => onEdit(w)} className="bg-slate-100 text-slate-600 p-2 rounded-xl flex items-center">📝</button>
-                                    <button onClick={() => setDeletingId(w.id)} className="bg-red-50 text-red-500 p-2 rounded-xl flex items-center">🗑️</button>
+                                    <button onClick={() => onEdit(w)} className="bg-slate-100 text-slate-600 p-2 rounded-xl">📝</button>
+                                    <button onClick={() => setDeletingId(w.id)} className="bg-red-50 text-red-500 p-2 rounded-xl">🗑️</button>
                                 </div>
                             </div>
                         ))}
@@ -340,12 +346,6 @@
             );
         }
 
-        const PHASES_CONFIG = [
-            { id: 'calentamiento', label: 'Calentamiento', color: 'bg-orange-500', voice: 'Calienta' },
-            { id: 'entrenamiento', label: 'Entrenamiento', color: 'bg-red-600', voice: 'Entrena' },
-            { id: 'estiramientos', label: 'Estiramientos', color: 'bg-blue-500', voice: 'Estira' }
-        ];
-
         function CreateView({ onCancel, user, appId, db, workoutToEdit }) {
             const [name, setName] = useState(workoutToEdit ? workoutToEdit.name : '');
             const [phases, setPhases] = useState(workoutToEdit ? workoutToEdit.phases : {
@@ -353,50 +353,38 @@
                 entrenamiento: { prep: 0, action: 30, change: 5, rounds: 9, cycles: 4, rest: 60 },
                 estiramientos: { prep: 0, action: 20, change: 5, rounds: 4, cycles: 1, rest: 0 }
             });
-            const [saving, setSaving] = useState(false);
             const update = (p, f, v) => setPhases(prev => ({...prev, [p]: {...prev[p], [f]: parseInt(v) || 0}}));
 
             const handleSave = async () => {
-                if (!name.trim() || saving) return;
-                setSaving(true);
-                try {
-                    const col = db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('workouts');
-                    if (workoutToEdit) await col.doc(workoutToEdit.id).update({ name, phases, updatedAt: new Date().toISOString() });
-                    else await col.add({ name, phases, createdAt: new Date().toISOString() });
-                    onCancel();
-                } catch (e) { setSaving(false); }
+                const col = db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('workouts');
+                if (workoutToEdit) await col.doc(workoutToEdit.id).update({ name, phases, updatedAt: new Date().toISOString() });
+                else await col.add({ name, phases, createdAt: new Date().toISOString() });
+                onCancel();
             };
 
             return (
                 <div className="flex-1 flex flex-col pb-24 animate-fade-in">
                     <header className="flex items-center gap-4 py-4 mb-4">
-                        <button onClick={onCancel} className="p-3 bg-slate-100 rounded-2xl leading-none font-bold">⬅</button>
-                        <h2 className="text-xl font-black uppercase italic leading-none italic">{workoutToEdit ? 'Editar Rutina' : 'Nueva Rutina'}</h2>
+                        <button onClick={onCancel} className="p-3 bg-slate-100 rounded-2xl font-bold">⬅</button>
+                        <h2 className="text-xl font-black uppercase italic leading-none italic">{workoutToEdit ? 'Editar' : 'Nueva Rutina'}</h2>
                     </header>
-                    <div className="space-y-6 overflow-y-auto pr-1 scrollbar-hide pb-10 landscape:grid landscape:grid-cols-2 landscape:gap-6 landscape:space-y-0">
-                        <div className="px-1 col-span-2 mb-4">
-                            <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block italic leading-none">Nombre de la Rutina</label>
-                            <input type="text" placeholder="Ej: Full Body" className="w-full p-5 bg-white border-2 border-slate-100 rounded-[1.5rem] font-bold outline-none focus:border-orange-500 uppercase italic" value={name} onChange={e => setName(e.target.value)} />
-                        </div>
-                        {PHASES_CONFIG.map((p) => (
-                            <div key={p.id} className="glass-card p-6 space-y-4 border-l-4 border-l-orange-500 italic mb-4">
-                                <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
-                                    <div className={`${p.color} w-3 h-3 rounded-full`}></div>
-                                    <span className="font-black uppercase text-sm italic leading-none">{p.label}</span>
-                                </div>
+                    <div className="space-y-6 overflow-y-auto pr-1 scrollbar-hide">
+                        <input type="text" placeholder="NOMBRE" className="w-full p-5 bg-white border-2 border-slate-100 rounded-[1.5rem] font-bold outline-none focus:border-orange-500 uppercase italic" value={name} onChange={e => setName(e.target.value)} />
+                        {['calentamiento', 'entrenamiento', 'estiramientos'].map((p) => (
+                            <div key={p} className="glass-card p-6 italic mb-4">
+                                <span className="font-black uppercase text-sm border-b border-slate-100 block mb-4 pb-2">{p}</span>
                                 <div className="grid grid-cols-2 gap-4">
-                                    {p.id === 'calentamiento' && <InputField label="Prep. Inicial (s)" val={phases[p.id].prep} set={v => update(p.id, 'prep', v)} />}
-                                    <InputField label="Acción (s)" val={phases[p.id].action} set={v => update(p.id, 'action', v)} />
-                                    <InputField label="Cambio (s)" val={phases[p.id].change} set={v => update(p.id, 'change', v)} />
-                                    <InputField label="Rondas" val={phases[p.id].rounds} set={v => update(p.id, 'rounds', v)} />
-                                    <InputField label="Ciclos" val={phases[p.id].cycles} set={v => update(p.id, 'cycles', v)} />
-                                    <InputField label="Descanso (s)" val={phases[p.id].rest} set={v => update(p.id, 'rest', v)} />
+                                    <InputField label="Acción (s)" val={phases[p].action} set={v => update(p, 'action', v)} />
+                                    <InputField label="Cambio (s)" val={phases[p].change} set={v => update(p, 'change', v)} />
+                                    <InputField label="Rondas" val={phases[p].rounds} set={v => update(p, 'rounds', v)} />
+                                    <InputField label="Ciclos" val={phases[p].cycles} set={v => update(p, 'cycles', v)} />
+                                    <InputField label="Descanso (s)" val={phases[p].rest} set={v => update(p, 'rest', v)} />
                                 </div>
                             </div>
                         ))}
                     </div>
                     <div className="fixed bottom-0 left-0 right-0 p-6 bg-slate-50 border-t border-slate-200 z-50">
-                        <button onClick={handleSave} disabled={!name || saving} className="w-full btn-primary py-5 rounded-full font-black uppercase shadow-lg italic tracking-widest leading-none">{saving ? 'GUARDANDO...' : 'GUARDAR RUTINA'}</button>
+                        <button onClick={handleSave} className="w-full btn-primary py-5 rounded-full font-black uppercase shadow-lg italic tracking-widest leading-none">GUARDAR</button>
                     </div>
                 </div>
             );
@@ -406,7 +394,7 @@
             return (
                 <div className="flex flex-col gap-1">
                     <span className="text-[8px] font-bold uppercase opacity-40 leading-none italic">{label}</span>
-                    <input type="number" className="w-full bg-slate-50 border border-slate-100 p-3 rounded-xl text-center font-black text-sm outline-none focus:border-orange-500" value={val} onChange={e => set(e.target.value)} />
+                    <input type="number" className="w-full bg-slate-50 p-3 rounded-xl text-center font-black text-sm outline-none" value={val} onChange={e => set(e.target.value)} />
                 </div>
             );
         }
@@ -414,18 +402,16 @@
         function HistoryListView({ history, user, appId, db }) {
             return (
                 <div className="space-y-4 animate-fade-in">
-                    <h2 className="text-[10px] font-black uppercase text-slate-400 mb-2 italic tracking-widest leading-none">Sesiones Realizadas</h2>
-                    <div className="grid grid-cols-1 landscape:grid-cols-2 gap-3">
-                        {history.sort((a,b) => new Date(b.date) - new Date(a.date)).map(h => (
-                            <div key={h.id} className="glass-card p-4 flex justify-between items-center shadow-sm">
-                                <div className="flex-1 overflow-hidden pr-4">
-                                    <h3 className="font-black uppercase italic text-xs text-slate-700 italic leading-none truncate">{h.workoutName}</h3>
-                                    <p className="text-[8px] font-bold text-slate-400 mt-1 leading-none">{new Date(h.date).toLocaleDateString()} • {formatTime(h.totalTime)}</p>
-                                </div>
-                                <button onClick={() => db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('history').doc(h.id).delete()} className="text-slate-300 p-2 leading-none">✕</button>
+                    <h2 className="text-[10px] font-black uppercase text-slate-400 mb-2 italic leading-none">Historial de Sesiones</h2>
+                    {history.sort((a,b) => new Date(b.date) - new Date(a.date)).map(h => (
+                        <div key={h.id} className="glass-card p-4 flex justify-between items-center">
+                            <div className="flex-1 pr-4">
+                                <h3 className="font-black uppercase italic text-xs text-slate-700 italic leading-none">{h.workoutName}</h3>
+                                <p className="text-[8px] font-bold text-slate-400 mt-1 leading-none">{new Date(h.date).toLocaleDateString()} • {formatTime(h.totalTime)}</p>
                             </div>
-                        ))}
-                    </div>
+                            <button onClick={() => db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('history').doc(h.id).delete()} className="text-slate-300 p-2 leading-none">✕</button>
+                        </div>
+                    ))}
                 </div>
             );
         }
@@ -441,27 +427,44 @@
             useEffect(() => {
                 const s = [];
                 const ph = workout.phases;
-                if (ph.calentamiento.prep > 0) s.push({ label: 'Prepárate', sec: ph.calentamiento.prep, color: 'bg-yellow-500', voice: 'Prepárate' });
+                const REGIONS = ['Piernas', 'Brazos', 'Tronco'];
+
+                // CALENTAMIENTO
+                if (ph.calentamiento.prep > 0) s.push({ label: 'Prepárate', sec: ph.calentamiento.prep, color: 'bg-yellow-500', voice: 'Prepárate', phase: 'Calentamiento' });
                 for(let r=1; r<=ph.calentamiento.rounds; r++) {
-                    s.push({ label: 'Calienta', sec: ph.calentamiento.action, color: 'bg-emerald-600', voice: 'Calienta' });
-                    if(r < ph.calentamiento.rounds) s.push({ label: 'Cambio', sec: ph.calentamiento.change, color: 'bg-yellow-500', voice: 'Cambio' });
+                    s.push({ label: 'CALIENTA', sec: ph.calentamiento.action, color: 'bg-emerald-600', voice: 'Calienta', phase: 'Calentamiento', r, tr: ph.calentamiento.rounds, cy: 1, tc: 1 });
+                    if(r < ph.calentamiento.rounds) s.push({ label: 'Cambio', sec: ph.calentamiento.change, color: 'bg-yellow-500', voice: 'Cambio', phase: 'Calentamiento' });
                 }
-                s.push({ label: 'Cambio de Fase', sec: 5, color: 'bg-yellow-500', voice: 'Prepárate para entrenar' });
+
+                s.push({ label: 'Cambio de Fase', sec: 5, color: 'bg-yellow-500', voice: 'Prepárate para entrenar', phase: 'Transición' });
+
+                // ENTRENAMIENTO
                 for(let cy=1; cy<=ph.entrenamiento.cycles; cy++) {
                     for(let r=1; r<=ph.entrenamiento.rounds; r++) {
                         const regionIdx = Math.floor((r - 1) / 3) % 3;
-                        const regionName = ['Piernas', 'Brazos', 'Tronco'][regionIdx];
-                        const isFirstRoundOfRegion = (r - 1) % 3 === 0;
-                        s.push({ label: `¡ENTRENA! (${regionName})`, sec: ph.entrenamiento.action, color: 'bg-emerald-600', voice: isFirstRoundOfRegion ? `Entrena ${regionName}` : 'Entrena', roundInfo: `Ronda ${r} - ${regionName}` });
-                        if(r < ph.entrenamiento.rounds) s.push({ label: 'Cambio', sec: ph.entrenamiento.change, color: 'bg-yellow-500', voice: 'Cambio' });
+                        const regionName = REGIONS[regionIdx];
+                        const isFirst = (r - 1) % 3 === 0;
+                        s.push({ 
+                            label: regionName.toUpperCase(), 
+                            sec: ph.entrenamiento.action, 
+                            color: 'bg-emerald-600', 
+                            voice: isFirst ? `Entrena ${regionName}` : 'Entrena',
+                            phase: 'Entrenamiento',
+                            r, tr: ph.entrenamiento.rounds, cy, tc: ph.entrenamiento.cycles
+                        });
+                        if(r < ph.entrenamiento.rounds) s.push({ label: 'CAMBIO', sec: ph.entrenamiento.change, color: 'bg-yellow-500', voice: 'Cambio', phase: 'Entrenamiento' });
                     }
-                    if(cy < ph.entrenamiento.cycles) s.push({ label: 'Descanso Ciclo', sec: ph.entrenamiento.rest, color: 'bg-red-600', voice: 'Descanso' });
+                    if(cy < ph.entrenamiento.cycles) s.push({ label: 'DESCANSO', sec: ph.entrenamiento.rest, color: 'bg-red-600', voice: 'Descanso', phase: 'Entrenamiento' });
                 }
-                s.push({ label: 'Cambio de Fase', sec: 5, color: 'bg-yellow-500', voice: 'Prepárate para estirar' });
+
+                s.push({ label: 'Cambio de Fase', sec: 5, color: 'bg-yellow-500', voice: 'Prepárate para estirar', phase: 'Transición' });
+
+                // ESTIRAMIENTOS
                 for(let r=1; r<=ph.estiramientos.rounds; r++) {
-                    s.push({ label: 'Estira', sec: ph.estiramientos.action, color: 'bg-emerald-600', voice: 'Estira' });
-                    if(r < ph.estiramientos.rounds) s.push({ label: 'Cambio', sec: ph.estiramientos.change, color: 'bg-yellow-500', voice: 'Cambio' });
+                    s.push({ label: 'ESTIRA', sec: ph.estiramientos.action, color: 'bg-emerald-600', voice: 'Estira', phase: 'Estiramiento', r, tr: ph.estiramientos.rounds, cy: 1, tc: 1 });
+                    if(r < ph.estiramientos.rounds) s.push({ label: 'Cambio', sec: ph.estiramientos.change, color: 'bg-yellow-500', voice: 'Cambio', phase: 'Estiramiento' });
                 }
+
                 setSteps(s);
                 if (s.length > 0) setTimeLeft(s[0].sec);
             }, [workout]);
@@ -481,7 +484,11 @@
                         setElapsed(e => e + 1);
                         if (timeLeft > 0) setTimeLeft(t => t - 1);
                         else {
-                            if (idx < steps.length - 1) { setIdx(i => i + 1); setTimeLeft(steps[idx+1].sec); if('vibrate' in navigator) navigator.vibrate(200); }
+                            if (idx < steps.length - 1) { 
+                                setIdx(i => i + 1); 
+                                setTimeLeft(steps[idx+1].sec); 
+                                if('vibrate' in navigator) navigator.vibrate(200); 
+                            }
                             else { setStatus('finished'); wakeLockRef.current?.release().catch(e => {}); }
                         }
                     }, 1000);
@@ -490,47 +497,75 @@
             }, [status, timeLeft, idx, steps]);
 
             if (status === 'finished') return (
-                <div className="h-full flex flex-col items-center justify-center p-8 text-center animate-in bg-white">
-                    <div className="text-6xl mb-4 animate-bounce">🏆</div>
-                    <h2 className="text-3xl font-black uppercase italic leading-none italic text-center">¡Entrenamiento Finalizado!</h2>
-                    <p className="text-6xl font-black text-orange-500 my-8 italic leading-none">{formatTime(elapsed)}</p>
-                    <button onClick={() => onComplete(workout.name, elapsed)} className="w-full btn-primary py-5 rounded-full font-black uppercase shadow-lg italic tracking-widest leading-none max-w-sm">Guardar y Salir</button>
+                <div className="h-full w-full flex flex-col items-center justify-center p-8 text-center bg-white overflow-hidden">
+                    <div className="text-8xl mb-4 animate-bounce">🏆</div>
+                    <h2 className="text-4xl font-black uppercase italic leading-none text-center">¡LOGRADO!</h2>
+                    <p className="text-7xl font-black text-orange-500 my-10 italic leading-none">{formatTime(elapsed)}</p>
+                    <button onClick={() => onComplete(workout.name, elapsed)} className="w-full btn-primary py-8 rounded-full font-black uppercase shadow-lg italic tracking-widest max-w-md">FINALIZAR</button>
                 </div>
             );
 
-            const current = steps[idx];
+            const curr = steps[idx];
             const circ = 2 * Math.PI * 42; 
-            const offset = circ - ((current?.sec - timeLeft) / current?.sec) * circ;
+            const offset = circ - ((curr?.sec - timeLeft) / curr?.sec) * circ;
 
             return (
-                <div className={`fixed inset-0 z-[150] transition-colors duration-500 ${current?.color || 'bg-slate-900'} flex flex-col p-6 text-white overflow-hidden`}>
-                    <div className="flex justify-between items-center mb-4 relative z-20 landscape:mb-1">
-                        <button onClick={onExit} className="bg-black/20 px-4 py-2 rounded-xl font-bold text-xs uppercase italic tracking-widest leading-none">✖ SALIR</button>
+                <div className={`h-screen w-screen flex flex-col transition-colors duration-500 ${curr?.color || 'bg-slate-900'} text-white overflow-hidden p-4`}>
+                    {/* Header Minimalista - Oculto en horizontal para ganar espacio */}
+                    <div className="flex justify-between items-center mb-2 z-20">
+                        <button onClick={onExit} className="bg-black/20 px-6 py-2 rounded-xl font-black text-xs uppercase tracking-widest italic">✖ SALIR</button>
                         <div className="text-right">
-                            <p className="text-[8px] font-bold opacity-60 uppercase italic tracking-tighter leading-none mb-1">{workout.name}</p>
-                            <p className="font-black italic text-lg uppercase leading-none">{idx + 1} / {steps.length}</p>
+                             <div className="bg-white/20 px-3 py-1 rounded-full text-[10px] font-black backdrop-blur-md flex items-center gap-1">
+                                ⏱️ {formatTime(elapsed)}
+                             </div>
                         </div>
                     </div>
 
-                    <div className="flex-1 flex flex-col items-center justify-center relative landscape:flex-row landscape:gap-10">
-                        <div className="relative flex items-center justify-center w-[300px] h-[300px] landscape:w-[45vh] landscape:h-[45vh]">
-                            <svg className="absolute w-full h-full" viewBox="0 0 100 100">
-                                <circle cx="50" cy="50" r="42" stroke="rgba(255,255,255,0.15)" strokeWidth="8" fill="none" />
-                                <circle cx="50" cy="50" r="42" stroke="white" strokeWidth="8" fill="none" className="progress-ring__circle" style={{ strokeDasharray: circ, strokeDashoffset: offset }} />
-                            </svg>
-                            <div className="text-[9rem] landscape:text-[7rem] font-black leading-none tabular-nums drop-shadow-lg italic z-10">{timeLeft}</div>
+                    {/* MODO HORIZONTAL (LANDSCAPE) - CONTENEDOR MAESTRO */}
+                    <div className="flex-1 flex flex-col items-center justify-center relative">
+                        
+                        {/* LEYENDA SUPERIOR (Región/Fase) */}
+                        <div className="mb-4 text-center z-20">
+                             <h3 className="text-[12px] uppercase tracking-[0.5em] font-black opacity-60 mb-1 italic">{curr?.phase}</h3>
+                             <h2 className="text-4xl font-black uppercase italic tracking-tighter drop-shadow-lg">{curr?.label}</h2>
                         </div>
-                        <div className="text-center landscape:text-left">
-                            <h2 className="mt-6 text-3xl font-black uppercase italic tracking-tighter italic leading-none landscape:mt-0 landscape:text-2xl">{current?.label}</h2>
-                            {current?.roundInfo && <p className="mt-2 bg-black/20 px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest leading-none inline-block">{current.roundInfo}</p>}
-                        </div>
-                    </div>
 
-                    <div className="flex justify-center gap-4 mb-8 relative z-20 landscape:mb-2">
-                        <button onClick={() => setStatus(s => s === 'running' ? 'paused' : 'running')} className="bg-white text-black w-24 h-24 rounded-full text-3xl flex items-center justify-center shadow-2xl transition-all active:scale-90 landscape:w-16 landscape:h-16 landscape:text-xl">
-                            {status === 'running' ? '⏸' : '▶'}
-                        </button>
-                        <button onClick={() => setTimeLeft(0)} className="bg-white/20 w-16 h-16 rounded-full text-xl flex items-center justify-center transition-all active:scale-90 leading-none landscape:w-12 landscape:h-12 landscape:text-lg">⏭</button>
+                        {/* FILA CENTRAL: RONDAS - TIMER - CICLOS */}
+                        <div className="flex items-center justify-center gap-10 w-full px-10">
+                            
+                            {/* LADO IZQUIERDO: RONDAS */}
+                            <div className="flex flex-col items-center justify-center bg-black/25 p-5 rounded-[2rem] min-w-[120px] backdrop-blur-md border border-white/5">
+                                <span className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1 italic">RONDAS</span>
+                                <div className="text-4xl font-black italic">{curr?.r || 1}<span className="text-lg opacity-30 mx-1">/</span>{curr?.tr || 1}</div>
+                                <span className="text-[8px] font-bold opacity-30 mt-1 uppercase italic">Faltan: {(curr?.tr || 1) - (curr?.r || 1)}</span>
+                            </div>
+
+                            {/* CENTRO: TIMER PRINCIPAL */}
+                            <div className="relative flex items-center justify-center w-[38vh] h-[38vh]">
+                                <svg className="absolute w-full h-full" viewBox="0 0 100 100">
+                                    <circle cx="50" cy="50" r="42" stroke="rgba(255,255,255,0.15)" strokeWidth="12" fill="none" />
+                                    <circle cx="50" cy="50" r="42" stroke="white" strokeWidth="12" fill="none" className="progress-ring__circle" style={{ strokeDasharray: circ, strokeDashoffset: offset }} />
+                                </svg>
+                                <div className="text-[11vh] font-black tabular-nums drop-shadow-2xl italic z-10 leading-none">
+                                    {timeLeft}
+                                </div>
+                            </div>
+
+                            {/* LADO DERECHO: CICLOS */}
+                            <div className="flex flex-col items-center justify-center bg-black/25 p-5 rounded-[2rem] min-w-[120px] backdrop-blur-md border border-white/5">
+                                <span className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1 italic">CICLOS</span>
+                                <div className="text-4xl font-black italic">{curr?.cy || 1}<span className="text-lg opacity-30 mx-1">/</span>{curr?.tc || 1}</div>
+                                <span className="text-[8px] font-bold opacity-30 mt-1 uppercase italic">Faltan: {(curr?.tc || 1) - (curr?.cy || 1)}</span>
+                            </div>
+                        </div>
+
+                        {/* CONTROLES INFERIORES */}
+                        <div className="mt-6 flex justify-center gap-10 items-center z-20">
+                            <button onClick={() => setStatus(s => s === 'running' ? 'paused' : 'running')} className="bg-white text-black w-20 h-20 rounded-full flex items-center justify-center shadow-2xl transition-all active:scale-90">
+                                {status === 'running' ? '⏸' : '▶'}
+                            </button>
+                            <button onClick={() => setTimeLeft(0)} className="bg-white/20 w-14 h-14 rounded-full text-xl flex items-center justify-center active:scale-90">⏭</button>
+                        </div>
                     </div>
                 </div>
             );
@@ -544,18 +579,13 @@
             }, []);
             return (
                 <div className="animate-fade-in space-y-4">
-                    <button onClick={onBack} className="p-3 bg-slate-100 rounded-xl font-bold text-xs mb-4 italic tracking-widest leading-none">⬅ VOLVER</button>
-                    <div className="space-y-3">
-                        {users.map(u => (
-                            <div key={u.id} className="glass-card p-5 flex justify-between items-center shadow-sm">
-                                <div className="truncate text-left pr-4">
-                                    <h4 className="font-bold text-[10px] lowercase italic leading-none">{u.email}</h4>
-                                    <p className="text-[8px] text-slate-400 uppercase tracking-widest leading-none mt-1 italic">Clave: {u.password}</p>
-                                </div>
-                                <button onClick={async () => { if(confirm("¿Eliminar registro?")) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('users_metadata').doc(u.id).delete(); }} className="bg-red-50 text-red-500 px-3 py-1 rounded-lg text-[10px] font-black uppercase italic italic leading-none">Limpiar</button>
-                            </div>
-                        ))}
-                    </div>
+                    <button onClick={onBack} className="p-3 bg-slate-100 rounded-xl font-bold text-xs mb-4">⬅ VOLVER</button>
+                    {users.map(u => (
+                        <div key={u.id} className="glass-card p-5 flex justify-between items-center shadow-sm mb-2">
+                            <div className="truncate text-left pr-4"><h4 className="font-bold text-[10px]">{u.email}</h4><p className="text-[8px] text-slate-400">CLAVE: {u.password}</p></div>
+                            <button onClick={async () => { if(confirm("¿Eliminar?")) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('users_metadata').doc(u.id).delete(); }} className="bg-red-50 text-red-500 px-3 py-1 rounded-lg text-[10px] font-black">LIMPIAR</button>
+                        </div>
+                    ))}
                 </div>
             );
         }
