@@ -92,8 +92,8 @@
         const appId = "mientrenador-v3";
         const SUPERUSER_EMAIL = "cumorahnet@gmail.com";
         
-        // VERSIÓN PROGRESIVA ACTUALIZADA
-        const APP_VERSION = "4.1.0"; 
+        // VERSIÓN PROGRESIVA ACTUALIZADA CON CONTADORES DINÁMICOS
+        const APP_VERSION = "4.2.0"; 
 
         const speak = (text) => {
             if (!window.speechSynthesis) return;
@@ -137,7 +137,6 @@
                     const el = document.documentElement;
                     if (el.requestFullscreen) await el.requestFullscreen();
                     else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
-                    
                     if (screen.orientation && screen.orientation.lock) {
                         await screen.orientation.lock('landscape').catch(() => {});
                     }
@@ -150,8 +149,7 @@
                     <div className="relative z-10 flex flex-col items-center animate-fade-in text-center px-6">
                         <div className="text-9xl mb-6 drop-shadow-[0_0_40px_rgba(249,115,22,0.4)] animate-pulse-slow">🏋️‍♂️</div>
                         <h1 className="text-5xl font-black italic uppercase tracking-tighter mb-1 leading-none">MI ENTRENADOR</h1>
-                        <p className="text-orange-500 font-bold uppercase text-sm tracking-[0.3em] italic mb-12 opacity-80">Fuerte y saludable</p>
-                        
+                        <p className="text-orange-500 font-bold uppercase text-sm tracking-[0.3em] italic mb-12 opacity-80 text-center">Fuerte y saludable</p>
                         <div className="mt-4 flex flex-col items-center gap-3">
                             <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
                             <span className="text-slate-600 font-black text-[10px] tracking-[0.5em] uppercase italic">Versión {APP_VERSION}</span>
@@ -166,15 +164,15 @@
                 <div className="h-full w-full flex flex-col relative bg-slate-950 overflow-hidden">
                     {view !== 'play' && (
                         <header className="p-6 flex justify-between items-center bg-slate-900 shadow-2xl shrink-0 border-b border-white/5">
-                            <div>
+                            <div onClick={() => setView('dashboard')} className="cursor-pointer">
                                 <h1 className="text-xl font-black italic uppercase leading-none tracking-tight">Mi Entrenador</h1>
                                 <p className="text-[9px] font-bold text-slate-500 lowercase italic tracking-wider">{user.email}</p>
                             </div>
                             <div className="flex gap-2">
                                 {user.email?.toLowerCase() === SUPERUSER_EMAIL.toLowerCase() && (
-                                    <button onClick={() => setView('admin')} className="p-2 bg-slate-800 rounded-xl font-bold">🛡️</button>
+                                    <button onClick={() => setView('admin')} className="p-2 bg-slate-800 rounded-xl font-bold text-lg">🛡️</button>
                                 )}
-                                <button onClick={() => auth.signOut()} className="p-2 bg-red-500/10 rounded-xl text-red-500 font-bold border border-red-500/20">🚪</button>
+                                <button onClick={() => auth.signOut()} className="p-2 bg-red-500/10 rounded-xl text-red-500 font-bold border border-red-500/20 text-lg">🚪</button>
                             </div>
                         </header>
                     )}
@@ -232,8 +230,8 @@
 
             return (
                 <div className="h-full w-full flex flex-col justify-center p-10 text-center animate-fade-in bg-slate-950 overflow-y-auto">
-                    <div className="text-7xl mb-4 animate-pulse-slow">🏃‍♂️</div>
-                    <h1 className="text-4xl font-black italic uppercase leading-none mb-1">MI ENTRENADOR</h1>
+                    <div className="text-7xl mb-4 animate-pulse-slow text-center">🏃‍♂️</div>
+                    <h1 className="text-4xl font-black italic uppercase leading-none mb-1 text-center">MI ENTRENADOR</h1>
                     <p className="text-orange-500 font-bold uppercase text-[9px] tracking-[0.3em] mb-12 italic text-center">Fuerte y Saludable</p>
                     <form onSubmit={handleAuth} className="space-y-4 max-w-sm mx-auto w-full">
                         <input type="email" placeholder="EMAIL" className="w-full p-6 bg-slate-900 border border-white/5 rounded-3xl font-bold outline-none focus:border-orange-500 text-xs lowercase" value={email} onChange={e => setEmail(e.target.value)} required />
@@ -243,10 +241,10 @@
                         </div>
                         <button type="submit" className="w-full bg-orange-500 py-6 rounded-full font-black uppercase shadow-xl tracking-widest italic leading-none active:scale-95 transition-transform">ENTRAR</button>
                     </form>
-                    <button onClick={() => setIsRegister(!isRegister)} className="mt-8 text-slate-500 text-[10px] font-black uppercase border-b border-orange-500/30 pb-1 mx-auto italic">
+                    <button onClick={() => setIsRegister(!isRegister)} className="mt-8 text-slate-500 text-[10px] font-black uppercase border-b border-orange-500/30 pb-1 mx-auto italic text-center">
                         {isRegister ? 'Ya tengo cuenta' : 'Regístrate gratis'}
                     </button>
-                    <p className="mt-10 text-slate-700 font-bold text-[8px] uppercase tracking-[0.5em] opacity-40">v{APP_VERSION}</p>
+                    <p className="mt-10 text-slate-700 font-bold text-[8px] uppercase tracking-[0.5em] opacity-40 text-center text-center">v{APP_VERSION}</p>
                 </div>
             );
         }
@@ -269,7 +267,7 @@
             }, [history]);
 
             return (
-                <div className="space-y-6 animate-fade-in pb-10">
+                <div className="space-y-6 animate-fade-in pb-10 text-center">
                     <section>
                         <h2 className="text-[10px] font-black uppercase text-slate-500 mb-3 tracking-widest italic leading-none">Mi Actividad Semanal</h2>
                         <div className="glass-card p-6 h-64 shadow-2xl">
@@ -277,7 +275,7 @@
                         </div>
                     </section>
                     <section>
-                        <h2 className="text-[10px] font-black uppercase text-slate-500 mb-3 tracking-widest italic leading-none text-center">Entrenamiento Rápido</h2>
+                        <h2 className="text-[10px] font-black uppercase text-slate-500 mb-3 tracking-widest italic leading-none">Entrenamiento Rápido</h2>
                         <div className="grid grid-cols-1 gap-3">
                             {workouts.slice(0, 3).map(w => (
                                 <div key={w.id} onClick={() => onStart(w)} className="glass-card p-5 flex justify-between items-center cursor-pointer active:scale-95 transition-all text-left">
@@ -319,7 +317,7 @@
                                 </div>
                                 <div className="flex gap-2">
                                     <button onClick={() => setWorkout(w)} className="bg-white text-black px-5 py-3 rounded-2xl font-black text-[10px] italic leading-none">GO</button>
-                                    <button onClick={() => onEdit(w)} className="bg-slate-800 text-white p-3 rounded-2xl leading-none">📝</button>
+                                    <button onClick={() => onEdit(w)} className="bg-slate-800 text-white p-3 rounded-2xl">📝</button>
                                     <button onClick={() => setDeletingId(w.id)} className="bg-red-500/10 text-red-500 p-3 rounded-2xl leading-none">🗑️</button>
                                 </div>
                             </div>
@@ -375,8 +373,8 @@
 
         function InputField({ label, val, set }) {
             return (
-                <div className="flex flex-col gap-1.5">
-                    <span className="text-[8px] font-black uppercase opacity-40 leading-none tracking-widest italic">{label}</span>
+                <div className="flex flex-col gap-1.5 items-center">
+                    <span className="text-[8px] font-black uppercase opacity-40 leading-none tracking-widest italic text-center">{label}</span>
                     <input type="number" className="w-full bg-white/5 p-4 rounded-2xl text-center font-black text-lg outline-none border border-white/5 focus:border-orange-500/50" value={val} onChange={e => set(e.target.value)} />
                 </div>
             );
@@ -385,7 +383,7 @@
         function HistoryListView({ history, user, appId, db }) {
             return (
                 <div className="space-y-4 animate-fade-in pb-20">
-                    <h2 className="text-[10px] font-black uppercase text-slate-500 mb-2 italic tracking-widest leading-none">Mis Sesiones</h2>
+                    <h2 className="text-[10px] font-black uppercase text-slate-500 mb-2 italic tracking-widest leading-none text-center">Mis Sesiones</h2>
                     {history.sort((a,b) => new Date(b.date) - new Date(a.date)).map(h => (
                         <div key={h.id} className="glass-card p-5 flex justify-between items-center border-white/5 text-left">
                             <div className="flex-1 pr-4">
@@ -418,6 +416,7 @@
                     s.push({ label: 'CALIENTA', sec: ph.calentamiento.action, color: 'bg-emerald-600', voice: 'Calienta', phase: 'Calentamiento', r, tr: ph.calentamiento.rounds, cy: 1, tc: 1 });
                     if(r < ph.calentamiento.rounds) s.push({ label: 'CAMBIO', sec: ph.calentamiento.change, color: 'bg-yellow-500', voice: 'Cambio', phase: 'Calentamiento', r, tr: ph.calentamiento.rounds, cy: 1, tc: 1 });
                 }
+                // TRANSICIÓN 5S
                 s.push({ label: 'CAMBIO DE FASE', sec: 5, color: 'bg-yellow-500', voice: 'Prepárate para entrenar', phase: 'Transición', r: 0, tr: 0, cy: 0, tc: 0 });
 
                 // 2. ENTRENAMIENTO
@@ -437,8 +436,9 @@
                         });
                         if(r < ph.entrenamiento.rounds) s.push({ label: 'CAMBIO', sec: ph.entrenamiento.change, color: 'bg-yellow-500', voice: 'Cambio', phase: 'Entrenamiento', r, tr: ph.entrenamiento.rounds, cy, tc: ph.entrenamiento.cycles });
                     }
-                    if(cy < ph.entrenamiento.cycles) s.push({ label: 'DESCANSO', sec: ph.entrenamiento.rest, color: 'bg-red-600', voice: 'Descanso', phase: 'Entrenamiento', r: 'Rest', tr: ph.entrenamiento.rounds, cy, tc: ph.entrenamiento.cycles });
+                    if(cy < ph.entrenamiento.cycles) s.push({ label: 'DESCANSO', sec: ph.entrenamiento.rest, color: 'bg-red-600', voice: 'Descanso', phase: 'Entrenamiento', r: 'R', tr: ph.entrenamiento.rounds, cy, tc: ph.entrenamiento.cycles });
                 }
+                // TRANSICIÓN 5S
                 s.push({ label: 'CAMBIO DE FASE', sec: 5, color: 'bg-yellow-500', voice: 'Prepárate para estirar', phase: 'Transición', r: 0, tr: 0, cy: 0, tc: 0 });
 
                 // 3. ESTIRAMIENTOS
@@ -483,8 +483,8 @@
 
             if (status === 'finished') return (
                 <div className="h-full w-full flex flex-col items-center justify-center p-8 text-center bg-slate-950 overflow-hidden">
-                    <div className="text-9xl mb-4 animate-bounce">🏆</div>
-                    <h2 className="text-5xl font-black uppercase italic leading-none mb-10 tracking-tighter">¡HECHO!</h2>
+                    <div className="text-9xl mb-4 animate-bounce text-center">🏆</div>
+                    <h2 className="text-5xl font-black uppercase italic leading-none mb-10 tracking-tighter text-center">¡HECHO!</h2>
                     <div className="glass-card p-10 w-full mb-12 shadow-2xl border-orange-500/20 text-center uppercase italic">
                         <p className="text-[10px] font-black text-slate-500 mb-2 tracking-[0.4em]">Resumen de Sesión</p>
                         <p className="text-7xl font-black text-orange-500 leading-none">{formatTime(elapsed)}</p>
@@ -518,7 +518,7 @@
                                 {curr?.r || 0}<span className="text-[3vh] opacity-20 mx-1">/</span>{curr?.tr || 0}
                             </div>
                             <div className="bg-white/10 px-3 py-1 rounded-full text-[1.4vh] font-bold tracking-tighter opacity-50 uppercase italic leading-none">
-                                Faltan: {curr?.tr ? Math.max(0, curr.tr - (parseInt(curr.r) || 0)) : 0}
+                                {curr?.r === 'R' ? 'Descanso' : `Faltan: ${curr?.tr ? Math.max(0, curr.tr - (parseInt(curr.r) || 0)) : 0}`}
                             </div>
                         </div>
 
@@ -547,11 +547,11 @@
 
                         {/* DERECHA: PANEL DE CICLOS DINÁMICO */}
                         <div className="flex flex-col items-center justify-center h-[55vh] rounded-[2.5rem] bg-black/25 border border-white/5 shadow-2xl backdrop-blur-sm">
-                            <span className="text-[1.5vh] font-black uppercase tracking-[0.4em] opacity-40 mb-[1vh] italic leading-none">CICLOS</span>
-                            <div className="text-[8vh] font-black italic tabular-nums leading-none mb-[1vh]">
+                            <span className="text-[1.5vh] font-black uppercase tracking-[0.4em] opacity-40 mb-[1vh] italic leading-none text-center">CICLOS</span>
+                            <div className="text-[8vh] font-black italic tabular-nums leading-none mb-[1vh] text-center">
                                 {curr?.cy || 0}<span className="text-[3vh] opacity-20 mx-1">/</span>{curr?.tc || 0}
                             </div>
-                            <div className="bg-white/10 px-3 py-1 rounded-full text-[1.4vh] font-bold tracking-tighter opacity-50 uppercase italic leading-none">
+                            <div className="bg-white/10 px-3 py-1 rounded-full text-[1.4vh] font-bold tracking-tighter opacity-50 uppercase italic leading-none text-center mx-auto">
                                 Faltan: {curr?.tc ? Math.max(0, curr.tc - (parseInt(curr.cy) || 0)) : 0}
                             </div>
                         </div>
@@ -569,7 +569,7 @@
                 return () => unsub();
             }, []);
             return (
-                <div className="animate-fade-in space-y-4 pb-20 p-4">
+                <div className="animate-fade-in space-y-4 pb-20 p-4 text-center">
                     <button onClick={onBack} className="p-4 bg-slate-900 rounded-2xl font-black text-xs tracking-widest border border-white/5 mb-6 uppercase italic italic leading-none">⬅ VOLVER AL DASHBOARD</button>
                     <div className="grid gap-3">
                         {users.map(u => (
