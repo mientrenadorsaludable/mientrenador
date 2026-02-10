@@ -61,7 +61,7 @@
         :fullscreen { background-color: #020617; }
         :-webkit-full-screen { background-color: #020617; }
 
-        /* Brillos Neón */
+        /* Efectos Neón Potenciados */
         .neon-text-orange { text-shadow: 0 0 20px rgba(249, 115, 22, 0.7); }
         .neon-text-cyan { text-shadow: 0 0 20px rgba(34, 211, 238, 0.7); }
         .neon-text-green { text-shadow: 0 0 20px rgba(74, 222, 128, 0.7); }
@@ -78,7 +78,6 @@
 <body>
     <div id="root"></div>
 
-    <!-- Firebase SDK (Compat) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -103,7 +102,7 @@
         const SUPERUSER_EMAIL = "cumorahnet@gmail.com";
         const APP_TITLE = "Mi entrenador Fuerte y saludable";
         
-        const APP_VERSION = "8.1.0"; 
+        const APP_VERSION = "8.2.0"; 
 
         const speak = (text) => {
             if (!window.speechSynthesis) return;
@@ -160,7 +159,7 @@
                         <h1 className="text-4xl font-black italic uppercase tracking-tighter mb-4 leading-tight">{APP_TITLE}</h1>
                         <div className="mt-4 flex flex-col items-center gap-3">
                             <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-                            <span className="text-slate-600 font-black text-[10px] tracking-[0.5em] uppercase italic text-center text-white text-center">Versión {APP_VERSION}</span>
+                            <span className="text-slate-600 font-black text-[10px] tracking-[0.5em] uppercase italic text-center text-white">Versión {APP_VERSION}</span>
                         </div>
                     </div>
                 </div>
@@ -301,7 +300,7 @@
             }, [history, filter]);
 
             return (
-                <div className="space-y-6 animate-fade-in pb-20 text-center text-white">
+                <div className="space-y-6 animate-fade-in pb-20 text-center text-white text-center">
                     <section>
                         <div className="flex justify-between items-end mb-4 px-2 text-center text-center">
                             <h2 className="text-[10px] font-black uppercase text-slate-500 tracking-widest italic leading-none text-left">Mi Avance (Min)</h2>
@@ -311,7 +310,7 @@
                                 ))}
                             </div>
                         </div>
-                        <div className="glass-card p-6 h-64 shadow-2xl relative overflow-hidden mx-auto w-full text-center">
+                        <div className="glass-card p-6 h-64 shadow-2xl relative overflow-hidden mx-auto w-full text-center text-center">
                              <canvas id="progressChart"></canvas>
                         </div>
                     </section>
@@ -321,25 +320,25 @@
 
         function WorkoutsView({ workouts, setWorkout, onEdit, onCreate, user, appId, db }) {
             return (
-                <div className="space-y-4 animate-fade-in pb-32 text-center text-white">
-                    <div className="grid grid-cols-1 gap-3 text-center mx-auto w-full">
+                <div className="space-y-4 animate-fade-in pb-32 text-center text-white text-center">
+                    <div className="grid grid-cols-1 gap-3 text-center mx-auto w-full text-center">
                         {workouts.map(w => (
                             <div key={w.id} className="glass-card p-6 flex justify-between items-center border-white/10 text-left text-center">
-                                <div className="flex-1 cursor-pointer truncate text-center" onClick={() => setWorkout(w)}>
-                                    <h3 className="font-black italic uppercase text-md leading-none mb-2 truncate text-white">{w.name}</h3>
-                                    <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest italic leading-none">Duración: {formatTime(w.totalTime || 0)}</p>
+                                <div className="flex-1 cursor-pointer truncate text-center text-center" onClick={() => setWorkout(w)}>
+                                    <h3 className="font-black italic uppercase text-md leading-none mb-2 truncate text-white text-center">{w.name}</h3>
+                                    <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest italic leading-none text-center">Duración: {formatTime(w.totalTime || 0)}</p>
                                 </div>
                                 <div className="flex gap-2 leading-none text-center">
-                                    <button onClick={() => setWorkout(w)} className="bg-white text-black px-5 py-3 rounded-2xl font-black text-[10px] italic leading-none flex items-center justify-center">GO</button>
-                                    <button onClick={() => onEdit(w)} className="bg-slate-800 text-white p-3 rounded-2xl leading-none flex items-center justify-center">📝</button>
-                                    <button onClick={() => db.collection(`artifacts/${appId}/users/${user.uid}/workouts`).doc(w.id).delete()} className="bg-red-500/10 text-red-500 p-3 rounded-2xl leading-none flex items-center justify-center">🗑️</button>
+                                    <button onClick={() => setWorkout(w)} className="bg-white text-black px-5 py-3 rounded-2xl font-black text-[10px] italic leading-none flex items-center justify-center text-center">GO</button>
+                                    <button onClick={() => onEdit(w)} className="bg-slate-800 text-white p-3 rounded-2xl leading-none flex items-center justify-center text-center">📝</button>
+                                    <button onClick={() => db.collection(`artifacts/${appId}/users/${user.uid}/workouts`).doc(w.id).delete()} className="bg-red-500/10 text-red-500 p-3 rounded-2xl leading-none flex items-center justify-center text-center">🗑️</button>
                                 </div>
                             </div>
                         ))}
                     </div>
                     
                     <button onClick={onCreate} className="w-full bg-white/5 border border-white/10 text-white py-5 rounded-full font-black uppercase shadow-xl italic tracking-widest active:scale-95 transition-transform flex items-center justify-center gap-2 leading-none mt-4 text-center">
-                        <span className="text-xl leading-none">➕</span> NUEVA RUTINA
+                        <span className="text-xl leading-none text-center">➕</span> NUEVA RUTINA
                     </button>
                 </div>
             );
@@ -364,27 +363,27 @@
 
             return (
                 <div className="flex-1 flex flex-col items-center bg-slate-950 overflow-y-auto px-4 pb-40 scrollbar-hide text-center mx-auto w-full text-white italic">
-                    <header className="w-full flex items-center gap-4 py-6 text-center text-white italic">
-                        <button onClick={onCancel} className="p-3 bg-slate-900 rounded-2xl font-bold border border-white/5 leading-none flex items-center justify-center text-white">⬅</button>
-                        <h2 className="text-xl font-black uppercase italic leading-none text-center flex-1 text-white">{workoutToEdit ? 'EDITAR RUTINA' : 'NUEVA RUTINA'}</h2>
+                    <header className="w-full flex items-center gap-4 py-6 text-center text-white italic text-center">
+                        <button onClick={onCancel} className="p-3 bg-slate-900 rounded-2xl font-bold border border-white/5 leading-none flex items-center justify-center text-white text-center text-center">⬅</button>
+                        <h2 className="text-xl font-black uppercase italic leading-none text-center flex-1 text-white text-center text-center">{workoutToEdit ? 'EDITAR RUTINA' : 'NUEVA RUTINA'}</h2>
                     </header>
-                    <div className="w-full space-y-6 max-w-lg mx-auto text-center italic">
-                        <input type="text" placeholder="NOMBRE DE RUTINA" className="w-full p-6 bg-slate-900 border border-white/10 rounded-[2rem] font-black text-center uppercase italic focus:border-orange-500 outline-none shadow-inner leading-none text-white text-center" value={name} onChange={e => setName(e.target.value)} />
+                    <div className="w-full space-y-6 max-w-lg mx-auto text-center italic text-center text-center">
+                        <input type="text" placeholder="NOMBRE DE RUTINA" className="w-full p-6 bg-slate-900 border border-white/10 rounded-[2rem] font-black text-center uppercase italic focus:border-orange-500 outline-none shadow-inner leading-none text-white text-center text-center text-center" value={name} onChange={e => setName(e.target.value)} />
                         {['calentamiento', 'entrenamiento', 'estiramientos'].map((p) => (
-                            <div key={p} className="glass-card p-6 italic mb-4 text-center">
-                                <span className="font-black uppercase text-xs tracking-widest text-orange-500 border-b border-white/5 block mb-6 pb-2 leading-none mx-auto w-fit text-center uppercase">{p}</span>
-                                <div className="grid grid-cols-2 gap-4 mt-4 text-center">
+                            <div key={p} className="glass-card p-6 italic mb-4 text-center text-center text-center">
+                                <span className="font-black uppercase text-xs tracking-widest text-orange-500 border-b border-white/5 block mb-6 pb-2 leading-none mx-auto w-fit text-center text-center uppercase">{p}</span>
+                                <div className="grid grid-cols-2 gap-4 mt-4 text-center text-center">
                                     <InputField label="ACCIÓN (S)" val={phases[p].action} set={v => update(p, 'action', v)} />
                                     <InputField label="CAMBIO (S)" val={phases[p].change} set={v => update(p, 'change', v)} />
                                     <InputField label="RONDAS" val={phases[p].rounds} set={v => update(p, 'rounds', v)} />
                                     <InputField label="CICLOS" val={phases[p].cycles} set={v => update(p, 'cycles', v)} />
-                                    <div className="col-span-2 text-center"><InputField label="DESCANSO LARGO (S)" val={phases[p].rest} set={v => update(p, 'rest', v)} /></div>
+                                    <div className="col-span-2 text-center text-center text-center"><InputField label="DESCANSO LARGO (S)" val={phases[p].rest} set={v => update(p, 'rest', v)} /></div>
                                 </div>
                             </div>
                         ))}
                     </div>
-                    <div className="fixed bottom-0 left-0 right-0 p-6 bg-slate-950/90 backdrop-blur-xl border-t border-white/5 z-50 text-center">
-                        <button onClick={handleSave} className="w-full bg-white text-black py-6 rounded-full font-black uppercase shadow-2xl italic tracking-[0.2em] leading-none active:scale-95 transition-transform max-w-sm mx-auto text-center">
+                    <div className="fixed bottom-0 left-0 right-0 p-6 bg-slate-950/90 backdrop-blur-xl border-t border-white/5 z-50 text-center text-center text-center">
+                        <button onClick={handleSave} className="w-full bg-white text-black py-6 rounded-full font-black uppercase shadow-2xl italic tracking-[0.2em] leading-none active:scale-95 transition-transform max-w-sm mx-auto text-center text-center">
                             {workoutToEdit ? 'GUARDAR MODIFICACIONES' : 'CREAR RUTINA'}
                         </button>
                     </div>
@@ -394,27 +393,26 @@
 
         function InputField({ label, val, set }) {
             return (
-                <div className="flex flex-col gap-1.5 items-center text-center">
-                    <span className="text-[8px] font-black uppercase opacity-40 leading-none tracking-widest italic text-center text-white uppercase">{label}</span>
-                    <input type="number" className="w-full bg-white/5 p-4 rounded-2xl text-center font-black text-lg outline-none border border-white/5 focus:border-orange-500/50 text-center leading-none text-white text-center" value={val} onChange={e => set(e.target.value)} />
+                <div className="flex flex-col gap-1.5 items-center text-center text-center text-center text-center">
+                    <span className="text-[8px] font-black uppercase opacity-40 leading-none tracking-widest italic text-center text-white text-center text-center text-center uppercase">{label}</span>
+                    <input type="number" className="w-full bg-white/5 p-4 rounded-2xl text-center font-black text-lg outline-none border border-white/5 focus:border-orange-500/50 text-center leading-none text-white text-center text-center text-center" value={val} onChange={e => set(e.target.value)} />
                 </div>
             );
         }
 
         function HistoryListView({ history, user, appId, db }) {
             return (
-                <div className="space-y-4 animate-fade-in pb-20 text-center mx-auto w-full text-white italic">
-                    <h2 className="text-[10px] font-black uppercase text-slate-500 mb-2 italic tracking-widest leading-none text-center italic">Historial de Sesiones</h2>
+                <div className="space-y-4 animate-fade-in pb-20 text-center mx-auto w-full text-white italic text-center text-center">
+                    <h2 className="text-[10px] font-black uppercase text-slate-500 mb-2 italic tracking-widest leading-none text-center italic text-center text-center">Historial de Sesiones</h2>
                     {history.sort((a,b) => new Date(b.date) - new Date(a.date)).map(h => (
-                        <div key={h.id} className="glass-card p-5 flex justify-between items-center border-white/5 text-left text-center">
-                            <div className="flex-1 pr-4 truncate text-center">
-                                <h3 className="font-black uppercase italic text-xs leading-none mb-1 truncate text-center text-white italic">{h.workoutName}</h3>
-                                <p className="text-[8px] font-bold text-slate-500 uppercase leading-none italic text-center tracking-tighter text-center">{new Date(h.date).toLocaleDateString()} • {formatTime(h.totalTime)}</p>
+                        <div key={h.id} className="glass-card p-5 flex justify-between items-center border-white/5 text-left text-center text-center text-center">
+                            <div className="flex-1 pr-4 truncate text-center text-center text-center text-center">
+                                <h3 className="font-black uppercase italic text-xs leading-none mb-1 truncate text-center text-white italic text-center text-center text-center">{h.workoutName}</h3>
+                                <p className="text-[8px] font-bold text-slate-500 uppercase leading-none italic text-center tracking-tighter text-center text-center text-center text-center">{new Date(h.date).toLocaleDateString()} • {formatTime(h.totalTime)}</p>
                             </div>
-                            <button onClick={() => db.collection(`artifacts/${appId}/users/${user.uid}/history`).doc(h.id).delete()} className="text-slate-700 p-2 leading-none flex items-center justify-center text-center">✕</button>
+                            <button onClick={() => db.collection(`artifacts/${appId}/users/${user.uid}/history`).doc(h.id).delete()} className="text-slate-700 p-2 leading-none flex items-center justify-center text-center text-center text-center">✕</button>
                         </div>
                     ))}
-                    {history.length === 0 && <p className="text-center p-20 opacity-20 italic font-black uppercase text-[10px] leading-none text-white italic text-center">Sin datos aún</p>}
                 </div>
             );
         }
@@ -430,7 +428,7 @@
             const savedRef = useRef(false);
 
             const MUSIC_SERVICES = [
-                { name: 'Gospel Library', url: 'gospellibrary:', fallback: 'https://www.churchofjesuschrist.org/study' },
+                { name: 'Gospel Library', url: 'gospellibrary://', fallback: 'https://www.churchofjesuschrist.org/study' },
                 { name: 'Spotify', url: 'spotify:', fallback: 'https://open.spotify.com' },
                 { name: 'Amazon Music', url: 'https://music.amazon.com' },
                 { name: 'YouTube Music', url: 'https://music.youtube.com' }
@@ -451,7 +449,6 @@
                         for(let r=1; r<=c.rounds; r++) {
                             let voiceMsg = 'Empieza';
                             let bodySection = pInfo.label.toUpperCase();
-                            
                             if (pInfo.id === 'entrenamiento') {
                                 const regionIdx = Math.floor((r - 1) / 3) % 3;
                                 bodySection = REGIONS[regionIdx].toUpperCase();
@@ -506,11 +503,15 @@
 
             const totalWorkoutSeconds = useMemo(() => steps.reduce((acc, curr) => acc + curr.sec, 0), [steps]);
 
+            // Función de apertura mejorada para evitar bloqueos de permisos
             const openMusic = (url, fallback) => {
-                window.open(url, '_blank');
+                // Usamos location.assign para ser menos invasivos con los permisos de popup
+                window.location.assign(url);
+                
+                // Si la app no responde en 1.5 seg, intentamos el fallback (url web)
                 setTimeout(() => {
-                    if (fallback) window.open(fallback, '_blank');
-                }, 500);
+                    if (fallback) window.location.assign(fallback);
+                }, 1500);
             };
 
             if (status === 'finished') return (
@@ -624,30 +625,6 @@
                         </div>
                     </div>
                     <div className="h-[3vh] shrink-0 text-center"></div>
-                </div>
-            );
-        }
-
-        function AdminView({ onBack, appId, db }) {
-            const [users, setUsers] = useState([]);
-            useEffect(() => {
-                const unsub = db.collection(`artifacts/${appId}/public/data/users_metadata`).onSnapshot(s => setUsers(s.docs.map(d => ({id: d.id, ...d.data()}))));
-                return () => unsub();
-            }, []);
-            return (
-                <div className="animate-fade-in space-y-4 pb-20 p-4 text-center text-center mx-auto w-full max-w-sm flex flex-col items-center text-white italic text-center">
-                    <button onClick={onBack} className="p-4 bg-slate-900 rounded-2xl font-black text-xs tracking-widest border border-white/5 mb-6 uppercase italic italic leading-none flex items-center justify-center mx-auto flex items-center justify-center text-center text-white italic text-center text-center text-center text-center">⬅ VOLVER AL INICIO</button>
-                    <div className="grid gap-3 text-center mx-auto w-full">
-                        {users.map(u => (
-                            <div key={u.id} className="glass-card p-6 flex justify-between items-center shadow-sm text-center">
-                                <div className="truncate text-left pr-4 text-white text-center">
-                                    <h4 className="font-bold text-[11px] text-white/90 truncate leading-none mb-1 text-center">{u.email}</h4>
-                                    <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-1 italic leading-none text-center">PASS: {u.password}</p>
-                                </div>
-                                <button onClick={async () => { if(confirm("¿Borrar?")) await db.collection(`artifacts/${appId}/public/data/users_metadata`).doc(u.id).delete(); }} className="bg-red-500/20 text-red-500 px-4 py-2 rounded-xl text-[10px] font-black border border-red-500/30 uppercase italic leading-none flex items-center justify-center">Borrar</button>
-                            </div>
-                        ))}
-                    </div>
                 </div>
             );
         }
