@@ -48,7 +48,7 @@
             border-radius: 1.5rem;
         }
 
-        /* Anillo de progreso grueso y centrado */
+        /* Anillo de progreso centralizado y fluido */
         .progress-ring__circle {
             transition: stroke-dashoffset 0.35s linear, stroke 0.3s ease;
             transform: rotate(-90deg);
@@ -59,7 +59,7 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         .animate-pulse-slow { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.03); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.02); } }
 
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         
@@ -92,7 +92,9 @@
         const db = firebase.firestore();
         const appId = "mientrenador-v3";
         const SUPERUSER_EMAIL = "cumorahnet@gmail.com";
-        const APP_VERSION = "3.11.0"; 
+        
+        // VERSIÓN PROGRESIVA DE LA APP
+        const APP_VERSION = "4.0.0"; 
 
         const speak = (text) => {
             if (!window.speechSynthesis) return;
@@ -117,7 +119,7 @@
             useEffect(() => {
                 const unsubscribe = auth.onAuthStateChanged((u) => {
                     setUser(u && !u.isAnonymous ? u : null);
-                    // Splash Screen de 3 segundos
+                    // Splash Screen fijo de 3 segundos
                     setTimeout(() => setLoading(false), 3000);
                 });
                 return () => unsubscribe();
@@ -134,12 +136,10 @@
             const startWorkout = async (w) => {
                 setSelectedWorkout(w);
                 try {
-                    // Solicitar pantalla completa real
                     const el = document.documentElement;
                     if (el.requestFullscreen) await el.requestFullscreen();
                     else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
                     
-                    // Intentar bloquear orientación
                     if (screen.orientation && screen.orientation.lock) {
                         await screen.orientation.lock('landscape').catch(() => {});
                     }
@@ -148,12 +148,17 @@
             };
 
             if (loading) return (
-                <div className="h-full w-full flex flex-col items-center justify-center bg-slate-950 text-white">
+                <div className="h-full w-full flex flex-col items-center justify-center bg-slate-950 text-white overflow-hidden">
                     <div className="relative z-10 flex flex-col items-center animate-fade-in text-center px-6">
-                        <div className="text-8xl mb-8 animate-pulse-slow">🏋️‍♂️</div>
-                        <h1 className="text-5xl font-black italic uppercase tracking-tighter mb-1 leading-none">Mi Entrenador</h1>
-                        <p className="text-orange-500 font-bold uppercase text-sm tracking-[0.2em] italic mb-10">Fuerte y saludable</p>
-                        <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                        <div className="text-9xl mb-6 drop-shadow-[0_0_40px_rgba(249,115,22,0.4)] animate-pulse-slow">🏋️‍♂️</div>
+                        <h1 className="text-5xl font-black italic uppercase tracking-tighter mb-1 leading-none">MI ENTRENADOR</h1>
+                        <p className="text-orange-500 font-bold uppercase text-sm tracking-[0.3em] italic mb-12 opacity-80">Fuerte y saludable</p>
+                        
+                        {/* Indicador de Versión en Splash */}
+                        <div className="mt-4 flex flex-col items-center gap-3">
+                            <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                            <span className="text-slate-600 font-black text-[10px] tracking-[0.5em] uppercase italic">Versión {APP_VERSION}</span>
+                        </div>
                     </div>
                 </div>
             );
@@ -163,9 +168,9 @@
             return (
                 <div className="h-full w-full flex flex-col relative bg-slate-950 overflow-hidden">
                     {view !== 'play' && (
-                        <header className="p-6 flex justify-between items-center bg-slate-900 shadow-xl shrink-0 border-b border-white/5">
+                        <header className="p-6 flex justify-between items-center bg-slate-900 shadow-2xl shrink-0 border-b border-white/5">
                             <div>
-                                <h1 className="text-xl font-black italic uppercase leading-none">Mi Entrenador</h1>
+                                <h1 className="text-xl font-black italic uppercase leading-none tracking-tight">Mi Entrenador</h1>
                                 <p className="text-[9px] font-bold text-slate-500 lowercase italic tracking-wider">{user.email}</p>
                             </div>
                             <div className="flex gap-2">
@@ -241,10 +246,10 @@
                         </div>
                         <button type="submit" className="w-full bg-orange-500 py-6 rounded-full font-black uppercase shadow-xl tracking-widest italic leading-none active:scale-95 transition-transform">ENTRAR</button>
                     </form>
-                    <button onClick={() => setIsRegister(!isRegister)} className="mt-8 text-slate-500 text-[10px] font-black uppercase border-b border-orange-500/30 pb-1 mx-auto">
+                    <button onClick={() => setIsRegister(!isRegister)} className="mt-8 text-slate-500 text-[10px] font-black uppercase border-b border-orange-500/30 pb-1 mx-auto italic">
                         {isRegister ? 'Ya tengo cuenta' : 'Regístrate gratis'}
                     </button>
-                    <p className="mt-10 text-slate-700 font-bold text-[8px] uppercase tracking-widest">v{APP_VERSION}</p>
+                    <p className="mt-10 text-slate-700 font-bold text-[8px] uppercase tracking-[0.5em] opacity-40">v{APP_VERSION}</p>
                 </div>
             );
         }
@@ -269,13 +274,13 @@
             return (
                 <div className="space-y-6 animate-fade-in pb-10">
                     <section>
-                        <h2 className="text-[10px] font-black uppercase text-slate-500 mb-3 tracking-widest italic">Actividad Semanal (Minutos)</h2>
+                        <h2 className="text-[10px] font-black uppercase text-slate-500 mb-3 tracking-widest italic leading-none">Mi Actividad Semanal</h2>
                         <div className="glass-card p-6 h-64 shadow-2xl">
                             <canvas id="progressChart"></canvas>
                         </div>
                     </section>
                     <section>
-                        <h2 className="text-[10px] font-black uppercase text-slate-500 mb-3 tracking-widest italic text-center">Entrenamiento Rápido</h2>
+                        <h2 className="text-[10px] font-black uppercase text-slate-500 mb-3 tracking-widest italic leading-none text-center">Entrenamiento Rápido</h2>
                         <div className="grid grid-cols-1 gap-3">
                             {workouts.slice(0, 3).map(w => (
                                 <div key={w.id} onClick={() => onStart(w)} className="glass-card p-5 flex justify-between items-center cursor-pointer active:scale-95 transition-all">
@@ -300,9 +305,9 @@
                         <div className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-6 z-[100]">
                             <div className="bg-slate-900 border border-white/5 p-8 rounded-[3rem] w-full max-w-sm text-center">
                                 <h2 className="font-black uppercase italic text-xl mb-2 leading-none">¿Borrar?</h2>
-                                <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest mb-8 italic">Esta acción es permanente</p>
+                                <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest mb-8 italic">Eliminar definitivamente</p>
                                 <div className="flex flex-col gap-3">
-                                    <button onClick={async () => { await db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('workouts').doc(deletingId).delete(); setDeletingId(null); }} className="bg-red-600 text-white py-4 rounded-3xl font-black uppercase text-xs tracking-widest shadow-xl shadow-red-600/20">SÍ, ELIMINAR</button>
+                                    <button onClick={async () => { await db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('workouts').doc(deletingId).delete(); setDeletingId(null); }} className="bg-red-600 text-white py-4 rounded-3xl font-black uppercase text-xs tracking-widest shadow-xl">ELIMINAR</button>
                                     <button onClick={() => setDeletingId(null)} className="bg-slate-800 text-slate-300 py-4 rounded-3xl font-black uppercase text-xs tracking-widest">CANCELAR</button>
                                 </div>
                             </div>
@@ -313,7 +318,7 @@
                             <div key={w.id} className="glass-card p-6 flex justify-between items-center border-white/10">
                                 <div className="flex-1 cursor-pointer" onClick={() => setWorkout(w)}>
                                     <h3 className="font-black italic uppercase text-md leading-none mb-1">{w.name}</h3>
-                                    <p className="text-[8px] font-black text-orange-500 mt-1 uppercase tracking-widest italic">{formatTime(w.totalTime)} • MODO HIIT</p>
+                                    <p className="text-[8px] font-black text-orange-500 mt-1 uppercase tracking-widest italic">{formatTime(w.totalTime)} • HIIT</p>
                                 </div>
                                 <div className="flex gap-2">
                                     <button onClick={() => setWorkout(w)} className="bg-white text-black px-5 py-3 rounded-2xl font-black text-[10px] italic">GO</button>
@@ -350,10 +355,10 @@
                         <h2 className="text-xl font-black uppercase italic leading-none">{workoutToEdit ? 'Editar' : 'Nueva Rutina'}</h2>
                     </header>
                     <div className="space-y-6 overflow-y-auto pr-1 scrollbar-hide pb-10">
-                        <input type="text" placeholder="NOMBRE" className="w-full p-6 bg-slate-900 border border-white/10 rounded-[2rem] font-black text-center uppercase italic focus:border-orange-500 outline-none" value={name} onChange={e => setName(e.target.value)} />
+                        <input type="text" placeholder="NOMBRE DE RUTINA" className="w-full p-6 bg-slate-900 border border-white/10 rounded-[2rem] font-black text-center uppercase italic focus:border-orange-500 outline-none" value={name} onChange={e => setName(e.target.value)} />
                         {['calentamiento', 'entrenamiento', 'estiramientos'].map((p) => (
                             <div key={p} className="glass-card p-6 italic mb-4">
-                                <span className="font-black uppercase text-xs tracking-widest text-orange-500 border-b border-white/5 block mb-6 pb-2">{p}</span>
+                                <span className="font-black uppercase text-xs tracking-widest text-orange-500 border-b border-white/5 block mb-6 pb-2 leading-none">{p}</span>
                                 <div className="grid grid-cols-2 gap-4">
                                     <InputField label="ACCIÓN (S)" val={phases[p].action} set={v => update(p, 'action', v)} />
                                     <InputField label="CAMBIO (S)" val={phases[p].change} set={v => update(p, 'change', v)} />
@@ -383,12 +388,12 @@
         function HistoryListView({ history, user, appId, db }) {
             return (
                 <div className="space-y-4 animate-fade-in pb-20">
-                    <h2 className="text-[10px] font-black uppercase text-slate-500 mb-2 italic tracking-widest leading-none">Historial Reciente</h2>
+                    <h2 className="text-[10px] font-black uppercase text-slate-500 mb-2 italic tracking-widest leading-none">Mis Sesiones</h2>
                     {history.sort((a,b) => new Date(b.date) - new Date(a.date)).map(h => (
                         <div key={h.id} className="glass-card p-5 flex justify-between items-center border-white/5">
                             <div className="flex-1 pr-4">
-                                <h3 className="font-black uppercase italic text-xs leading-none mb-1">{h.workoutName}</h3>
-                                <p className="text-[8px] font-bold text-slate-500 uppercase leading-none tracking-tighter italic">{new Date(h.date).toLocaleDateString()} • {formatTime(h.totalTime)}</p>
+                                <h3 className="font-black uppercase italic text-xs leading-none mb-1 truncate">{h.workoutName}</h3>
+                                <p className="text-[8px] font-bold text-slate-500 uppercase leading-none italic">{new Date(h.date).toLocaleDateString()} • {formatTime(h.totalTime)}</p>
                             </div>
                             <button onClick={() => db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('history').doc(h.id).delete()} className="text-slate-700 p-2 leading-none">✕</button>
                         </div>
@@ -480,10 +485,10 @@
             if (status === 'finished') return (
                 <div className="h-full w-full flex flex-col items-center justify-center p-8 text-center bg-slate-950 overflow-hidden">
                     <div className="text-9xl mb-4 animate-bounce">🏆</div>
-                    <h2 className="text-5xl font-black uppercase italic leading-none mb-10 tracking-tighter">¡LOGRADO!</h2>
-                    <div className="glass-card p-10 w-full mb-12 shadow-2xl uppercase border-orange-500/20 text-center">
-                        <p className="text-[10px] font-black text-slate-500 mb-2 tracking-[0.4em] italic">Tiempo de Sesión</p>
-                        <p className="text-7xl font-black text-orange-500 italic leading-none">{formatTime(elapsed)}</p>
+                    <h2 className="text-5xl font-black uppercase italic leading-none mb-10 tracking-tighter">¡HECHO!</h2>
+                    <div className="glass-card p-10 w-full mb-12 shadow-2xl border-orange-500/20 text-center uppercase italic">
+                        <p className="text-[10px] font-black text-slate-500 mb-2 tracking-[0.4em]">Resumen de Sesión</p>
+                        <p className="text-7xl font-black text-orange-500 leading-none">{formatTime(elapsed)}</p>
                     </div>
                     <button onClick={() => onComplete(workout.name, elapsed)} className="w-full bg-white text-black py-8 rounded-full font-black uppercase shadow-2xl italic tracking-widest max-w-sm text-xl active:scale-95 transition-transform">FINALIZAR</button>
                 </div>
@@ -496,62 +501,62 @@
             return (
                 <div className={`h-screen w-screen flex flex-col transition-colors duration-500 ${curr?.color || 'bg-slate-950'} text-white overflow-hidden`}>
                     
-                    {/* TOP HUD (Minimizado para altura limitada) */}
+                    {/* TOP HUD PRO */}
                     <div className="flex justify-between items-start p-4 z-30 relative shrink-0 h-[12vh]">
-                        <button onClick={onExit} className="bg-black/20 px-6 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest border border-white/5 active:scale-90 transition-transform">✖ SALIR</button>
+                        <button onClick={onExit} className="bg-black/20 px-6 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest border border-white/5 active:scale-90 transition-transform italic leading-none">✖ SALIR</button>
                         <div className="text-right">
-                             <div className="bg-white/20 px-3 py-1 rounded-xl text-[10px] font-black border border-white/5 backdrop-blur-md flex items-center gap-2">
-                                <span className="opacity-40">TIEMPO:</span> {formatTime(elapsed)}
+                             <div className="bg-white/20 px-3 py-1 rounded-xl text-[10px] font-black border border-white/5 backdrop-blur-md flex items-center gap-2 italic">
+                                <span className="opacity-40">TIME:</span> {formatTime(elapsed)}
                              </div>
                         </div>
                     </div>
 
-                    {/* MAIN HUD GRID */}
+                    {/* MAIN CONSOLE - HUD DE ALTO RENDIMIENTO */}
                     <div className="flex-1 grid grid-cols-3 items-center w-full px-6 landscape:px-12 relative overflow-hidden">
                         
-                        {/* LADO IZQUIERDO: RONDAS */}
-                        <div className="flex flex-col items-center justify-center h-[60vh] rounded-[2.5rem] bg-black/25 border border-white/5 shadow-2xl">
-                            <span className="text-[1.5vh] font-black uppercase tracking-[0.3em] opacity-40 mb-[1vh] italic">RONDAS</span>
+                        {/* IZQUIERDA: PANEL DE RONDAS */}
+                        <div className="flex flex-col items-center justify-center h-[55vh] rounded-[2.5rem] bg-black/25 border border-white/5 shadow-2xl backdrop-blur-sm">
+                            <span className="text-[1.5vh] font-black uppercase tracking-[0.4em] opacity-40 mb-[1vh] italic leading-none">RONDAS</span>
                             <div className="text-[8vh] font-black italic tabular-nums leading-none mb-[1vh]">{curr?.r || 1}<span className="text-[3vh] opacity-20 mx-1">/</span>{curr?.tr || 1}</div>
-                            <span className="text-[1.5vh] font-bold opacity-30 uppercase italic tracking-tighter">FALTAN: {(curr?.tr || 1) - (curr?.r || 1)}</span>
+                            <div className="bg-white/10 px-3 py-1 rounded-full text-[1.4vh] font-bold tracking-tighter opacity-50 uppercase italic leading-none">Faltan: {(curr?.tr || 1) - (curr?.r || 1)}</div>
                         </div>
 
-                        {/* CENTRO: TIMER & REGION */}
+                        {/* CENTRO: TIMER DINÁMICO */}
                         <div className="flex flex-col items-center justify-center h-full relative">
-                            {/* LEYENDA REGIÓN (SUPERIOR) */}
+                            {/* ETIQUETA DE FASE Y REGIÓN */}
                             <div className="absolute top-[0vh] w-full text-center">
-                                 <h3 className="text-[1.8vh] uppercase tracking-[0.5em] font-black text-white/40 mb-[0.5vh] italic drop-shadow-md">{curr?.phase}</h3>
-                                 <h2 className="text-[5vh] font-black uppercase italic tracking-tighter drop-shadow-2xl leading-none">{curr?.region || curr?.label}</h2>
+                                 <h3 className="text-[1.8vh] uppercase tracking-[0.6em] font-black text-white/40 mb-[0.5vh] italic drop-shadow-md leading-none">{curr?.phase}</h3>
+                                 <h2 className="text-[5vh] font-black uppercase italic tracking-tighter drop-shadow-2xl leading-none text-white">{curr?.region || curr?.label}</h2>
                             </div>
 
-                            {/* TIMER CIRCULAR (CENTRADO) */}
-                            <div className="relative flex items-center justify-center w-[45vh] h-[45vh] mt-[5vh]">
+                            {/* CÍRCULO TIMER (AJUSTADO A 40vh PARA EVITAR DESBORDE) */}
+                            <div className="relative flex items-center justify-center w-[40vh] h-[40vh] mt-[4vh]">
                                 <svg className="absolute w-full h-full" viewBox="0 0 100 100">
-                                    <circle cx="50" cy="50" r="42" stroke="rgba(255,255,255,0.1)" strokeWidth="10" fill="none" />
+                                    <circle cx="50" cy="50" r="42" stroke="rgba(255,255,255,0.08)" strokeWidth="10" fill="none" />
                                     <circle cx="50" cy="50" r="42" stroke="white" strokeWidth="10" fill="none" className="progress-ring__circle" style={{ strokeDasharray: circ, strokeDashoffset: offset }} />
                                 </svg>
                                 <div className="text-[14vh] font-black tabular-nums drop-shadow-2xl italic leading-none z-10">{timeLeft}</div>
                             </div>
 
-                            {/* CONTROLES */}
-                            <div className="mt-[3vh] flex items-center gap-[4vh]">
-                                <button onClick={() => setStatus(s => s === 'running' ? 'paused' : 'running')} className="bg-white text-black w-[10vh] h-[10vh] rounded-full flex items-center justify-center shadow-2xl transition-all active:scale-90 text-[4vh]">
+                            {/* MANDOS DE REPRODUCCIÓN */}
+                            <div className="mt-[3vh] flex items-center gap-[5vh]">
+                                <button onClick={() => setStatus(s => s === 'running' ? 'paused' : 'running')} className="bg-white text-black w-[9vh] h-[9vh] rounded-full flex items-center justify-center shadow-2xl active:scale-90 transition-all text-[4vh] leading-none">
                                     {status === 'running' ? '⏸' : '▶'}
                                 </button>
-                                <button onClick={() => setTimeLeft(0)} className="bg-white/20 w-[7vh] h-[7vh] rounded-full text-[3vh] flex items-center justify-center border border-white/10 active:scale-90 leading-none italic">⏭</button>
+                                <button onClick={() => setTimeLeft(0)} className="bg-white/20 w-[6vh] h-[6vh] rounded-full text-[2.5vh] flex items-center justify-center border border-white/10 active:scale-90 italic leading-none">⏭</button>
                             </div>
                         </div>
 
-                        {/* LADO DERECHO: CICLOS */}
-                        <div className="flex flex-col items-center justify-center h-[60vh] rounded-[2.5rem] bg-black/25 border border-white/5 shadow-2xl">
-                            <span className="text-[1.5vh] font-black uppercase tracking-[0.3em] opacity-40 mb-[1vh] italic">CICLOS</span>
+                        {/* DERECHA: PANEL DE CICLOS */}
+                        <div className="flex flex-col items-center justify-center h-[55vh] rounded-[2.5rem] bg-black/25 border border-white/5 shadow-2xl backdrop-blur-sm">
+                            <span className="text-[1.5vh] font-black uppercase tracking-[0.4em] opacity-40 mb-[1vh] italic leading-none">CICLOS</span>
                             <div className="text-[8vh] font-black italic tabular-nums leading-none mb-[1vh]">{curr?.cy || 1}<span className="text-[3vh] opacity-20 mx-1">/</span>{curr?.tc || 1}</div>
-                            <span className="text-[1.5vh] font-bold opacity-30 uppercase italic tracking-tighter">FALTAN: {(curr?.tc || 1) - (curr?.cy || 1)}</span>
+                            <div className="bg-white/10 px-3 py-1 rounded-full text-[1.4vh] font-bold tracking-tighter opacity-50 uppercase italic leading-none">Faltan: {(curr?.tc || 1) - (curr?.cy || 1)}</div>
                         </div>
                     </div>
 
-                    {/* PIE DE PÁGINA / SAFE AREA */}
-                    <div className="h-[2vh] shrink-0"></div>
+                    {/* MARGEN DE SEGURIDAD INFERIOR */}
+                    <div className="h-[3vh] shrink-0"></div>
                 </div>
             );
         }
@@ -563,17 +568,19 @@
                 return () => unsub();
             }, []);
             return (
-                <div className="animate-fade-in space-y-4 pb-10">
-                    <button onClick={onBack} className="p-4 bg-slate-900 rounded-2xl font-black text-xs tracking-widest border border-white/5 mb-6 uppercase italic">⬅ VOLVER AL DASHBOARD</button>
-                    {users.map(u => (
-                        <div key={u.id} className="glass-card p-6 flex justify-between items-center shadow-sm mb-3">
-                            <div className="truncate text-left pr-4">
-                                <h4 className="font-bold text-[11px] text-white/90">{u.email}</h4>
-                                <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-1 italic">PASS: {u.password}</p>
+                <div className="animate-fade-in space-y-4 pb-20">
+                    <button onClick={onBack} className="p-4 bg-slate-900 rounded-2xl font-black text-xs tracking-widest border border-white/5 mb-6 uppercase italic italic leading-none">⬅ VOLVER AL DASHBOARD</button>
+                    <div className="grid gap-3">
+                        {users.map(u => (
+                            <div key={u.id} className="glass-card p-6 flex justify-between items-center shadow-sm">
+                                <div className="truncate text-left pr-4">
+                                    <h4 className="font-bold text-[11px] text-white/90 truncate">{u.email}</h4>
+                                    <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-1 italic leading-none">PASS: {u.password}</p>
+                                </div>
+                                <button onClick={async () => { if(confirm("¿Limpiar registro?")) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('users_metadata').doc(u.id).delete(); }} className="bg-red-500/20 text-red-500 px-4 py-2 rounded-xl text-[10px] font-black border border-red-500/30 uppercase italic leading-none">Limpiar</button>
                             </div>
-                            <button onClick={async () => { if(confirm("¿Eliminar registro?")) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('users_metadata').doc(u.id).delete(); }} className="bg-red-500/20 text-red-500 px-4 py-2 rounded-xl text-[10px] font-black border border-red-500/30 uppercase italic">Limpiar</button>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
             );
         }
