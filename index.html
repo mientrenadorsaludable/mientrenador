@@ -105,10 +105,9 @@
         const db = firebase.firestore();
         const appId = "mientrenador-v3"; 
         const APP_TITLE = "Mi entrenador Fuerte y saludable";
-        const APP_VERSION = "17.0.1"; 
+        const APP_VERSION = "17.1.0"; 
 
-        // --- CONSTANTES GLOBALES (CON MEJOR DETALLE DE EXTREMIDADES) ---
-        const WARMUP_STEPS = ['tobillo derecho', 'tobillo izquierdo', 'rodilla derecha', 'rodilla izquierda', 'cintura', 'brazo derecho', 'brazo izquierdo', 'cabeza'];
+        const WARMUP_STEPS = ['tobillos', 'rodillas', 'cintura', 'brazos', 'cabeza'];
         const DEFAULT_PARAMS = {
             calentamiento: { action: 30, change: 5, rounds: 8, cycles: 1, rest: 0 },
             entrenamiento: { action: 30, change: 10, rounds: 9, cycles: 4, rest: 60 },
@@ -116,8 +115,6 @@
         };
 
         const formatTime = (s) => `${Math.floor(s / 60)}:${((s || 0) % 60).toString().padStart(2, '0')}`;
-
-        // --- COMPONENTES ---
 
         function App() {
             const [user, setUser] = useState(null);
@@ -143,8 +140,8 @@
                 const msg = new SpeechSynthesisUtterance(text);
                 msg.lang = 'es-ES';
                 msg.rate = 1.15;
-                msg.onstart = () => { if (audioRef.current) audioRef.current.volume = musicVolume * 0.1; };
-                msg.onend = () => { if (audioRef.current) audioRef.current.volume = musicVolume; };
+                msg.onstart = () => { if (audioRef.current && musicMode !== 'off') audioRef.current.volume = musicVolume * 0.1; };
+                msg.onend = () => { if (audioRef.current && musicMode !== 'off') audioRef.current.volume = musicVolume; };
                 window.speechSynthesis.speak(msg);
             };
 
@@ -260,7 +257,7 @@
             return (
                 <div className="h-full w-full flex flex-col items-center bg-slate-950 p-10 pt-20 text-white text-center">
                     <div className="text-7xl mb-6 animate-pulse-slow">🏃‍♂️</div>
-                    <h1 className="text-3xl font-black italic uppercase mb-1 tracking-tighter text-white">{APP_TITLE}</h1>
+                    <h1 className="text-4xl font-black italic uppercase mb-1 tracking-tighter text-white">{APP_TITLE}</h1>
                     <form onSubmit={handleAuth} className="space-y-4 w-full max-w-sm mt-8">
                         <input type="email" placeholder="EMAIL" className="w-full p-6 bg-slate-900 border border-white/5 rounded-3xl font-bold outline-none focus:border-orange-500 text-center" value={email} onChange={e => setEmail(e.target.value)} required />
                         <input type="password" placeholder="CLAVE" className="w-full p-6 bg-slate-900 border border-white/5 rounded-3xl font-bold outline-none focus:border-orange-500 text-center" value={password} onChange={e => setPassword(e.target.value)} required />
@@ -300,6 +297,26 @@
             const [elapsed, setElapsed] = useState(0);
             const [steps, setSteps] = useState([]);
             const savedRef = useRef(false);
+            const wakeLockRef = useRef(null); // Referencia para el bloqueo de pantalla
+
+            // Función para solicitar el Wake Lock (Evitar que se apague la pantalla)
+            const requestWakeLock = async () => {
+                if ('wakeLock' in navigator) {
+                    try {
+                        wakeLockRef.current = await navigator.wakeLock.request('screen');
+                    } catch (err) {
+                        console.error(`Wake Lock Error: ${err.name}, ${err.message}`);
+                    }
+                }
+            };
+
+            // Liberar el Wake Lock
+            const releaseWakeLock = async () => {
+                if (wakeLockRef.current !== null) {
+                    await wakeLockRef.current.release();
+                    wakeLockRef.current = null;
+                }
+            };
 
             useEffect(() => {
                 const s = [];
@@ -329,10 +346,30 @@
                 });
                 setSteps(s);
                 if (s.length > 0) setTimeLeft(s[0].sec);
+
+                // Manejar cambio de visibilidad (si el usuario cambia de app y vuelve)
+                const handleVisibilityChange = async () => {
+                    if (wakeLockRef.current !== null && document.visibilityState === 'visible') {
+                        requestWakeLock();
+                    }
+                };
+                document.addEventListener('visibilitychange', handleVisibilityChange);
+
+                return () => {
+                    releaseWakeLock();
+                    document.removeEventListener('visibilitychange', handleVisibilityChange);
+                };
             }, [workout]);
 
             useEffect(() => {
-                if (status !== 'running') return;
+                if (status !== 'running') {
+                    releaseWakeLock();
+                    return;
+                }
+                
+                // Activar bloqueo de pantalla cuando se inicia
+                requestWakeLock();
+
                 const current = steps[idx];
                 if (timeLeft === current?.sec) speak(current.voice);
                 if (timeLeft <= 3 && timeLeft > 0) speak(timeLeft.toString());
@@ -350,23 +387,24 @@
                                 if('vibrate' in navigator) navigator.vibrate(200); 
                             } else {
                                 setStatus('finished');
+                                releaseWakeLock();
                                 if (!savedRef.current) { onComplete(workout.name, elapsed + 1); savedRef.current = true; }
                             }
                         }
                     }, 1000);
                 }
                 return () => clearInterval(timer);
-            }, [status, timeLeft, idx, steps, workout.name, elapsed, onComplete]);
+            }, [status, timeLeft, idx, steps]);
 
             if (status === 'finished') return (
-                <div className="h-screen flex flex-col items-center justify-center p-8 bg-slate-950 text-white italic text-center">
+                <div className="h-screen flex flex-col items-center justify-center p-8 bg-slate-950 text-white italic text-center text-center">
                     <div className="text-9xl mb-10 animate-bounce">🏆</div>
-                    <h1 className="text-6xl font-black mb-4 uppercase tracking-tighter">¡LOGRADO!</h1>
+                    <h1 className="text-6xl font-black mb-4 uppercase tracking-tighter text-center">¡LOGRADO!</h1>
                     <div className="glass-card p-10 w-full mb-12 shadow-2xl border-orange-500/20 text-center text-center">
-                        <p className="text-[10px] font-black opacity-40 uppercase">Resumen de sesión</p>
-                        <p className="text-7xl font-black text-orange-500 leading-none">{formatTime(elapsed)}</p>
+                        <p className="text-[10px] font-black opacity-40 uppercase text-center">Resumen de sesión</p>
+                        <p className="text-7xl font-black text-orange-500 leading-none text-center">{formatTime(elapsed)}</p>
                     </div>
-                    <button onClick={onExit} className="w-full bg-white text-black py-8 rounded-full font-black uppercase active:scale-95 transition-transform italic tracking-widest max-w-sm">FINALIZAR</button>
+                    <button onClick={onExit} className="w-full bg-white text-black py-8 rounded-full font-black uppercase active:scale-95 transition-transform italic tracking-widest max-w-sm text-center">FINALIZAR</button>
                 </div>
             );
 
