@@ -50,46 +50,48 @@
             border-radius: 1.5rem;
         }
 
-        /* --- MOTOR DE ANIMACIÓN ANATÓMICA 2.5 --- */
+        /* --- MOTOR DE ANIMACIÓN ANATÓMICA 12.6 --- */
         
-        /* Squat (Sentadilla) */
-        @keyframes human-squat-main {
+        /* Animación: Sentadilla (Cuerpo baja y rodillas flexionan) */
+        @keyframes bio-squat {
             0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(38px); }
+            50% { transform: translateY(45px); }
         }
-        @keyframes human-thigh-bend {
+        @keyframes bio-thigh {
             0%, 100% { transform: rotate(0deg); }
-            50% { transform: rotate(-65deg); }
+            50% { transform: rotate(-70deg); }
         }
-        @keyframes human-shin-bend {
+        @keyframes bio-calf {
             0%, 100% { transform: rotate(0deg); }
-            50% { transform: rotate(70deg); }
+            50% { transform: rotate(80deg); }
         }
 
-        /* Pushup (Flexión) */
-        @keyframes human-pushup-main {
-            0%, 100% { transform: rotate(-15deg) translateY(0); }
-            50% { transform: rotate(-6deg) translateY(22px); }
+        /* Animación: Flexión (Inclinación de cuerpo entero) */
+        @keyframes bio-pushup {
+            0%, 100% { transform: rotate(-20deg) translateY(0); }
+            50% { transform: rotate(-10deg) translateY(30px); }
         }
-        @keyframes human-arm-flex {
+        @keyframes bio-arm {
             0%, 100% { transform: rotate(0deg); }
-            50% { transform: rotate(-75deg); }
+            50% { transform: rotate(-80deg); }
         }
 
-        .anim-group-squat { animation: human-squat-main 1.6s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        .anim-thigh { animation: human-thigh-bend 1.6s cubic-bezier(0.4, 0, 0.6, 1) infinite; transform-origin: top center; }
-        .anim-shin { animation: human-shin-bend 1.6s cubic-bezier(0.4, 0, 0.6, 1) infinite; transform-origin: top center; }
+        /* Aplicación de Clases Animadas */
+        .anim-squat-group { animation: bio-squat 1.6s ease-in-out infinite; }
+        .anim-thigh { animation: bio-thigh 1.6s ease-in-out infinite; transform-origin: top center; }
+        .anim-calf { animation: bio-calf 1.6s ease-in-out infinite; transform-origin: top center; }
 
-        .anim-group-pushup { animation: human-pushup-main 1.3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        .anim-arm { animation: human-arm-flex 1.3s cubic-bezier(0.4, 0, 0.6, 1) infinite; transform-origin: top center; }
+        .anim-pushup-group { animation: bio-pushup 1.4s ease-in-out infinite; transform-origin: bottom left; }
+        .anim-arm-bend { animation: bio-arm 1.4s ease-in-out infinite; transform-origin: top center; }
 
-        .anim-pulse-soft { animation: pulse-soft 2s ease-in-out infinite; }
-        @keyframes pulse-soft { 0%, 100% { transform: scale(1); filter: brightness(1); } 50% { transform: scale(1.05); filter: brightness(1.2); } }
+        .anim-pulse-ui { animation: pulse-glow 2s ease-in-out infinite; }
+        @keyframes pulse-glow { 0%, 100% { transform: scale(1); filter: brightness(1); } 50% { transform: scale(1.05); filter: brightness(1.3); } }
 
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .neon-text-orange { text-shadow: 0 0 30px rgba(249, 115, 22, 0.8); }
         .neon-text-cyan { text-shadow: 0 0 30px rgba(34, 211, 238, 0.8); }
         
+        /* IMPORTANTE: Evita recortes de los dibujos */
         svg { overflow: visible !important; }
     </style>
 </head>
@@ -104,7 +106,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo } = React;
 
-        // --- 1. GLOBALES (CON VAR PARA DISPONIBILIDAD TOTAL) ---
+        // --- 1. DEFINICIÓN DE GLOBALES (VAR PARA DISPONIBILIDAD TOTAL) ---
         var firebaseConfig = {
             apiKey: "AIzaSyDg0nohFAprIYta3Z3IvFGms55PehyxGIM",
             authDomain: "entrenadorpersonal-4e69d.firebaseapp.com",
@@ -120,7 +122,7 @@
         var db = firebase.firestore();
         var globalAppId = "mientrenador-v3";
         var APP_TITLE = "Mi entrenador Fuerte y saludable";
-        var APP_VERSION = "12.5.0";
+        var APP_VERSION = "12.6.0";
 
         var EXERCISE_CATALOG = {
             piernas: [
@@ -169,51 +171,51 @@
 
         const formatTime = (s) => `${Math.floor(s / 60)}:${((s || 0) % 60).toString().padStart(2, '0')}`;
 
-        // --- 3. COMPONENTE DE MANIQUÍ DINÁMICO ---
+        // --- 3. COMPONENTE DE MANIQUÍ DINÁMICO MEJORADO ---
         const AnatomicalTrainer = ({ type, className = "w-32 h-32" }) => {
             const isSquat = type === 'squat';
             const isPushup = type === 'pushup';
             
             return (
-                <div className={`flex items-center justify-center ${(!isSquat && !isPushup) ? 'anim-pulse-soft' : ''}`}>
+                <div className={`flex items-center justify-center ${(!isSquat && !isPushup) ? 'anim-pulse-ui' : ''}`}>
                     <svg viewBox="0 0 100 130" className={className} xmlns="http://www.w3.org/2000/svg">
                         <defs>
-                            <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <linearGradient id="skin" x1="0%" y1="0%" x2="0%" y2="100%">
                                 <stop offset="0%" style={{stopColor: 'var(--accent)', stopOpacity: 1}} />
                                 <stop offset="100%" style={{stopColor: '#fb923c', stopOpacity: 1}} />
                             </linearGradient>
                         </defs>
                         
-                        <g className={isSquat ? 'anim-group-squat' : isPushup ? 'anim-group-pushup' : ''}>
+                        <g className={isSquat ? 'anim-squat-group' : isPushup ? 'anim-pushup-group' : ''}>
                             {/* Cabeza */}
-                            <circle cx="50" cy="18" r="8" fill="url(#bodyGrad)" />
+                            <circle cx="50" cy="18" r="8" fill="url(#skin)" />
                             {/* Torso */}
-                            <path d="M42 28h16l3 25h-22z" fill="url(#bodyGrad)" />
+                            <path d="M42 28h16l3 25h-22z" fill="url(#skin)" />
                             
                             {/* Brazos Articulados */}
-                            <g className={isPushup ? 'anim-arm' : ''}>
-                                <path d="M42 30l-15 15" stroke="url(#bodyGrad)" strokeWidth="8" strokeLinecap="round" />
-                                <path d="M27 45l-5 18" stroke="url(#bodyGrad)" strokeWidth="8" strokeLinecap="round" />
+                            <g className={isPushup ? 'anim-arm-bend' : ''}>
+                                <path d="M42 30l-15 15" stroke="url(#skin)" strokeWidth="8" strokeLinecap="round" />
+                                <path d="M27 45l-5 18" stroke="url(#skin)" strokeWidth="8" strokeLinecap="round" />
                             </g>
-                            <g className={isPushup ? 'anim-arm' : ''}>
-                                <path d="M58 30l15 15" stroke="url(#bodyGrad)" strokeWidth="8" strokeLinecap="round" />
-                                <path d="M73 45l5 18" stroke="url(#bodyGrad)" strokeWidth="8" strokeLinecap="round" />
+                            <g className={isPushup ? 'anim-arm-bend' : ''}>
+                                <path d="M58 30l15 15" stroke="url(#skin)" strokeWidth="8" strokeLinecap="round" />
+                                <path d="M73 45l5 18" stroke="url(#skin)" strokeWidth="8" strokeLinecap="round" />
                             </g>
 
-                            {/* Piernas con Cinemática Humana */}
+                            {/* Piernas con Cinemática Humana (Muslo + Pantorrilla) */}
                             <g transform="translate(44, 53)">
                                 <g className={isSquat ? 'anim-thigh' : ''}>
-                                    <path d="M0 0l-10 25" stroke="url(#bodyGrad)" strokeWidth="9" strokeLinecap="round" />
-                                    <g transform="translate(-10, 25)" className={isSquat ? 'anim-shin' : ''}>
-                                        <path d="M0 0l6 25" stroke="url(#bodyGrad)" strokeWidth="9" strokeLinecap="round" />
+                                    <path d="M0 0l-10 25" stroke="url(#skin)" strokeWidth="9" strokeLinecap="round" />
+                                    <g transform="translate(-10, 25)" className={isSquat ? 'anim-calf' : ''}>
+                                        <path d="M0 0l6 25" stroke="url(#skin)" strokeWidth="9" strokeLinecap="round" />
                                     </g>
                                 </g>
                             </g>
                             <g transform="translate(56, 53)">
                                 <g className={isSquat ? 'anim-thigh' : ''}>
-                                    <path d="M0 0l10 25" stroke="url(#bodyGrad)" strokeWidth="9" strokeLinecap="round" />
-                                    <g transform="translate(10, 25)" className={isSquat ? 'anim-shin' : ''}>
-                                        <path d="M0 0l-6 25" stroke="url(#bodyGrad)" strokeWidth="9" strokeLinecap="round" />
+                                    <path d="M0 0l10 25" stroke="url(#skin)" strokeWidth="9" strokeLinecap="round" />
+                                    <g transform="translate(10, 25)" className={isSquat ? 'anim-calf' : ''}>
+                                        <path d="M0 0l-6 25" stroke="url(#skin)" strokeWidth="9" strokeLinecap="round" />
                                     </g>
                                 </g>
                             </g>
@@ -223,7 +225,7 @@
             );
         };
 
-        // --- 4. VISTAS ---
+        // --- 4. COMPONENTES DE VISTA ---
 
         function ExerciseSelectionView({ onSave }) {
             const [selected, setSelected] = useState({ piernas: [], brazos: [], tronco: [] });
@@ -250,7 +252,7 @@
                                     return (
                                         <button key={item.name} onClick={() => toggle(sec, item)} className={`p-6 rounded-[2rem] flex flex-col items-center gap-4 transition-all border ${isSel ? "bg-orange-500 border-orange-400 shadow-xl scale-105" : "bg-white/5 border-white/5 opacity-40"}`}>
                                             <AnatomicalTrainer type={item.type} className="w-14 h-14" />
-                                            <span className="text-[10px] font-black uppercase italic text-white">{item.name}</span>
+                                            <span className="text-[10px] font-black uppercase italic text-white whitespace-nowrap overflow-hidden">{item.name}</span>
                                         </button>
                                     );
                                 })}
@@ -259,7 +261,7 @@
                     ))}
                     <div className="fixed bottom-0 left-0 right-0 p-8 bg-slate-950/95 backdrop-blur-xl border-t border-white/10 z-50">
                         <button disabled={!ready} onClick={() => onSave(selected)} className={`w-full py-6 rounded-full font-black uppercase italic tracking-widest shadow-2xl transition-all ${ready ? "bg-white text-black" : "bg-slate-800 text-slate-600 opacity-50"}`}>
-                            {ready ? "COMENZAR ENTRENAMIENTO" : "ELIGE 9 EJERCICIOS"}
+                            {ready ? "COMENZAR ENTRENAMIENTO" : "FALTA SELECCIONAR"}
                         </button>
                     </div>
                 </div>
@@ -343,32 +345,34 @@
                 return () => clearInterval(timer);
             }, [status, timeLeft, idx, steps, workout, elapsed, onComplete]);
 
-            const curr = steps[idx];
-            const pieCirc = 2 * Math.PI * 20;
-            const roundPercentage = curr?.tr ? (Math.min(1, (parseInt(curr.r) || 0) / curr.tr)) : 0;
-            const timerPercentage = curr?.sec ? (Math.min(1, (curr.sec - timeLeft) / curr.sec)) : 0;
-
             if (status === 'finished') return (
                 <div className="h-full w-full flex flex-col items-center justify-center p-8 bg-slate-950 text-white italic text-center">
                     <div className="text-9xl mb-10 animate-bounce text-center">🏆</div>
                     <h1 className="text-6xl font-black mb-4 uppercase tracking-tighter">¡LOGRADO!</h1>
-                    <div className="glass-card p-10 w-full mb-12 shadow-2xl border-orange-500/20 text-center">
-                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic mb-2 text-center text-center">TIEMPO TOTAL</p>
+                    <div className="glass-card p-10 w-full mb-12 shadow-2xl border-orange-500/20 text-center text-white">
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic mb-2">TIEMPO TOTAL</p>
                         <p className="text-7xl font-black text-orange-500 leading-none">{formatTime(elapsed)}</p>
                     </div>
-                    <button onClick={onExit} className="w-full bg-white text-black py-8 rounded-full font-black uppercase shadow-2xl active:scale-95 transition-all text-center">FINALIZAR</button>
+                    <button onClick={onExit} className="w-full bg-white text-black py-8 rounded-full font-black uppercase shadow-2xl active:scale-95 transition-all">TERMINAR</button>
                 </div>
             );
+
+            const curr = steps[idx];
+            const pieCirc = 2 * Math.PI * 20;
+            const roundPercentage = curr?.tr ? (Math.min(1, (parseInt(curr.r) || 0) / curr.tr)) : 0;
+            const timerPercentage = curr?.sec ? (Math.min(1, (curr.sec - timeLeft) / curr.sec)) : 0;
+            const totalSecs = steps.reduce((a,b) => a + b.sec, 0);
+            const sessionPercentage = totalSecs ? (elapsed / totalSecs) : 0;
 
             return (
                 <div className={`h-screen w-screen flex flex-col transition-colors duration-1000 ${curr?.color || 'bg-slate-950'} text-white overflow-hidden text-center`}>
                     <div className="flex justify-between items-start p-6 z-30 relative h-[15vh]">
-                        <button onClick={onExit} className="bg-black/20 px-6 py-3 rounded-xl font-black text-[10px] uppercase border border-white/5 active:scale-90 italic text-center">✖ SALIR</button>
+                        <button onClick={onExit} className="bg-black/20 px-6 py-3 rounded-xl font-black text-[10px] uppercase border border-white/5 active:scale-90 italic">✖ SALIR</button>
                         <div className="flex flex-col items-center">
                             <div className="relative flex items-center justify-center w-[16vh] h-[16vh] scale-75 mt-[-2vh]">
                                 <svg className="absolute w-full h-full transform -rotate-90 text-center" viewBox="0 0 100 100">
                                     <circle cx="50" cy="50" r="20" className="pie-background" strokeWidth="40" fill="none" />
-                                    <circle cx="50" cy="50" r="20" stroke="var(--accent)" strokeWidth="40" fill="none" style={{ strokeDasharray: pieCirc, strokeDashoffset: pieCirc - ( (elapsed / steps.reduce((a,b)=>a+b.sec,0)) * pieCirc), transition: 'stroke-dashoffset 1s linear' }} />
+                                    <circle cx="50" cy="50" r="20" stroke="var(--accent)" strokeWidth="40" fill="none" style={{ strokeDasharray: pieCirc, strokeDashoffset: pieCirc - (sessionPercentage * pieCirc), transition: 'stroke-dashoffset 1s linear' }} />
                                 </svg>
                             </div>
                             <span className="text-[2.5vh] font-black italic neon-text-orange leading-none mt-[-2vh]">{formatTime(elapsed)}</span>
@@ -377,7 +381,7 @@
 
                     <div className="flex-1 grid grid-cols-3 items-center w-full px-12 relative text-center">
                         <div className="flex flex-col items-center justify-center h-[55vh] relative text-center">
-                            <span className="text-[1.8vh] font-black uppercase tracking-[0.4em] text-white/50 mb-4 italic text-center">RONDAS</span>
+                            <span className="text-[1.8vh] font-black uppercase tracking-[0.4em] text-white/50 mb-4 italic">RONDAS</span>
                             <div className="relative flex items-center justify-center w-[38vh] h-[38vh] mx-auto text-center">
                                 <svg className="absolute w-full h-full transform -rotate-90 text-center" viewBox="0 0 100 100">
                                     <circle cx="50" cy="50" r="20" className="pie-background" strokeWidth="40" fill="none" />
@@ -408,14 +412,14 @@
                                 </div>
                             </div>
                             <div className="mt-[3vh] flex items-center gap-10">
-                                <button onClick={() => setStatus(s => s === 'running' ? 'paused' : 'running')} className="bg-white text-black w-[9vh] h-[9vh] rounded-full flex items-center justify-center shadow-2xl text-[4vh] text-center text-center">
+                                <button onClick={() => setStatus(s => s === 'running' ? 'paused' : 'running')} className="bg-white text-black w-[9vh] h-[9vh] rounded-full flex items-center justify-center shadow-2xl text-[4vh] text-center">
                                     {status === 'running' ? '⏸' : '▶'}
                                 </button>
-                                <button onClick={() => { if (idx < steps.length - 1) { setIdx(i => i + 1); setTimeLeft(steps[idx+1].sec); } }} className="bg-white/20 w-[6vh] h-[6vh] rounded-full text-[2.5vh] flex items-center justify-center border border-white/10 active:scale-90 italic text-center">⏭</button>
+                                <button onClick={() => { if (idx < steps.length - 1) { setIdx(i => i + 1); setTimeLeft(steps[idx+1].sec); } }} className="bg-white/20 w-[6vh] h-[6vh] rounded-full text-[2.5vh] flex items-center justify-center border border-white/10 active:scale-90 italic">⏭</button>
                             </div>
                         </div>
 
-                        <div className="flex flex-col items-center justify-center h-[55vh] relative text-center text-center">
+                        <div className="flex flex-col items-center justify-center h-[55vh] relative text-center">
                             <span className="text-[1.8vh] font-black uppercase tracking-[0.4em] text-white/50 mb-4 italic text-center">CICLOS</span>
                             <div className="relative flex items-center justify-center w-[40vh] h-[40vh] mx-auto text-center">
                                 <svg className="absolute w-full h-full transform -rotate-90 text-center" viewBox="0 0 100 100">
@@ -423,7 +427,7 @@
                                     <circle cx="50" cy="50" r="20" stroke="var(--neon-green)" strokeWidth="40" fill="none" style={{ strokeDasharray: pieCirc, strokeDashoffset: pieCirc - (0.8 * pieCirc), transition: 'stroke-dashoffset 0.8s ease' }} />
                                 </svg>
                             </div>
-                            <div className="mt-4 text-center text-center"><span className="text-[10vh] font-black italic leading-none neon-text-green tabular-nums text-center">{curr?.cy || 1}</span></div>
+                            <div className="mt-4 text-center"><span className="text-[10vh] font-black italic leading-none neon-text-green tabular-nums">{curr?.cy || 1}</span></div>
                         </div>
                     </div>
                 </div>
@@ -434,24 +438,24 @@
 
         function WorkoutsView({ workouts, onStart, onCreate, onDelete }) {
             return (
-                <div className="space-y-4 animate-fade-in pb-32 text-white p-6 max-w-lg mx-auto text-center">
-                    <header className="flex justify-between items-center mb-10 text-center">
+                <div className="space-y-4 animate-fade-in pb-32 text-white p-6 max-w-lg mx-auto text-center text-white">
+                    <header className="flex justify-between items-center mb-10 text-center text-white">
                         <h1 className="text-3xl font-black italic uppercase tracking-tighter leading-none text-white">{APP_TITLE}</h1>
-                        <button onClick={() => auth.signOut()} className="bg-slate-900 p-4 rounded-2xl border border-white/5 text-red-500 text-center text-center">🚪</button>
+                        <button onClick={() => auth.signOut()} className="bg-slate-900 p-4 rounded-2xl border border-white/5 text-red-500 text-center">🚪</button>
                     </header>
                     {workouts.map(w => (
                         <div key={w.id} className="glass-card p-6 flex justify-between items-center text-center">
                             <div className="flex-1 cursor-pointer truncate text-left" onClick={() => onStart(w)}>
                                 <h3 className="font-black uppercase italic text-md truncate text-white">{w.name}</h3>
-                                <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest block mt-1 italic text-center">PLAN DE ENTRENAMIENTO</span>
+                                <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest block mt-1 italic text-white">MODO RUTINA</span>
                             </div>
                             <div className="flex gap-2">
-                                <button onClick={() => onStart(w)} className="bg-white text-black px-6 py-4 rounded-2xl font-black text-[10px] italic text-center">GO</button>
+                                <button onClick={() => onStart(w)} className="bg-white text-black px-6 py-4 rounded-2xl font-black text-[10px] italic">GO</button>
                                 <button onClick={() => onDelete(w.id)} className="bg-red-500/10 text-red-500 p-4 rounded-2xl text-center">🗑️</button>
                             </div>
                         </div>
                     ))}
-                    <button onClick={onCreate} className="w-full bg-white/5 border border-white/10 py-6 rounded-full font-black uppercase shadow-xl active:scale-95 flex items-center justify-center gap-2 mt-4 text-white text-center">
+                    <button onClick={onCreate} className="w-full bg-white/5 border border-white/10 py-6 rounded-full font-black uppercase shadow-xl active:scale-95 flex items-center justify-center gap-2 mt-4 text-white">
                         <span className="text-xl">➕</span> NUEVA RUTINA
                     </button>
                 </div>
@@ -473,12 +477,12 @@
                 <div className="h-screen flex flex-col justify-center p-10 bg-slate-950 text-center text-white">
                     <div className="bg-orange-500 w-24 h-24 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-2xl animate-pulse-slow text-3xl font-black italic">fs</div>
                     <h1 className="text-4xl font-black uppercase mb-2 italic tracking-tighter text-white">{APP_TITLE}</h1>
-                    <form onSubmit={handleAuth} className="space-y-4 max-w-sm mx-auto w-full text-white text-center text-center">
-                        <input type="email" placeholder="EMAIL" className="w-full bg-slate-900 border-2 border-slate-800 p-5 rounded-[1.5rem] outline-none font-bold text-white text-center text-center text-center" value={email} onChange={e => setEmail(e.target.value)} required />
-                        <input type="password" placeholder="CLAVE" className="w-full bg-slate-900 border-2 border-slate-800 p-5 rounded-[1.5rem] outline-none font-bold text-white text-center text-center text-center" value={password} onChange={e => setPassword(e.target.value)} required />
-                        <button type="submit" className="w-full bg-orange-500 py-6 rounded-full font-black uppercase shadow-xl text-white text-center">ENTRAR</button>
+                    <form onSubmit={handleAuth} className="space-y-4 max-w-sm mx-auto w-full text-white">
+                        <input type="email" placeholder="EMAIL" className="w-full bg-slate-900 border-2 border-slate-800 p-5 rounded-[1.5rem] outline-none font-bold text-white text-center" value={email} onChange={e => setEmail(e.target.value)} required />
+                        <input type="password" placeholder="CLAVE" className="w-full bg-slate-900 border-2 border-slate-800 p-5 rounded-[1.5rem] outline-none font-bold text-white text-center" value={password} onChange={e => setPassword(e.target.value)} required />
+                        <button type="submit" className="w-full bg-orange-500 py-6 rounded-full font-black uppercase shadow-xl text-white">ENTRAR</button>
                     </form>
-                    <button onClick={() => setIsLogin(!isLogin)} className="mt-8 text-slate-500 text-[10px] font-black uppercase border-b-2 border-orange-500/30 pb-1 mx-auto italic text-center">{isLogin ? 'REGISTRARME' : 'LOGUEARME'}</button>
+                    <button onClick={() => setIsLogin(!isLogin)} className="mt-8 text-slate-500 text-[10px] font-black uppercase border-b-2 border-orange-500/30 pb-1 mx-auto italic">{isLogin ? 'REGISTRARME' : 'YA TENGO CUENTA'}</button>
                 </div>
             );
         }
@@ -519,12 +523,12 @@
             };
 
             if (loading) return (
-                <div className="h-full w-full flex flex-col items-center justify-center bg-slate-950 text-white p-10 text-center">
+                <div className="h-full w-full flex flex-col items-center justify-center bg-slate-950 text-white p-10 text-center text-white">
                     <div className="animate-pulse-slow text-9xl mb-8">🏋️‍♂️</div>
-                    <h1 className="text-4xl font-black italic uppercase tracking-tighter mb-4 leading-tight text-center">{APP_TITLE}</h1>
-                    <div className="mt-4 flex flex-col items-center gap-3 text-center">
+                    <h1 className="text-4xl font-black italic uppercase tracking-tighter mb-4 leading-tight text-center text-white">{APP_TITLE}</h1>
+                    <div className="mt-4 flex flex-col items-center gap-3 text-center text-white">
                         <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-                        <span className="text-slate-600 font-black text-[10px] tracking-[0.5em] uppercase italic text-center">VERSIÓN {APP_VERSION}</span>
+                        <span className="text-slate-600 font-black text-[10px] tracking-[0.5em] uppercase italic text-center">VERSION {APP_VERSION}</span>
                     </div>
                 </div>
             );
@@ -537,7 +541,7 @@
                         <header className="p-6 flex justify-between items-center bg-slate-900 border-b border-white/5 text-white">
                             <div className="text-left text-white text-center">
                                 <h1 className="text-lg font-black italic uppercase leading-none tracking-tight text-white">{APP_TITLE}</h1>
-                                <p className="text-[9px] font-bold text-slate-500 truncate mt-1 text-white italic text-center">{user.email}</p>
+                                <p className="text-[9px] font-bold text-slate-500 truncate mt-1 text-white italic">{user.email}</p>
                             </div>
                         </header>
                     )}
@@ -552,7 +556,7 @@
                     </main>
 
                     {view !== 'play' && view !== 'exercise_selection' && (
-                        <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-white/5 p-4 flex justify-around z-50 shadow-2xl text-white text-center text-center">
+                        <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-white/5 p-4 flex justify-around z-50 shadow-2xl text-white">
                             <button onClick={() => setView('workouts')} className={`flex flex-col items-center text-[9px] font-black ${view === 'workouts' ? 'text-orange-500' : 'text-slate-500'}`}><span className="text-xl mb-1 text-center text-white text-center">🏋️</span> RUTINAS</button>
                         </nav>
                     )}
