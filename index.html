@@ -10,7 +10,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#020617">
     
-    <title>Mi Entrenador | Fuerte y Saludable</title>
+    <title>Mi entrenador Fuerte y saludable | App</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -41,52 +41,68 @@
             height: 100%;
         }
 
-        #root { height: 100%; width: 100%; background-color: var(--bg-main); }
+        #root { height: 100%; width: 100%; }
 
         .glass-card {
             background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 1.5rem;
         }
 
-        /* --- ANIMACIONES DE ALTO IMPACTO --- */
-        @keyframes exert-bounce {
-            0%, 100% { transform: translateY(0) scaleY(1); }
-            50% { transform: translateY(20px) scaleY(0.9); }
+        /* --- MOTOR DE ANIMACIÓN ANATÓMICA FLUIDA 2.0 --- */
+        
+        /* Animación Humana: Sentadilla (Squat) */
+        @keyframes human-squat-main {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(40px); }
+        }
+        @keyframes human-squat-thigh {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(-75deg); }
+        }
+        @keyframes human-squat-shin {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(65deg); }
         }
 
-        @keyframes exert-rotate {
-            0% { transform: rotate(-15deg); }
-            100% { transform: rotate(15deg); }
+        /* Animación Humana: Flexión (Pushup) */
+        @keyframes human-pushup-main {
+            0%, 100% { transform: rotate(-15deg) translateY(0); }
+            50% { transform: rotate(-5deg) translateY(25px); }
+        }
+        @keyframes human-pushup-arm {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(-70deg); }
         }
 
-        @keyframes exert-pulse {
-            0%, 100% { transform: scale(1); filter: brightness(1) drop-shadow(0 0 5px var(--accent)); }
-            50% { transform: scale(1.1); filter: brightness(1.4) drop-shadow(0 0 20px var(--accent)); }
+        /* Animación Humana: Abdominales (Crunch) */
+        @keyframes human-crunch-torso {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(-30deg); }
         }
 
-        .anim-bounce { animation: exert-bounce 1.2s ease-in-out infinite; }
-        .anim-rotate { animation: exert-rotate 0.8s ease-in-out infinite alternate; }
-        .anim-pulse { animation: exert-pulse 2s ease-in-out infinite; }
+        /* Clases de Activación con timing humano (cubic-bezier) */
+        .anim-group-squat { animation: human-squat-main 1.8s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
+        .anim-thigh { animation: human-squat-thigh 1.8s cubic-bezier(0.45, 0, 0.55, 1) infinite; transform-origin: top center; }
+        .anim-shin { animation: human-squat-shin 1.8s cubic-bezier(0.45, 0, 0.55, 1) infinite; transform-origin: top center; }
+
+        .anim-group-pushup { animation: human-pushup-main 1.4s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
+        .anim-arm-flex { animation: human-pushup-arm 1.4s cubic-bezier(0.45, 0, 0.55, 1) infinite; transform-origin: top center; }
+
+        .anim-crunch { animation: human-crunch-torso 1.6s ease-in-out infinite alternate; transform-origin: bottom center; }
+
+        .anim-global-pulse { animation: pulse-soft 2s ease-in-out infinite; }
+        @keyframes pulse-soft { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.04); opacity: 0.8; } }
 
         .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .neon-text-orange { text-shadow: 0 0 30px rgba(249, 115, 22, 0.8); }
+        .neon-text-cyan { text-shadow: 0 0 30px rgba(34, 211, 238, 0.8); }
         
-        :fullscreen { background-color: #020617; }
-        :-webkit-full-screen { background-color: #020617; }
-
-        .neon-text-orange { text-shadow: 0 0 40px rgba(249, 115, 22, 0.9); }
-        .neon-text-cyan { text-shadow: 0 0 40px rgba(34, 211, 238, 0.9); }
-        
-        .pie-background { fill: rgba(255, 255, 255, 0.03); }
-
-        .wger-img {
-            filter: drop-shadow(0 0 15px rgba(255,255,255,0.2)) brightness(1.2);
-            mix-blend-mode: screen;
-            transition: transform 0.3s ease;
-        }
+        /* Prevención de cortes visuales */
+        svg { overflow: visible !important; }
     </style>
-</head>
+ head>
 <body>
     <div id="root"></div>
 
@@ -98,7 +114,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo } = React;
 
-        // --- 1. CONFIGURACIÓN Y CONSTANTES GLOBALES (DECLARADAS CON VAR PARA EVITAR TDZ) ---
+        // --- 1. CONFIGURACIÓN Y GLOBALES ---
         var firebaseConfig = {
             apiKey: "AIzaSyDg0nohFAprIYta3Z3IvFGms55PehyxGIM",
             authDomain: "entrenadorpersonal-4e69d.firebaseapp.com",
@@ -109,40 +125,37 @@
             measurementId: "G-D4X8GVGRXT"
         };
 
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        
+        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
         var auth = firebase.auth();
         var db = firebase.firestore();
         var appId = "mientrenador-v3";
-        var APP_TITLE = "Fuerte y Saludable";
-        var APP_VERSION = "11.1.3";
+        var APP_TITLE = "Mi entrenador Fuerte y saludable";
+        var APP_VERSION = "12.4.0";
 
         var EXERCISE_CATALOG = {
             piernas: [
-                { name: 'Sentadillas', img: 'https://wger.de/static/images/exercises/main/113.png', type: 'bounce' },
-                { name: 'Desplantes', img: 'https://wger.de/static/images/exercises/main/114.png', type: 'bounce' },
-                { name: 'Puente Glúteo', img: 'https://wger.de/static/images/exercises/main/160.png', type: 'pulse' },
-                { name: 'Zancadas', img: 'https://wger.de/static/images/exercises/main/120.png', type: 'bounce' },
-                { name: 'Elevación Talón', img: 'https://wger.de/static/images/exercises/main/116.png', type: 'bounce' },
-                { name: 'Sentadilla Sumo', img: 'https://wger.de/static/images/exercises/main/113.png', type: 'bounce' }
+                { name: 'Sentadillas', type: 'squat' },
+                { name: 'Desplantes', type: 'squat' },
+                { name: 'Puente Glúteo', type: 'pulse' },
+                { name: 'Zancadas', type: 'squat' },
+                { name: 'Elevación Talón', type: 'squat' },
+                { name: 'Sentadilla Sumo', type: 'squat' }
             ],
             brazos: [
-                { name: 'Flexiones', img: 'https://wger.de/static/images/exercises/main/85.png', type: 'bounce' },
-                { name: 'Fondos Tríceps', img: 'https://wger.de/static/images/exercises/main/81.png', type: 'bounce' },
-                { name: 'Curl Bíceps', img: 'https://wger.de/static/images/exercises/main/74.png', type: 'pulse' },
-                { name: 'Press Hombros', img: 'https://wger.de/static/images/exercises/main/87.png', type: 'bounce' },
-                { name: 'Escaladores', img: 'https://wger.de/static/images/exercises/main/164.png', type: 'pulse' },
-                { name: 'Burpees', img: 'https://wger.de/static/images/exercises/main/206.png', type: 'bounce' }
+                { name: 'Flexiones', type: 'pushup' },
+                { name: 'Fondos Tríceps', type: 'pushup' },
+                { name: 'Curl Bíceps', type: 'pulse' },
+                { name: 'Press Hombros', type: 'pulse' },
+                { name: 'Escaladores', type: 'pushup' },
+                { name: 'Burpees', type: 'squat' }
             ],
             tronco: [
-                { name: 'Abdominales', img: 'https://wger.de/static/images/exercises/main/91.png', type: 'bounce' },
-                { name: 'Plancha Fija', img: 'https://wger.de/static/images/exercises/main/164.png', type: 'pulse' },
-                { name: 'Crunch', img: 'https://wger.de/static/images/exercises/main/91.png', type: 'bounce' },
-                { name: 'Elevación Piernas', img: 'https://wger.de/static/images/exercises/main/165.png', type: 'bounce' },
-                { name: 'Supermán', img: 'https://wger.de/static/images/exercises/main/161.png', type: 'pulse' },
-                { name: 'Giro Ruso', img: 'https://wger.de/static/images/exercises/main/110.png', type: 'rotate' }
+                { name: 'Abdominales', type: 'crunch' },
+                { name: 'Plancha Fija', type: 'pushup' },
+                { name: 'Crunch', type: 'crunch' },
+                { name: 'Elevación Piernas', type: 'pulse' },
+                { name: 'Supermán', type: 'pulse' },
+                { name: 'Giro Ruso', type: 'pulse' }
             ]
         };
 
@@ -166,87 +179,63 @@
 
         const formatTime = (s) => `${Math.floor(s / 60)}:${((s || 0) % 60).toString().padStart(2, '0')}`;
 
-        // --- 3. COMPONENTES VISUALES ---
-
-        const WorkoutGraphic = ({ name, imgUrl, type, className = "w-24 h-24" }) => {
-            const n = name?.toLowerCase() || "";
-            let animClass = "anim-pulse";
-            if (type === 'bounce') animClass = "anim-bounce";
-            if (type === 'rotate' || n.includes('tobillo') || n.includes('giro')) animClass = "anim-rotate";
-
-            if (imgUrl) {
-                return (
-                    <div className={`${animClass} flex items-center justify-center`}>
-                        <img src={imgUrl} className={`${className} object-contain wger-img`} alt={name} />
-                    </div>
-                );
-            }
-
-            // Respaldo SVG si no hay imagen
-            const silhouettes = {
-                'sentadilla': <g fill="currentColor"><circle cx="50" cy="15" r="7" /><path d="M50 25c-5 0-10 3-10 8v12h20v-12c0-5-5-8-10-8zM30 46l-5 15l15 28h10v-25h10v25h10l15-28l-5-15H30z" /></g>,
-                'flexion': <g fill="currentColor"><circle cx="85" cy="35" r="6" /><path d="M10 70l70-20l3-5l-73 18z" /><rect x="22" y="68" width="5" height="15" rx="2" /><rect x="68" y="55" width="5" height="15" rx="2" /></g>,
-                'tobillo': <g fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round"><path d="M50 20v55l20 15M50 75l-15 5" /><circle cx="50" cy="88" r="4" fill="currentColor" /></g>,
-                'default': <g fill="currentColor" opacity="0.6"><circle cx="50" cy="30" r="10" /><path d="M40 45h20v35H40zM35 80l15 15l15-15H35z" /></g>
-            };
-
-            let content = silhouettes['default'];
-            if (n.includes('sentadilla')) content = silhouettes['sentadilla'];
-            else if (n.includes('flexion') || n.includes('plancha')) content = silhouettes['flexion'];
-            else if (n.includes('tobillo')) content = silhouettes['tobillo'];
-
+        // --- 3. COMPONENTE DE MANIQUÍ DINÁMICO (MOVIMIENTOS REALES) ---
+        const AnatomicalTrainer = ({ type, className = "w-32 h-32" }) => {
+            const isSquat = type === 'squat';
+            const isPushup = type === 'pushup';
+            const isCrunch = type === 'crunch';
+            
             return (
-                <div className={animClass}>
-                    <svg viewBox="0 0 100 100" className={className} xmlns="http://www.w3.org/2000/svg">
-                        {content}
+                <div className={`flex items-center justify-center ${(!isSquat && !isPushup && !isCrunch) ? 'anim-global-pulse' : ''}`}>
+                    <svg viewBox="0 0 100 130" className={className} xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="humanGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" style={{stopColor: 'var(--accent)', stopOpacity: 1}} />
+                                <stop offset="100%" style={{stopColor: '#fb923c', stopOpacity: 1}} />
+                            </linearGradient>
+                        </defs>
+                        
+                        <g className={isSquat ? 'anim-group-squat' : isPushup ? 'anim-group-pushup' : isCrunch ? 'anim-crunch' : ''}>
+                            {/* Cabeza */}
+                            <circle cx="50" cy="18" r="8" fill="url(#humanGrad)" />
+                            
+                            {/* Torso */}
+                            <path d="M42 28h16l3 25h-22z" fill="url(#humanGrad)" />
+                            
+                            {/* Brazos Articulados */}
+                            <g className={isPushup ? 'anim-arm-flex' : ''}>
+                                <path d="M42 30l-15 15" stroke="url(#humanGrad)" strokeWidth="8" strokeLinecap="round" />
+                                <path d="M27 45l-5 18" stroke="url(#humanGrad)" strokeWidth="8" strokeLinecap="round" />
+                            </g>
+                            <g className={isPushup ? 'anim-arm-flex' : ''}>
+                                <path d="M58 30l15 15" stroke="url(#humanGrad)" strokeWidth="8" strokeLinecap="round" />
+                                <path d="M73 45l5 18" stroke="url(#humanGrad)" strokeWidth="8" strokeLinecap="round" />
+                            </g>
+
+                            {/* Estructura de Piernas (Cinemática) */}
+                            <g transform="translate(44, 53)">
+                                <g className={isSquat ? 'anim-thigh' : ''}>
+                                    <path d="M0 0l-10 25" stroke="url(#humanGrad)" strokeWidth="9" strokeLinecap="round" />
+                                    <g transform="translate(-10, 25)" className={isSquat ? 'anim-shin' : ''}>
+                                        <path d="M0 0l6 25" stroke="url(#humanGrad)" strokeWidth="9" strokeLinecap="round" />
+                                    </g>
+                                </g>
+                            </g>
+                            <g transform="translate(56, 53)">
+                                <g className={isSquat ? 'anim-thigh' : ''}>
+                                    <path d="M0 0l10 25" stroke="url(#humanGrad)" strokeWidth="9" strokeLinecap="round" />
+                                    <g transform="translate(10, 25)" className={isSquat ? 'anim-shin' : ''}>
+                                        <path d="M0 0l-6 25" stroke="url(#humanGrad)" strokeWidth="9" strokeLinecap="round" />
+                                    </g>
+                                </g>
+                            </g>
+                        </g>
                     </svg>
                 </div>
             );
         };
 
-        const InputField = ({ label, val, set }) => (
-            <div className="flex flex-col gap-1 items-center text-center">
-                <span className="text-[7px] font-black uppercase opacity-40 text-white tracking-widest">{label}</span>
-                <input type="number" className="w-full bg-white/5 p-3 rounded-2xl text-center font-black text-lg outline-none border border-white/5 focus:border-orange-500 text-white" value={val} onChange={e => set(e.target.value)} />
-            </div>
-        );
-
         // --- 4. VISTAS ---
-
-        function AuthView() {
-            const [isLogin, setIsLogin] = useState(true);
-            const [email, setEmail] = useState('');
-            const [password, setPassword] = useState('');
-            const [busy, setBusy] = useState(false);
-
-            const handleAuth = async (e) => {
-                e.preventDefault();
-                setBusy(true);
-                try {
-                    if (isLogin) await auth.signInWithEmailAndPassword(email.trim(), password);
-                    else await auth.createUserWithEmailAndPassword(email.trim(), password);
-                } catch (err) { alert("Error de acceso: " + err.message); } 
-                finally { setBusy(false); }
-            };
-
-            return (
-                <div className="h-screen flex flex-col justify-center p-10 bg-slate-950 text-center text-white">
-                    <div className="bg-orange-500 w-24 h-24 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-2xl animate-pulse-slow text-3xl font-black italic">fs</div>
-                    <h1 className="text-4xl font-black uppercase mb-2 italic tracking-tighter">{APP_TITLE}</h1>
-                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] mb-12 italic">Tu Entrenador Personal</p>
-                    <form onSubmit={handleAuth} className="space-y-4 max-w-sm mx-auto w-full">
-                        <input type="email" placeholder="CORREO" className="w-full bg-slate-900 border-2 border-slate-800 p-5 rounded-[1.5rem] outline-none font-bold text-white text-center" value={email} onChange={e => setEmail(e.target.value)} required />
-                        <input type="password" placeholder="CONTRASEÑA" className="w-full bg-slate-900 border-2 border-slate-800 p-5 rounded-[1.5rem] outline-none font-bold text-white text-center" value={password} onChange={e => setPassword(e.target.value)} required />
-                        <button type="submit" disabled={busy} className="w-full bg-orange-500 py-6 rounded-full font-black uppercase shadow-xl active:scale-95 disabled:opacity-50 text-white">
-                            {busy ? 'Procesando...' : (isLogin ? 'Entrar' : 'Registrarme')}
-                        </button>
-                    </form>
-                    <button onClick={() => setIsLogin(!isLogin)} className="mt-8 text-slate-500 text-[10px] font-black uppercase border-b-2 border-orange-500/30 pb-1 mx-auto italic">
-                        {isLogin ? 'Crear cuenta nueva' : 'Ya tengo cuenta'}
-                    </button>
-                </div>
-            );
-        }
 
         function ExerciseSelectionView({ onSave }) {
             const [selected, setSelected] = useState({ piernas: [], brazos: [], tronco: [] });
@@ -258,22 +247,22 @@
                     return { ...prev, [sec]: [...list, item] };
                 });
             };
-            const isReady = selected.piernas.length === 3 && selected.brazos.length === 3 && selected.tronco.length === 3;
+            const ready = selected.piernas.length === 3 && selected.brazos.length === 3 && selected.tronco.length === 3;
 
             return (
                 <div className="h-full w-full bg-slate-950 flex flex-col p-6 overflow-y-auto scrollbar-hide text-white pb-40 text-center">
-                    <h2 className="text-3xl font-black italic uppercase text-orange-500 mb-2">Preparar Sesión</h2>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-10 italic">Elige 3 movimientos de cada zona</p>
+                    <h2 className="text-4xl font-black italic uppercase text-orange-500 mb-2 tracking-tighter">PREPARAR SESIÓN</h2>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-10 italic">ELIGE 3 MOVIMIENTOS POR ZONA</p>
                     {Object.entries(EXERCISE_CATALOG).map(([sec, items]) => (
                         <div key={sec} className="mb-12">
-                            <h3 className="text-sm font-black uppercase italic tracking-[0.4em] mb-6 border-b border-white/10 pb-2 inline-block mx-auto">{sec} ({selected[sec].length}/3)</h3>
-                            <div className="grid grid-cols-2 gap-3">
+                            <h3 className="text-sm font-black uppercase italic tracking-[0.4em] mb-6 border-b border-white/10 pb-2 inline-block mx-auto text-white">{sec} ({selected[sec].length}/3)</h3>
+                            <div className="grid grid-cols-2 gap-3 px-2">
                                 {items.map(item => {
                                     const isSel = selected[sec].some(i => i.name === item.name);
                                     return (
-                                        <button key={item.name} onClick={() => toggle(sec, item)} className={`p-4 rounded-[2rem] flex flex-col items-center gap-3 transition-all border ${isSel ? "bg-orange-500 border-orange-400 shadow-xl scale-105" : "bg-white/5 border-white/5 opacity-40"}`}>
-                                            <img src={item.img} alt={item.name} className="w-16 h-16 object-contain wger-img" />
-                                            <span className="text-[10px] font-black uppercase italic">{item.name}</span>
+                                        <button key={item.name} onClick={() => toggle(sec, item)} className={`p-6 rounded-[2rem] flex flex-col items-center gap-4 transition-all border ${isSel ? "bg-orange-500 border-orange-400 shadow-xl scale-105" : "bg-white/5 border-white/5 opacity-40"}`}>
+                                            <AnatomicalTrainer type={item.type} className="w-14 h-14" />
+                                            <span className="text-[10px] font-black uppercase italic text-white">{item.name}</span>
                                         </button>
                                     );
                                 })}
@@ -281,33 +270,10 @@
                         </div>
                     ))}
                     <div className="fixed bottom-0 left-0 right-0 p-8 bg-slate-950/95 backdrop-blur-xl border-t border-white/10 z-50">
-                        <button disabled={!isReady} onClick={() => onSave(selected)} className={`w-full py-6 rounded-full font-black uppercase italic tracking-widest shadow-2xl transition-all ${isReady ? "bg-white text-black" : "bg-slate-800 text-slate-600 opacity-50"}`}>
-                            {isReady ? "¡A ENTRENAR!" : "Faltan Selecciones"}
+                        <button disabled={!ready} onClick={() => onSave(selected)} className={`w-full py-6 rounded-full font-black uppercase italic tracking-widest shadow-2xl transition-all ${ready ? "bg-white text-black" : "bg-slate-800 text-slate-600 opacity-50"}`}>
+                            {ready ? "COMENZAR ENTRENAMIENTO" : "ELIGE 9 EJERCICIOS"}
                         </button>
                     </div>
-                </div>
-            );
-        }
-
-        function WorkoutsView({ workouts, onStart, onEdit, onCreate, onDelete }) {
-            return (
-                <div className="space-y-4 animate-fade-in pb-32 text-white text-center">
-                    {workouts.map(w => (
-                        <div key={w.id} className="glass-card p-6 flex justify-between items-center border-white/10">
-                            <div className="flex-1 cursor-pointer truncate text-left" onClick={() => onStart(w)}>
-                                <h3 className="font-black uppercase italic text-md truncate">{w.name}</h3>
-                                <span className="text-[9px] font-black text-orange-500 uppercase tracking-widest italic block">Tiempo total: {formatTime(w.totalTime || 1200)}</span>
-                            </div>
-                            <div className="flex gap-2">
-                                <button onClick={() => onStart(w)} className="bg-white text-black px-6 py-4 rounded-2xl font-black text-[10px] italic flex items-center justify-center">ENTRENAR</button>
-                                <button onClick={() => onEdit(w)} className="bg-slate-800 p-4 rounded-2xl leading-none">📝</button>
-                                <button onClick={() => onDelete(w.id)} className="bg-red-500/10 text-red-500 p-4 rounded-2xl leading-none">🗑️</button>
-                            </div>
-                        </div>
-                    ))}
-                    <button onClick={onCreate} className="w-full bg-white/5 border border-white/10 py-6 rounded-full font-black uppercase shadow-xl italic tracking-widest active:scale-95 flex items-center justify-center gap-2 mt-4 text-white text-center">
-                        <span className="text-xl">➕</span> NUEVA RUTINA
-                    </button>
                 </div>
             );
         }
@@ -323,45 +289,37 @@
             useEffect(() => {
                 const s = [];
                 const ph = workout.phases;
-                const transTime = workout.transition || 10;
-                const secTransTime = workout.sectionTransition || 10;
                 const REGIONS = ['Piernas', 'Brazos', 'Tronco'];
 
-                s.push({ label: 'PREPARACIÓN', sec: 30, color: 'bg-slate-800', voice: 'Prepárate', phase: 'Inicio', r: 1, tr: 1, bodySection: 'LISTO', currentExercise: { name: 'Respira' } });
+                s.push({ label: 'PREPARACIÓN', sec: 30, color: 'bg-slate-800', voice: 'Prepárate', phase: 'Inicio', bodySection: 'LISTO', currentExercise: { name: 'Respira', type: 'pulse' } });
 
-                ['calentamiento', 'entrenamiento', 'estiramientos'].forEach((phaseId, pIdx) => {
+                ['calentamiento', 'entrenamiento', 'estiramientos'].forEach((phaseId) => {
                     const c = ph[phaseId];
                     for(let cy=1; cy<=c.cycles; cy++) {
                         for(let r=1; r<=c.rounds; r++) {
-                            let currentEx = { name: "" };
-                            let nextEx = { name: "" };
+                            let curEx = { name: "" };
+                            let nexEx = { name: "" };
                             let voiceMsg = "";
                             
                             if (phaseId === 'calentamiento') {
-                                currentEx = { name: WARMUP_STEPS[(r-1) % WARMUP_STEPS.length] };
-                                voiceMsg = "Calienta " + currentEx.name;
+                                curEx = { name: WARMUP_STEPS[(r-1) % WARMUP_STEPS.length], type: 'pulse' };
+                                voiceMsg = "Calienta " + curEx.name;
                             } else if (phaseId === 'entrenamiento') {
                                 const sectionIdx = Math.floor((r - 1) / 3) % 3;
                                 const exIdx = (r - 1) % 3;
                                 const list = exercises[REGIONS[sectionIdx].toLowerCase()] || [];
-                                currentEx = list[exIdx] || { name: "Ejercicio" };
-                                nextEx = list[(exIdx + 1) % 3] || { name: "Siguiente" };
-                                voiceMsg = "Ejercita " + currentEx.name;
+                                curEx = list[exIdx] || { name: "Ejercicio", type: 'squat' };
+                                nexEx = list[(exIdx + 1) % 3] || { name: "Siguiente" };
+                                voiceMsg = "Ejercita " + curEx.name;
                             } else {
-                                currentEx = { name: "Estiramiento" };
+                                curEx = { name: "Estiramiento", type: 'pulse' };
                                 voiceMsg = "Estira";
                             }
 
-                            s.push({ label: phaseId.toUpperCase(), sec: c.action, color: 'bg-emerald-600', voice: voiceMsg, phase: phaseId, r, tr: c.rounds, cy, tc: c.cycles, bodySection: (phaseId === 'entrenamiento' ? REGIONS[Math.floor((r-1)/3)%3].toUpperCase() : phaseId.toUpperCase()), currentExercise: currentEx, nextExercise: nextEx });
+                            s.push({ label: phaseId.toUpperCase(), sec: c.action, color: 'bg-emerald-600', voice: voiceMsg, phase: phaseId, r, tr: c.rounds, cy, tc: c.cycles, bodySection: (phaseId === 'entrenamiento' ? REGIONS[Math.floor((r-1)/3)%3].toUpperCase() : phaseId.toUpperCase()), currentExercise: curEx, nextExercise: nexEx });
                             
                             if(r < c.rounds) {
-                                if (phaseId === 'entrenamiento' && r % 3 === 0) {
-                                    const nextSec = REGIONS[Math.floor(r/3)%3].toLowerCase();
-                                    const nex = (exercises[nextSec] || [])[0] || { name: "Siguiente" };
-                                    s.push({ label: 'CAMBIO', sec: secTransTime, color: 'bg-yellow-500', voice: "Prepárate para ejercitar " + nex.name, phase: phaseId, r, tr: c.rounds, cy, tc: c.cycles, bodySection: 'CAMBIO', currentExercise: { name: 'Cambio' }, nextExercise: nex });
-                                } else {
-                                    s.push({ label: 'CAMBIO', sec: c.change, color: 'bg-yellow-500', voice: 'Cambio', phase: phaseId, r, tr: c.rounds, cy, tc: c.cycles, bodySection: 'CAMBIO', currentExercise: { name: 'Cambio' } });
-                                }
+                                s.push({ label: 'CAMBIO', sec: c.change, color: 'bg-yellow-500', voice: 'Cambio', phase: phaseId, r, tr: c.rounds, cy, tc: c.cycles, bodySection: 'CAMBIO', currentExercise: { name: 'Cambio', type: 'pulse' } });
                             }
                         }
                     }
@@ -386,7 +344,6 @@
                         else {
                             if (idx < steps.length - 1) { 
                                 setIdx(i => i + 1); setTimeLeft(steps[idx+1].sec); 
-                                if('vibrate' in navigator) navigator.vibrate(200); 
                             } else {
                                 speak("ejercicio terminado, lo lograste");
                                 setStatus('finished');
@@ -402,76 +359,71 @@
             const pieCirc = 2 * Math.PI * 20;
             const roundPercentage = curr?.tr ? (Math.min(1, (parseInt(curr.r) || 0) / curr.tr)) : 0;
             const timerPercentage = curr?.sec ? (Math.min(1, (curr.sec - timeLeft) / curr.sec)) : 0;
-            const totalSecs = steps.reduce((acc, c) => acc + c.sec, 0);
-            const sessionPercentage = totalSecs ? (elapsed / totalSecs) : 0;
 
             if (status === 'finished') return (
                 <div className="h-full w-full flex flex-col items-center justify-center p-8 bg-slate-950 text-white italic text-center">
                     <div className="text-9xl mb-10 animate-bounce">🏆</div>
-                    <h2 className="text-5xl font-black uppercase mb-10 tracking-tighter">¡LOGRADO!</h2>
+                    <h1 className="text-6xl font-black mb-4 uppercase tracking-tighter">¡LOGRADO!</h1>
                     <div className="glass-card p-10 w-full mb-12 shadow-2xl border-orange-500/20 text-center">
-                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic mb-2 text-center">Tiempo Final</p>
-                        <p className="text-7xl font-black text-orange-500 leading-none text-center italic text-center">{formatTime(elapsed)}</p>
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic mb-2">TIEMPO TOTAL</p>
+                        <p className="text-7xl font-black text-orange-500 leading-none">{formatTime(elapsed)}</p>
                     </div>
-                    <button onClick={onExit} className="w-full bg-white text-black py-8 rounded-full font-black uppercase shadow-2xl active:scale-95 transition-transform italic tracking-widest">FINALIZAR</button>
+                    <button onClick={onExit} className="w-full bg-white text-black py-8 rounded-full font-black uppercase shadow-2xl active:scale-95 transition-all text-center">FINALIZAR</button>
                 </div>
             );
 
             return (
                 <div className={`h-screen w-screen flex flex-col transition-colors duration-1000 ${curr?.color || 'bg-slate-950'} text-white overflow-hidden text-center`}>
-                    <div className="flex justify-between items-start p-4 z-30 relative h-[15vh]">
-                        <button onClick={onExit} className="bg-black/20 px-6 py-3 rounded-xl font-black text-[10px] uppercase border border-white/5 active:scale-90 italic">✖ SALIR</button>
+                    <div className="flex justify-between items-start p-6 z-30 relative h-[15vh]">
+                        <button onClick={onExit} className="bg-black/20 px-6 py-3 rounded-xl font-black text-[10px] uppercase border border-white/5 active:scale-90 italic text-center">✖ SALIR</button>
                         <div className="flex flex-col items-center">
                             <div className="relative flex items-center justify-center w-[16vh] h-[16vh] scale-75 mt-[-2vh]">
                                 <svg className="absolute w-full h-full transform -rotate-90 text-center" viewBox="0 0 100 100">
                                     <circle cx="50" cy="50" r="20" className="pie-background" strokeWidth="40" fill="none" />
-                                    <circle cx="50" cy="50" r="20" stroke="var(--accent)" strokeWidth="40" fill="none" style={{ strokeDasharray: pieCirc, strokeDashoffset: pieCirc - (sessionPercentage * pieCirc), transition: 'stroke-dashoffset 1s linear' }} />
+                                    <circle cx="50" cy="50" r="20" stroke="var(--accent)" strokeWidth="40" fill="none" style={{ strokeDasharray: pieCirc, strokeDashoffset: pieCirc - ( (elapsed / steps.reduce((a,b)=>a+b.sec,0)) * pieCirc), transition: 'stroke-dashoffset 1s linear' }} />
                                 </svg>
                             </div>
-                            <span className="text-[2.5vh] font-black italic neon-text-orange leading-none mt-[-2vh] text-center text-center">{formatTime(elapsed)}</span>
+                            <span className="text-[2.5vh] font-black italic neon-text-orange leading-none mt-[-2vh]">{formatTime(elapsed)}</span>
                         </div>
                     </div>
 
-                    <div className="flex-1 grid grid-cols-3 items-center w-full px-6 landscape:px-12 relative text-center">
+                    <div className="flex-1 grid grid-cols-3 items-center w-full px-12 relative text-center">
                         <div className="flex flex-col items-center justify-center h-[55vh] relative text-center">
-                            <span className="text-[2vh] font-black uppercase tracking-[0.4em] text-white/50 mb-4 italic leading-none">RONDAS</span>
+                            <span className="text-[1.8vh] font-black uppercase tracking-[0.4em] text-white/50 mb-4 italic text-center">RONDAS</span>
                             <div className="relative flex items-center justify-center w-[38vh] h-[38vh] mx-auto text-center">
                                 <svg className="absolute w-full h-full transform -rotate-90 text-center" viewBox="0 0 100 100">
                                     <circle cx="50" cy="50" r="20" className="pie-background" strokeWidth="40" fill="none" />
                                     <circle cx="50" cy="50" r="20" stroke="var(--neon-cyan)" strokeWidth="40" fill="none" style={{ strokeDasharray: pieCirc, strokeDashoffset: pieCirc - (roundPercentage * pieCirc), transition: 'stroke-dashoffset 0.8s ease' }} />
                                 </svg>
                             </div>
-                            <div className="mt-4"><span className="text-[10vh] font-black italic leading-none neon-text-cyan tabular-nums text-center text-center">{curr?.r || 0}</span></div>
+                            <div className="mt-4"><span className="text-[10vh] font-black italic leading-none neon-text-cyan tabular-nums">{curr?.r || 0}</span></div>
                         </div>
 
-                        <div className="flex flex-col items-center justify-center h-full relative text-center">
-                            <div className="absolute top-[0vh] w-full text-center flex flex-col items-center px-4">
+                        <div className="flex flex-col items-center justify-center h-full relative">
+                            <div className="absolute top-[0vh] w-full flex flex-col items-center px-4">
                                  <div className="flex items-center gap-6 text-white/40 font-black uppercase italic leading-none max-w-full">
                                     <span className="text-[1.8vh] truncate max-w-[10vh]">{curr?.currentExercise?.name}</span>
-                                    <h2 className="text-[5vh] text-white drop-shadow-2xl">{curr?.bodySection || curr?.phase}</h2>
+                                    <h2 className="text-[6vh] text-white drop-shadow-2xl">{curr?.bodySection || curr?.phase}</h2>
                                     <span className="text-[1.8vh] truncate max-w-[10vh]">{curr?.nextExercise?.name}</span>
                                  </div>
                             </div>
-                            <div className="relative flex items-center justify-center w-[65vh] h-[65vh] mt-[4vh] mx-auto text-center silhouette">
+                            <div className="relative flex items-center justify-center w-[65vh] h-[65vh] mt-[4vh] mx-auto">
                                 <svg className="absolute w-full h-full transform -rotate-90 text-center" viewBox="0 0 100 100">
                                     <circle cx="50" cy="50" r="20" className="pie-background" strokeWidth="40" fill="none" />
                                     <circle cx="50" cy="50" r="20" stroke="var(--accent)" strokeWidth="40" fill="none" style={{ strokeDasharray: pieCirc, strokeDashoffset: pieCirc - (timerPercentage * pieCirc), transition: 'stroke-dashoffset 1s linear' }} />
                                 </svg>
                                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
                                     <div className="mb-[-2vh]">
-                                        {curr?.currentExercise?.img ? 
-                                            <img src={curr.currentExercise.img} className="w-[24vh] h-[24vh] object-contain wger-img" alt="ejercicio" /> :
-                                            <WorkoutGraphic name={curr?.currentExercise?.name} type={curr?.currentExercise?.type} className="w-[20vh] h-[20vh]" />
-                                        }
+                                        <AnatomicalTrainer type={curr?.currentExercise?.type} className="w-[30vh] h-[30vh]" />
                                     </div>
-                                    <span className="text-[25vh] font-black tabular-nums drop-shadow-2xl leading-none neon-text-orange italic text-center text-center">{timeLeft}</span>
+                                    <span className="text-[25vh] font-black tabular-nums drop-shadow-2xl leading-none neon-text-orange italic">{timeLeft}</span>
                                 </div>
                             </div>
                             <div className="mt-[3vh] flex items-center gap-10">
-                                <button onClick={() => setStatus(s => s === 'running' ? 'paused' : 'running')} className="bg-white text-black w-[8vh] h-[8vh] rounded-full flex items-center justify-center shadow-2xl text-[4vh] text-center">
+                                <button onClick={() => setStatus(s => s === 'running' ? 'paused' : 'running')} className="bg-white text-black w-[9vh] h-[9vh] rounded-full flex items-center justify-center shadow-2xl text-[4vh] text-center">
                                     {status === 'running' ? '⏸' : '▶'}
                                 </button>
-                                <button onClick={() => setTimeLeft(0)} className="bg-white/20 w-[6vh] h-[6vh] rounded-full text-[2.5vh] flex items-center justify-center border border-white/10 active:scale-90 italic text-center leading-none">⏭</button>
+                                <button onClick={() => { if (idx < steps.length - 1) { setIdx(i => i + 1); setTimeLeft(steps[idx+1].sec); } }} className="bg-white/20 w-[6vh] h-[6vh] rounded-full text-[2.5vh] flex items-center justify-center border border-white/10 active:scale-90 italic text-center">⏭</button>
                             </div>
                         </div>
 
@@ -483,96 +435,72 @@
                                     <circle cx="50" cy="50" r="20" stroke="var(--neon-green)" strokeWidth="40" fill="none" style={{ strokeDasharray: pieCirc, strokeDashoffset: pieCirc - (0.8 * pieCirc), transition: 'stroke-dashoffset 0.8s ease' }} />
                                 </svg>
                             </div>
-                            <div className="mt-4 text-center"><span className="text-[10vh] font-black italic leading-none neon-text-green tabular-nums text-center text-center">{curr?.cy || 1}</span></div>
+                            <div className="mt-4"><span className="text-[10vh] font-black italic leading-none neon-text-green tabular-nums">{curr?.cy || 1}</span></div>
                         </div>
                     </div>
                 </div>
             );
         }
 
-        function HistoryView({ history, onBack }) {
+        // --- COMPONENTES UI ADICIONALES ---
+
+        function WorkoutsView({ workouts, onStart, onCreate, onDelete }) {
             return (
-                <div className="flex-1 flex flex-col pt-6 text-white text-center">
-                    <header className="flex items-center gap-4 mb-8 px-2 text-center text-center">
-                        <button onClick={onBack} className="bg-slate-900 p-4 rounded-xl active:scale-90 text-white">⬅</button>
-                        <h1 className="text-2xl font-black italic uppercase flex-1 text-center">Historial</h1>
+                <div className="space-y-4 animate-fade-in pb-32 text-white p-6 max-w-lg mx-auto text-center">
+                    <header className="flex justify-between items-center mb-10 text-center">
+                        <h1 className="text-3xl font-black italic uppercase tracking-tighter leading-none text-white">{APP_TITLE}</h1>
+                        <button onClick={() => auth.signOut()} className="bg-slate-900 p-4 rounded-2xl border border-white/5 text-red-500 text-center">🚪</button>
                     </header>
-                    <div className="space-y-3 overflow-y-auto flex-1 pb-10 scrollbar-hide text-center">
-                        {history.map(e => (
-                            <div key={e.id} className="glass-card p-5 flex justify-between items-center text-center text-white">
-                                <div className="flex-1 text-center text-white">
-                                    <h3 className="font-black uppercase italic text-xs mb-1 text-center text-white">{e.workoutName}</h3>
-                                    <p className="text-[8px] font-bold opacity-40 text-center text-white">{new Date(e.date).toLocaleDateString()} • {formatTime(e.totalTime)}</p>
-                                </div>
+                    {workouts.map(w => (
+                        <div key={w.id} className="glass-card p-6 flex justify-between items-center text-center">
+                            <div className="flex-1 cursor-pointer truncate text-left" onClick={() => onStart(w)}>
+                                <h3 className="font-black uppercase italic text-md truncate text-white">{w.name}</h3>
+                                <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest block mt-1 italic">VISTA ACTIVA</span>
                             </div>
-                        ))}
-                    </div>
+                            <div className="flex gap-2">
+                                <button onClick={() => onStart(w)} className="bg-white text-black px-6 py-4 rounded-2xl font-black text-[10px] italic text-center">GO</button>
+                                <button onClick={() => onDelete(w.id)} className="bg-red-500/10 text-red-500 p-4 rounded-2xl text-center">🗑️</button>
+                            </div>
+                        </div>
+                    ))}
+                    <button onClick={onCreate} className="w-full bg-white/5 border border-white/10 py-6 rounded-full font-black uppercase shadow-xl active:scale-95 flex items-center justify-center gap-2 mt-4 text-white text-center">
+                        <span className="text-xl">➕</span> NUEVA RUTINA
+                    </button>
                 </div>
             );
         }
 
-        function AvanceView({ history }) {
-            return (
-                <div className="space-y-6 pt-10 text-white text-center">
-                    <h2 className="text-3xl font-black italic uppercase text-orange-500">Mi Avance</h2>
-                    <div className="glass-card p-10 text-center text-white text-center">
-                        <p className="text-[10px] font-black uppercase opacity-40 mb-2">Sesiones Realizadas</p>
-                        <p className="text-6xl font-black text-center">{history.length}</p>
-                    </div>
-                </div>
-            );
-        }
-
-        function CreateView({ workout, onCancel, user }) {
-            const [name, setName] = useState(workout?.name || '');
-            const [phases, setPhases] = useState(workout?.phases || DEFAULT_PARAMS);
-            const update = (p, f, v) => setPhases(prev => ({...prev, [p]: {...prev[p], [f]: parseInt(v) || 0}}));
-
-            const save = async () => {
-                if (!name.trim()) return;
-                const path = db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('workouts');
-                const data = { name, phases, totalTime: 0, createdAt: new Date().toISOString() };
-                if (workout?.id) await path.doc(workout.id).update(data);
-                else await path.add(data);
-                onCancel();
+        function AuthView() {
+            const [isLogin, setIsLogin] = useState(true);
+            const [email, setEmail] = useState('');
+            const [password, setPassword] = useState('');
+            const handleAuth = async (e) => {
+                e.preventDefault();
+                try {
+                    if (isLogin) await auth.signInWithEmailAndPassword(email.trim(), password);
+                    else await auth.createUserWithEmailAndPassword(email.trim(), password);
+                } catch (err) { alert(err.message); }
             };
-
             return (
-                <div className="flex-1 flex flex-col pb-32 text-white text-center">
-                    <header className="flex items-center gap-4 py-8 text-center text-white text-center">
-                        <button onClick={onCancel} className="bg-slate-900 p-3 rounded-xl text-white">⬅</button>
-                        <h2 className="text-xl font-black uppercase italic leading-none flex-1 text-white text-center">{workout ? 'Editar' : 'Nueva'} Rutina</h2>
-                    </header>
-                    <div className="space-y-8 overflow-y-auto pr-1 scrollbar-hide text-center">
-                        <input type="text" placeholder="NOMBRE DEL PLAN" className="w-full bg-slate-900 border-2 border-slate-800 p-5 rounded-[1.5rem] focus:border-orange-500 outline-none font-black text-center text-white" value={name} onChange={e => setName(e.target.value)} />
-                        {['calentamiento', 'entrenamiento', 'estiramientos'].map((p) => (
-                            <div key={p} className="glass-card p-6 italic space-y-6 text-center text-white">
-                                <span className="font-black uppercase text-xs tracking-widest text-orange-500 border-b border-white/5 block mb-4 uppercase">{p}</span>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <InputField label="ACCIÓN (S)" val={phases[p].action} set={v => update(p, 'action', v)} />
-                                    <InputField label="CAMBIO (S)" val={phases[p].change} set={v => update(p, 'change', v)} />
-                                    <InputField label="RONDAS" val={phases[p].rounds} set={v => update(p, 'rounds', v)} />
-                                    <InputField label="CICLOS" val={phases[p].cycles} set={v => update(p, 'cycles', v)} />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                    <div className="fixed bottom-0 left-0 right-0 p-8 bg-slate-950/95 border-t border-white/5 z-50 text-center">
-                        <button onClick={save} className="w-full bg-white text-black py-6 rounded-full font-black uppercase shadow-2xl italic tracking-widest text-center">GUARDAR RUTINA</button>
-                    </div>
+                <div className="h-screen flex flex-col justify-center p-10 bg-slate-950 text-center text-white">
+                    <div className="bg-orange-500 w-24 h-24 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-2xl animate-pulse-slow text-3xl font-black italic">fs</div>
+                    <h1 className="text-4xl font-black uppercase mb-2 italic tracking-tighter text-white">{APP_TITLE}</h1>
+                    <form onSubmit={handleAuth} className="space-y-4 max-w-sm mx-auto w-full text-white">
+                        <input type="email" placeholder="EMAIL" className="w-full bg-slate-900 border-2 border-slate-800 p-5 rounded-[1.5rem] outline-none font-bold text-white text-center" value={email} onChange={e => setEmail(e.target.value)} required />
+                        <input type="password" placeholder="CLAVE" className="w-full bg-slate-900 border-2 border-slate-800 p-5 rounded-[1.5rem] outline-none font-bold text-white text-center" value={password} onChange={e => setPassword(e.target.value)} required />
+                        <button type="submit" className="w-full bg-orange-500 py-6 rounded-full font-black uppercase shadow-xl text-white text-center">ENTRAR</button>
+                    </form>
+                    <button onClick={() => setIsLogin(!isLogin)} className="mt-8 text-slate-500 text-[10px] font-black uppercase border-b-2 border-orange-500/30 pb-1 mx-auto italic text-center">{isLogin ? 'REGISTRARME' : 'LOGUEARME'}</button>
                 </div>
             );
         }
 
-        // --- 5. COMPONENTE PRINCIPAL (App) ---
         function App() {
             const [user, setUser] = useState(null);
             const [view, setView] = useState('workouts'); 
             const [workouts, setWorkouts] = useState([]);
-            const [history, setHistory] = useState([]);
             const [loading, setLoading] = useState(true);
             const [selectedWorkout, setSelectedWorkout] = useState(null);
-            const [editingWorkout, setEditingWorkout] = useState(null);
             const [userExercises, setUserExercises] = useState({ piernas: [], brazos: [], tronco: [] });
 
             useEffect(() => {
@@ -585,25 +513,27 @@
 
             useEffect(() => {
                 if (!user) return;
-                const path = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
-                const unsubW = path.collection('workouts').onSnapshot(s => setWorkouts(s.docs.map(d => ({id: d.id, ...d.data()}))));
-                const unsubH = path.collection('history').onSnapshot(s => setHistory(s.docs.map(d => ({id: d.id, ...d.data()}))));
-                return () => { unsubW(); unsubH(); };
+                const pathBase = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
+                const unsubW = pathBase.collection('workouts').onSnapshot(s => setWorkouts(s.docs.map(d => ({id: d.id, ...d.data()}))));
+                return () => unsubW();
             }, [user]);
 
-            const startT = (w) => {
+            const onStartTraining = async (w) => {
                 setSelectedWorkout(w);
+                try {
+                    const el = document.documentElement;
+                    if (el.requestFullscreen) await el.requestFullscreen();
+                    if (screen.orientation && screen.orientation.lock) {
+                        await screen.orientation.lock('landscape').catch(() => {});
+                    }
+                } catch (e) {}
                 setView('exercise_selection');
             };
 
             if (loading) return (
                 <div className="h-full w-full flex flex-col items-center justify-center bg-slate-950 text-white p-10 text-center">
-                    <div className="animate-pulse-slow text-9xl mb-8 text-center text-white">⚡</div>
-                    <h1 className="text-4xl font-black italic uppercase tracking-tighter mb-4 leading-tight text-center text-white">{APP_TITLE}</h1>
-                    <div className="mt-4 flex flex-col items-center gap-3 text-center">
-                        <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-                        <span className="text-slate-600 font-black text-[10px] tracking-[0.5em] uppercase italic text-center text-white text-center">CARGANDO V{APP_VERSION}</span>
-                    </div>
+                    <div className="animate-pulse-slow text-9xl mb-8">🏋️‍♂️</div>
+                    <h1 className="text-4xl font-black italic uppercase tracking-tighter mb-4 leading-tight text-center">CARGANDO...</h1>
                 </div>
             );
 
@@ -615,26 +545,24 @@
                         <header className="p-6 flex justify-between items-center bg-slate-900 border-b border-white/5 text-white">
                             <div className="text-left text-white">
                                 <h1 className="text-lg font-black italic uppercase leading-none tracking-tight text-white">{APP_TITLE}</h1>
-                                <p className="text-[9px] font-bold text-slate-500 truncate mt-1 text-white">{user.email}</p>
+                                <p className="text-[9px] font-bold text-slate-500 truncate mt-1 text-white italic text-center">{user.email}</p>
                             </div>
-                            <button onClick={() => auth.signOut()} className="p-2 bg-red-500/10 rounded-xl text-red-500 font-bold border border-red-500/20 text-lg">🚪</button>
+                            <button onClick={() => auth.signOut()} className="p-2 bg-red-500/10 rounded-xl text-red-500 font-bold border border-red-500/20 text-lg text-center">🚪</button>
                         </header>
                     )}
 
-                    <main className={`flex-1 overflow-y-auto scrollbar-hide w-full ${view === 'play' || view === 'exercise_selection' ? 'p-0 h-full' : 'p-4 max-w-2xl mx-auto'}`}>
+                    <main className={`flex-1 overflow-y-auto scrollbar-hide w-full ${view === 'play' || view === 'exercise_selection' ? 'p-0 h-full' : 'p-0 mx-auto'}`}>
                         {view === 'exercise_selection' && <ExerciseSelectionView onSave={(ex) => { setUserExercises(ex); setView('play'); }} />}
-                        {view === 'workouts' && <WorkoutsView workouts={workouts} onStart={startT} onEdit={(w) => { setEditingWorkout(w); setView('create'); }} onCreate={() => { setEditingWorkout(null); setView('create'); }} onDelete={(id) => db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('workouts').doc(id).delete()} />}
-                        {view === 'history' && <HistoryView history={history} onBack={() => setView('workouts')} />}
-                        {view === 'avance' && <AvanceView history={history} />}
-                        {view === 'create' && <CreateView workout={editingWorkout} onCancel={() => setView('workouts')} user={user} />}
-                        {view === 'play' && <PlayerView workout={selectedWorkout} exercises={userExercises} onExit={() => setView('workouts')} onComplete={(name, time) => { db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('history').add({ workoutName: name, totalTime: time, date: new Date().toISOString() }); setView('workouts'); }} />}
+                        {view === 'workouts' && <WorkoutsView workouts={workouts} onStart={onStartTraining} onCreate={() => setView('workouts')} onDelete={(id) => db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('workouts').doc(id).delete()} />}
+                        {view === 'play' && <PlayerView workout={selectedWorkout} exercises={userExercises} onExit={() => { 
+                            if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+                            setView('workouts'); 
+                        }} onComplete={(name, time) => { db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('history').add({ workoutName: name, totalTime: time, date: new Date().toISOString() }); setView('workouts'); }} />}
                     </main>
 
                     {view !== 'play' && view !== 'exercise_selection' && (
                         <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-white/5 p-4 flex justify-around z-50 shadow-2xl text-white">
-                            <button onClick={() => setView('workouts')} className={`flex flex-col items-center text-[9px] font-black ${view === 'workouts' ? 'text-orange-500' : 'text-slate-500'}`}><span className="text-xl mb-1 text-center text-white">🏋️</span> MIS RUTINAS</button>
-                            <button onClick={() => setView('avance')} className={`flex flex-col items-center text-[9px] font-black ${view === 'avance' ? 'text-orange-500' : 'text-slate-500'}`}><span className="text-xl mb-1 text-center text-white">📊</span> AVANCE</button>
-                            <button onClick={() => setView('history')} className={`flex flex-col items-center text-[9px] font-black ${view === 'history' ? 'text-orange-500' : 'text-slate-500'}`}><span className="text-xl mb-1 text-center text-white">📜</span> HISTORIAL</button>
+                            <button onClick={() => setView('workouts')} className={`flex flex-col items-center text-[9px] font-black ${view === 'workouts' ? 'text-orange-500' : 'text-slate-500'}`}><span className="text-xl mb-1 text-center text-white text-center">🏋️</span> RUTINAS</button>
                         </nav>
                     )}
                 </div>
