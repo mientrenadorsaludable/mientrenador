@@ -50,59 +50,49 @@
             border-radius: 1.5rem;
         }
 
-        /* --- MOTOR DE ANIMACIÓN ANATÓMICA FLUIDA 2.0 --- */
+        /* --- MOTOR DE ANIMACIÓN ANATÓMICA 2.5 --- */
         
-        /* Animación Humana: Sentadilla (Squat) */
+        /* Squat (Sentadilla) */
         @keyframes human-squat-main {
             0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(40px); }
+            50% { transform: translateY(38px); }
         }
-        @keyframes human-squat-thigh {
+        @keyframes human-thigh-bend {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(-65deg); }
+        }
+        @keyframes human-shin-bend {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(70deg); }
+        }
+
+        /* Pushup (Flexión) */
+        @keyframes human-pushup-main {
+            0%, 100% { transform: rotate(-15deg) translateY(0); }
+            50% { transform: rotate(-6deg) translateY(22px); }
+        }
+        @keyframes human-arm-flex {
             0%, 100% { transform: rotate(0deg); }
             50% { transform: rotate(-75deg); }
         }
-        @keyframes human-squat-shin {
-            0%, 100% { transform: rotate(0deg); }
-            50% { transform: rotate(65deg); }
-        }
 
-        /* Animación Humana: Flexión (Pushup) */
-        @keyframes human-pushup-main {
-            0%, 100% { transform: rotate(-15deg) translateY(0); }
-            50% { transform: rotate(-5deg) translateY(25px); }
-        }
-        @keyframes human-pushup-arm {
-            0%, 100% { transform: rotate(0deg); }
-            50% { transform: rotate(-70deg); }
-        }
+        .anim-group-squat { animation: human-squat-main 1.6s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        .anim-thigh { animation: human-thigh-bend 1.6s cubic-bezier(0.4, 0, 0.6, 1) infinite; transform-origin: top center; }
+        .anim-shin { animation: human-shin-bend 1.6s cubic-bezier(0.4, 0, 0.6, 1) infinite; transform-origin: top center; }
 
-        /* Animación Humana: Abdominales (Crunch) */
-        @keyframes human-crunch-torso {
-            0%, 100% { transform: rotate(0deg); }
-            50% { transform: rotate(-30deg); }
-        }
+        .anim-group-pushup { animation: human-pushup-main 1.3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        .anim-arm { animation: human-arm-flex 1.3s cubic-bezier(0.4, 0, 0.6, 1) infinite; transform-origin: top center; }
 
-        /* Clases de Activación con timing humano (cubic-bezier) */
-        .anim-group-squat { animation: human-squat-main 1.8s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
-        .anim-thigh { animation: human-squat-thigh 1.8s cubic-bezier(0.45, 0, 0.55, 1) infinite; transform-origin: top center; }
-        .anim-shin { animation: human-squat-shin 1.8s cubic-bezier(0.45, 0, 0.55, 1) infinite; transform-origin: top center; }
-
-        .anim-group-pushup { animation: human-pushup-main 1.4s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
-        .anim-arm-flex { animation: human-pushup-arm 1.4s cubic-bezier(0.45, 0, 0.55, 1) infinite; transform-origin: top center; }
-
-        .anim-crunch { animation: human-crunch-torso 1.6s ease-in-out infinite alternate; transform-origin: bottom center; }
-
-        .anim-global-pulse { animation: pulse-soft 2s ease-in-out infinite; }
-        @keyframes pulse-soft { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.04); opacity: 0.8; } }
+        .anim-pulse-soft { animation: pulse-soft 2s ease-in-out infinite; }
+        @keyframes pulse-soft { 0%, 100% { transform: scale(1); filter: brightness(1); } 50% { transform: scale(1.05); filter: brightness(1.2); } }
 
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .neon-text-orange { text-shadow: 0 0 30px rgba(249, 115, 22, 0.8); }
         .neon-text-cyan { text-shadow: 0 0 30px rgba(34, 211, 238, 0.8); }
         
-        /* Prevención de cortes visuales */
         svg { overflow: visible !important; }
     </style>
- head>
+</head>
 <body>
     <div id="root"></div>
 
@@ -114,7 +104,7 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo } = React;
 
-        // --- 1. CONFIGURACIÓN Y GLOBALES ---
+        // --- 1. GLOBALES (CON VAR PARA DISPONIBILIDAD TOTAL) ---
         var firebaseConfig = {
             apiKey: "AIzaSyDg0nohFAprIYta3Z3IvFGms55PehyxGIM",
             authDomain: "entrenadorpersonal-4e69d.firebaseapp.com",
@@ -128,9 +118,9 @@
         if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
         var auth = firebase.auth();
         var db = firebase.firestore();
-        var appId = "mientrenador-v3";
+        var globalAppId = "mientrenador-v3";
         var APP_TITLE = "Mi entrenador Fuerte y saludable";
-        var APP_VERSION = "12.4.0";
+        var APP_VERSION = "12.5.0";
 
         var EXERCISE_CATALOG = {
             piernas: [
@@ -150,9 +140,9 @@
                 { name: 'Burpees', type: 'squat' }
             ],
             tronco: [
-                { name: 'Abdominales', type: 'crunch' },
+                { name: 'Abdominales', type: 'pulse' },
                 { name: 'Plancha Fija', type: 'pushup' },
-                { name: 'Crunch', type: 'crunch' },
+                { name: 'Crunch', type: 'pulse' },
                 { name: 'Elevación Piernas', type: 'pulse' },
                 { name: 'Supermán', type: 'pulse' },
                 { name: 'Giro Ruso', type: 'pulse' }
@@ -179,53 +169,51 @@
 
         const formatTime = (s) => `${Math.floor(s / 60)}:${((s || 0) % 60).toString().padStart(2, '0')}`;
 
-        // --- 3. COMPONENTE DE MANIQUÍ DINÁMICO (MOVIMIENTOS REALES) ---
+        // --- 3. COMPONENTE DE MANIQUÍ DINÁMICO ---
         const AnatomicalTrainer = ({ type, className = "w-32 h-32" }) => {
             const isSquat = type === 'squat';
             const isPushup = type === 'pushup';
-            const isCrunch = type === 'crunch';
             
             return (
-                <div className={`flex items-center justify-center ${(!isSquat && !isPushup && !isCrunch) ? 'anim-global-pulse' : ''}`}>
+                <div className={`flex items-center justify-center ${(!isSquat && !isPushup) ? 'anim-pulse-soft' : ''}`}>
                     <svg viewBox="0 0 100 130" className={className} xmlns="http://www.w3.org/2000/svg">
                         <defs>
-                            <linearGradient id="humanGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
                                 <stop offset="0%" style={{stopColor: 'var(--accent)', stopOpacity: 1}} />
                                 <stop offset="100%" style={{stopColor: '#fb923c', stopOpacity: 1}} />
                             </linearGradient>
                         </defs>
                         
-                        <g className={isSquat ? 'anim-group-squat' : isPushup ? 'anim-group-pushup' : isCrunch ? 'anim-crunch' : ''}>
+                        <g className={isSquat ? 'anim-group-squat' : isPushup ? 'anim-group-pushup' : ''}>
                             {/* Cabeza */}
-                            <circle cx="50" cy="18" r="8" fill="url(#humanGrad)" />
-                            
+                            <circle cx="50" cy="18" r="8" fill="url(#bodyGrad)" />
                             {/* Torso */}
-                            <path d="M42 28h16l3 25h-22z" fill="url(#humanGrad)" />
+                            <path d="M42 28h16l3 25h-22z" fill="url(#bodyGrad)" />
                             
                             {/* Brazos Articulados */}
-                            <g className={isPushup ? 'anim-arm-flex' : ''}>
-                                <path d="M42 30l-15 15" stroke="url(#humanGrad)" strokeWidth="8" strokeLinecap="round" />
-                                <path d="M27 45l-5 18" stroke="url(#humanGrad)" strokeWidth="8" strokeLinecap="round" />
+                            <g className={isPushup ? 'anim-arm' : ''}>
+                                <path d="M42 30l-15 15" stroke="url(#bodyGrad)" strokeWidth="8" strokeLinecap="round" />
+                                <path d="M27 45l-5 18" stroke="url(#bodyGrad)" strokeWidth="8" strokeLinecap="round" />
                             </g>
-                            <g className={isPushup ? 'anim-arm-flex' : ''}>
-                                <path d="M58 30l15 15" stroke="url(#humanGrad)" strokeWidth="8" strokeLinecap="round" />
-                                <path d="M73 45l5 18" stroke="url(#humanGrad)" strokeWidth="8" strokeLinecap="round" />
+                            <g className={isPushup ? 'anim-arm' : ''}>
+                                <path d="M58 30l15 15" stroke="url(#bodyGrad)" strokeWidth="8" strokeLinecap="round" />
+                                <path d="M73 45l5 18" stroke="url(#bodyGrad)" strokeWidth="8" strokeLinecap="round" />
                             </g>
 
-                            {/* Estructura de Piernas (Cinemática) */}
+                            {/* Piernas con Cinemática Humana */}
                             <g transform="translate(44, 53)">
                                 <g className={isSquat ? 'anim-thigh' : ''}>
-                                    <path d="M0 0l-10 25" stroke="url(#humanGrad)" strokeWidth="9" strokeLinecap="round" />
+                                    <path d="M0 0l-10 25" stroke="url(#bodyGrad)" strokeWidth="9" strokeLinecap="round" />
                                     <g transform="translate(-10, 25)" className={isSquat ? 'anim-shin' : ''}>
-                                        <path d="M0 0l6 25" stroke="url(#humanGrad)" strokeWidth="9" strokeLinecap="round" />
+                                        <path d="M0 0l6 25" stroke="url(#bodyGrad)" strokeWidth="9" strokeLinecap="round" />
                                     </g>
                                 </g>
                             </g>
                             <g transform="translate(56, 53)">
                                 <g className={isSquat ? 'anim-thigh' : ''}>
-                                    <path d="M0 0l10 25" stroke="url(#humanGrad)" strokeWidth="9" strokeLinecap="round" />
+                                    <path d="M0 0l10 25" stroke="url(#bodyGrad)" strokeWidth="9" strokeLinecap="round" />
                                     <g transform="translate(10, 25)" className={isSquat ? 'anim-shin' : ''}>
-                                        <path d="M0 0l-6 25" stroke="url(#humanGrad)" strokeWidth="9" strokeLinecap="round" />
+                                        <path d="M0 0l-6 25" stroke="url(#bodyGrad)" strokeWidth="9" strokeLinecap="round" />
                                     </g>
                                 </g>
                             </g>
@@ -362,10 +350,10 @@
 
             if (status === 'finished') return (
                 <div className="h-full w-full flex flex-col items-center justify-center p-8 bg-slate-950 text-white italic text-center">
-                    <div className="text-9xl mb-10 animate-bounce">🏆</div>
+                    <div className="text-9xl mb-10 animate-bounce text-center">🏆</div>
                     <h1 className="text-6xl font-black mb-4 uppercase tracking-tighter">¡LOGRADO!</h1>
                     <div className="glass-card p-10 w-full mb-12 shadow-2xl border-orange-500/20 text-center">
-                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic mb-2">TIEMPO TOTAL</p>
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic mb-2 text-center text-center">TIEMPO TOTAL</p>
                         <p className="text-7xl font-black text-orange-500 leading-none">{formatTime(elapsed)}</p>
                     </div>
                     <button onClick={onExit} className="w-full bg-white text-black py-8 rounded-full font-black uppercase shadow-2xl active:scale-95 transition-all text-center">FINALIZAR</button>
@@ -420,22 +408,22 @@
                                 </div>
                             </div>
                             <div className="mt-[3vh] flex items-center gap-10">
-                                <button onClick={() => setStatus(s => s === 'running' ? 'paused' : 'running')} className="bg-white text-black w-[9vh] h-[9vh] rounded-full flex items-center justify-center shadow-2xl text-[4vh] text-center">
+                                <button onClick={() => setStatus(s => s === 'running' ? 'paused' : 'running')} className="bg-white text-black w-[9vh] h-[9vh] rounded-full flex items-center justify-center shadow-2xl text-[4vh] text-center text-center">
                                     {status === 'running' ? '⏸' : '▶'}
                                 </button>
                                 <button onClick={() => { if (idx < steps.length - 1) { setIdx(i => i + 1); setTimeLeft(steps[idx+1].sec); } }} className="bg-white/20 w-[6vh] h-[6vh] rounded-full text-[2.5vh] flex items-center justify-center border border-white/10 active:scale-90 italic text-center">⏭</button>
                             </div>
                         </div>
 
-                        <div className="flex flex-col items-center justify-center h-[55vh] relative text-center">
-                            <span className="text-[1.8vh] font-black uppercase tracking-[0.4em] text-white/50 mb-4 italic leading-none text-center">CICLOS</span>
+                        <div className="flex flex-col items-center justify-center h-[55vh] relative text-center text-center">
+                            <span className="text-[1.8vh] font-black uppercase tracking-[0.4em] text-white/50 mb-4 italic text-center">CICLOS</span>
                             <div className="relative flex items-center justify-center w-[40vh] h-[40vh] mx-auto text-center">
                                 <svg className="absolute w-full h-full transform -rotate-90 text-center" viewBox="0 0 100 100">
                                     <circle cx="50" cy="50" r="20" className="pie-background" strokeWidth="40" fill="none" />
                                     <circle cx="50" cy="50" r="20" stroke="var(--neon-green)" strokeWidth="40" fill="none" style={{ strokeDasharray: pieCirc, strokeDashoffset: pieCirc - (0.8 * pieCirc), transition: 'stroke-dashoffset 0.8s ease' }} />
                                 </svg>
                             </div>
-                            <div className="mt-4"><span className="text-[10vh] font-black italic leading-none neon-text-green tabular-nums">{curr?.cy || 1}</span></div>
+                            <div className="mt-4 text-center text-center"><span className="text-[10vh] font-black italic leading-none neon-text-green tabular-nums text-center">{curr?.cy || 1}</span></div>
                         </div>
                     </div>
                 </div>
@@ -449,13 +437,13 @@
                 <div className="space-y-4 animate-fade-in pb-32 text-white p-6 max-w-lg mx-auto text-center">
                     <header className="flex justify-between items-center mb-10 text-center">
                         <h1 className="text-3xl font-black italic uppercase tracking-tighter leading-none text-white">{APP_TITLE}</h1>
-                        <button onClick={() => auth.signOut()} className="bg-slate-900 p-4 rounded-2xl border border-white/5 text-red-500 text-center">🚪</button>
+                        <button onClick={() => auth.signOut()} className="bg-slate-900 p-4 rounded-2xl border border-white/5 text-red-500 text-center text-center">🚪</button>
                     </header>
                     {workouts.map(w => (
                         <div key={w.id} className="glass-card p-6 flex justify-between items-center text-center">
                             <div className="flex-1 cursor-pointer truncate text-left" onClick={() => onStart(w)}>
                                 <h3 className="font-black uppercase italic text-md truncate text-white">{w.name}</h3>
-                                <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest block mt-1 italic">VISTA ACTIVA</span>
+                                <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest block mt-1 italic text-center">PLAN DE ENTRENAMIENTO</span>
                             </div>
                             <div className="flex gap-2">
                                 <button onClick={() => onStart(w)} className="bg-white text-black px-6 py-4 rounded-2xl font-black text-[10px] italic text-center">GO</button>
@@ -485,9 +473,9 @@
                 <div className="h-screen flex flex-col justify-center p-10 bg-slate-950 text-center text-white">
                     <div className="bg-orange-500 w-24 h-24 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-2xl animate-pulse-slow text-3xl font-black italic">fs</div>
                     <h1 className="text-4xl font-black uppercase mb-2 italic tracking-tighter text-white">{APP_TITLE}</h1>
-                    <form onSubmit={handleAuth} className="space-y-4 max-w-sm mx-auto w-full text-white">
-                        <input type="email" placeholder="EMAIL" className="w-full bg-slate-900 border-2 border-slate-800 p-5 rounded-[1.5rem] outline-none font-bold text-white text-center" value={email} onChange={e => setEmail(e.target.value)} required />
-                        <input type="password" placeholder="CLAVE" className="w-full bg-slate-900 border-2 border-slate-800 p-5 rounded-[1.5rem] outline-none font-bold text-white text-center" value={password} onChange={e => setPassword(e.target.value)} required />
+                    <form onSubmit={handleAuth} className="space-y-4 max-w-sm mx-auto w-full text-white text-center text-center">
+                        <input type="email" placeholder="EMAIL" className="w-full bg-slate-900 border-2 border-slate-800 p-5 rounded-[1.5rem] outline-none font-bold text-white text-center text-center text-center" value={email} onChange={e => setEmail(e.target.value)} required />
+                        <input type="password" placeholder="CLAVE" className="w-full bg-slate-900 border-2 border-slate-800 p-5 rounded-[1.5rem] outline-none font-bold text-white text-center text-center text-center" value={password} onChange={e => setPassword(e.target.value)} required />
                         <button type="submit" className="w-full bg-orange-500 py-6 rounded-full font-black uppercase shadow-xl text-white text-center">ENTRAR</button>
                     </form>
                     <button onClick={() => setIsLogin(!isLogin)} className="mt-8 text-slate-500 text-[10px] font-black uppercase border-b-2 border-orange-500/30 pb-1 mx-auto italic text-center">{isLogin ? 'REGISTRARME' : 'LOGUEARME'}</button>
@@ -513,7 +501,7 @@
 
             useEffect(() => {
                 if (!user) return;
-                const pathBase = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
+                const pathBase = db.collection('artifacts').doc(globalAppId).collection('users').doc(user.uid);
                 const unsubW = pathBase.collection('workouts').onSnapshot(s => setWorkouts(s.docs.map(d => ({id: d.id, ...d.data()}))));
                 return () => unsubW();
             }, [user]);
@@ -533,7 +521,11 @@
             if (loading) return (
                 <div className="h-full w-full flex flex-col items-center justify-center bg-slate-950 text-white p-10 text-center">
                     <div className="animate-pulse-slow text-9xl mb-8">🏋️‍♂️</div>
-                    <h1 className="text-4xl font-black italic uppercase tracking-tighter mb-4 leading-tight text-center">CARGANDO...</h1>
+                    <h1 className="text-4xl font-black italic uppercase tracking-tighter mb-4 leading-tight text-center">{APP_TITLE}</h1>
+                    <div className="mt-4 flex flex-col items-center gap-3 text-center">
+                        <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-slate-600 font-black text-[10px] tracking-[0.5em] uppercase italic text-center">VERSIÓN {APP_VERSION}</span>
+                    </div>
                 </div>
             );
 
@@ -543,25 +535,24 @@
                 <div className="h-full w-full flex flex-col bg-slate-950 overflow-hidden text-center text-white">
                     {view !== 'play' && view !== 'exercise_selection' && (
                         <header className="p-6 flex justify-between items-center bg-slate-900 border-b border-white/5 text-white">
-                            <div className="text-left text-white">
+                            <div className="text-left text-white text-center">
                                 <h1 className="text-lg font-black italic uppercase leading-none tracking-tight text-white">{APP_TITLE}</h1>
                                 <p className="text-[9px] font-bold text-slate-500 truncate mt-1 text-white italic text-center">{user.email}</p>
                             </div>
-                            <button onClick={() => auth.signOut()} className="p-2 bg-red-500/10 rounded-xl text-red-500 font-bold border border-red-500/20 text-lg text-center">🚪</button>
                         </header>
                     )}
 
                     <main className={`flex-1 overflow-y-auto scrollbar-hide w-full ${view === 'play' || view === 'exercise_selection' ? 'p-0 h-full' : 'p-0 mx-auto'}`}>
                         {view === 'exercise_selection' && <ExerciseSelectionView onSave={(ex) => { setUserExercises(ex); setView('play'); }} />}
-                        {view === 'workouts' && <WorkoutsView workouts={workouts} onStart={onStartTraining} onCreate={() => setView('workouts')} onDelete={(id) => db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('workouts').doc(id).delete()} />}
+                        {view === 'workouts' && <WorkoutsView workouts={workouts} onStart={onStartTraining} onCreate={() => setView('workouts')} onDelete={(id) => db.collection('artifacts').doc(globalAppId).collection('users').doc(user.uid).collection('workouts').doc(id).delete()} />}
                         {view === 'play' && <PlayerView workout={selectedWorkout} exercises={userExercises} onExit={() => { 
                             if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
                             setView('workouts'); 
-                        }} onComplete={(name, time) => { db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('history').add({ workoutName: name, totalTime: time, date: new Date().toISOString() }); setView('workouts'); }} />}
+                        }} onComplete={(name, time) => { db.collection('artifacts').doc(globalAppId).collection('users').doc(user.uid).collection('history').add({ workoutName: name, totalTime: time, date: new Date().toISOString() }); setView('workouts'); }} />}
                     </main>
 
                     {view !== 'play' && view !== 'exercise_selection' && (
-                        <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-white/5 p-4 flex justify-around z-50 shadow-2xl text-white">
+                        <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-white/5 p-4 flex justify-around z-50 shadow-2xl text-white text-center text-center">
                             <button onClick={() => setView('workouts')} className={`flex flex-col items-center text-[9px] font-black ${view === 'workouts' ? 'text-orange-500' : 'text-slate-500'}`}><span className="text-xl mb-1 text-center text-white text-center">🏋️</span> RUTINAS</button>
                         </nav>
                     )}
