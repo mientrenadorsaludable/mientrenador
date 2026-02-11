@@ -10,7 +10,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#020617">
     
-    <title>Mi entrenador Fuerte y saludable | App</title>
+    <title>Mi Entrenador | Fuerte y Saludable</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -50,11 +50,25 @@
             border-radius: 1.5rem;
         }
 
-        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* --- ANIMACIONES DE ALTO IMPACTO --- */
+        @keyframes exert-bounce {
+            0%, 100% { transform: translateY(0) scaleY(1); }
+            50% { transform: translateY(20px) scaleY(0.9); }
+        }
 
-        .animate-pulse-slow { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.02); } }
+        @keyframes exert-rotate {
+            0% { transform: rotate(-15deg); }
+            100% { transform: rotate(15deg); }
+        }
+
+        @keyframes exert-pulse {
+            0%, 100% { transform: scale(1); filter: brightness(1) drop-shadow(0 0 5px var(--accent)); }
+            50% { transform: scale(1.1); filter: brightness(1.4) drop-shadow(0 0 20px var(--accent)); }
+        }
+
+        .anim-bounce { animation: exert-bounce 1.2s ease-in-out infinite; }
+        .anim-rotate { animation: exert-rotate 0.8s ease-in-out infinite alternate; }
+        .anim-pulse { animation: exert-pulse 2s ease-in-out infinite; }
 
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         
@@ -63,24 +77,20 @@
 
         .neon-text-orange { text-shadow: 0 0 40px rgba(249, 115, 22, 0.9); }
         .neon-text-cyan { text-shadow: 0 0 40px rgba(34, 211, 238, 0.9); }
-        .neon-text-green { text-shadow: 0 0 40px rgba(74, 222, 128, 0.9); }
         
         .pie-background { fill: rgba(255, 255, 255, 0.03); }
 
-        .btn-filter-active {
-            background-color: var(--accent);
-            color: white;
-            box-shadow: 0 0 15px rgba(249, 115, 22, 0.3);
+        .wger-img {
+            filter: drop-shadow(0 0 15px rgba(255,255,255,0.2)) brightness(1.2);
+            mix-blend-mode: screen;
+            transition: transform 0.3s ease;
         }
-
-        input[type=range] { -webkit-appearance: none; background: transparent; }
-        input[type=range]::-webkit-slider-runnable-track { background: rgba(255,255,255,0.1); height: 6px; border-radius: 3px; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 18px; width: 18px; background: #f97316; border-radius: 50%; margin-top: -6px; cursor: pointer; box-shadow: 0 0 10px rgba(249, 115, 22, 0.5); }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -88,7 +98,8 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo } = React;
 
-        const firebaseConfig = {
+        // --- 1. CONFIGURACIÓN Y CONSTANTES GLOBALES (DECLARADAS CON VAR PARA EVITAR TDZ) ---
+        var firebaseConfig = {
             apiKey: "AIzaSyDg0nohFAprIYta3Z3IvFGms55PehyxGIM",
             authDomain: "entrenadorpersonal-4e69d.firebaseapp.com",
             projectId: "entrenadorpersonal-4e69d",
@@ -98,424 +109,215 @@
             measurementId: "G-D4X8GVGRXT"
         };
 
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-        const appId = "mientrenador-v3";
-        const APP_TITLE = "Mi entrenador Fuerte y saludable";
-        const APP_VERSION = "9.5.0"; 
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        
+        var auth = firebase.auth();
+        var db = firebase.firestore();
+        var appId = "mientrenador-v3";
+        var APP_TITLE = "Fuerte y Saludable";
+        var APP_VERSION = "11.1.3";
 
-        // --- FUNCIONES DE APOYO ---
+        var EXERCISE_CATALOG = {
+            piernas: [
+                { name: 'Sentadillas', img: 'https://wger.de/static/images/exercises/main/113.png', type: 'bounce' },
+                { name: 'Desplantes', img: 'https://wger.de/static/images/exercises/main/114.png', type: 'bounce' },
+                { name: 'Puente Glúteo', img: 'https://wger.de/static/images/exercises/main/160.png', type: 'pulse' },
+                { name: 'Zancadas', img: 'https://wger.de/static/images/exercises/main/120.png', type: 'bounce' },
+                { name: 'Elevación Talón', img: 'https://wger.de/static/images/exercises/main/116.png', type: 'bounce' },
+                { name: 'Sentadilla Sumo', img: 'https://wger.de/static/images/exercises/main/113.png', type: 'bounce' }
+            ],
+            brazos: [
+                { name: 'Flexiones', img: 'https://wger.de/static/images/exercises/main/85.png', type: 'bounce' },
+                { name: 'Fondos Tríceps', img: 'https://wger.de/static/images/exercises/main/81.png', type: 'bounce' },
+                { name: 'Curl Bíceps', img: 'https://wger.de/static/images/exercises/main/74.png', type: 'pulse' },
+                { name: 'Press Hombros', img: 'https://wger.de/static/images/exercises/main/87.png', type: 'bounce' },
+                { name: 'Escaladores', img: 'https://wger.de/static/images/exercises/main/164.png', type: 'pulse' },
+                { name: 'Burpees', img: 'https://wger.de/static/images/exercises/main/206.png', type: 'bounce' }
+            ],
+            tronco: [
+                { name: 'Abdominales', img: 'https://wger.de/static/images/exercises/main/91.png', type: 'bounce' },
+                { name: 'Plancha Fija', img: 'https://wger.de/static/images/exercises/main/164.png', type: 'pulse' },
+                { name: 'Crunch', img: 'https://wger.de/static/images/exercises/main/91.png', type: 'bounce' },
+                { name: 'Elevación Piernas', img: 'https://wger.de/static/images/exercises/main/165.png', type: 'bounce' },
+                { name: 'Supermán', img: 'https://wger.de/static/images/exercises/main/161.png', type: 'pulse' },
+                { name: 'Giro Ruso', img: 'https://wger.de/static/images/exercises/main/110.png', type: 'rotate' }
+            ]
+        };
+
+        var WARMUP_STEPS = ['tobillo derecho', 'tobillo izquierdo', 'rodilla derecha', 'rodilla izquierda', 'cintura', 'brazo derecho', 'brazo izquierdo', 'cabeza'];
+
+        var DEFAULT_PARAMS = {
+            calentamiento: { action: 30, change: 5, rounds: 8, cycles: 1, rest: 0 },
+            entrenamiento: { action: 30, change: 10, rounds: 9, cycles: 4, rest: 60 },
+            estiramientos: { action: 30, change: 5, rounds: 15, cycles: 1, rest: 0 }
+        };
+
+        // --- 2. UTILIDADES ---
+        const speak = (text) => {
+            if (!window.speechSynthesis) return;
+            window.speechSynthesis.cancel();
+            const msg = new SpeechSynthesisUtterance(text);
+            msg.lang = 'es-ES';
+            msg.rate = 1.1;
+            window.speechSynthesis.speak(msg);
+        };
+
         const formatTime = (s) => `${Math.floor(s / 60)}:${((s || 0) % 60).toString().padStart(2, '0')}`;
 
-        // Componente auxiliar para inputs
-        function InputField({ label, val, set }) {
-            return (
-                <div className="flex flex-col gap-1.5 items-center text-center">
-                    <span className="text-[8px] font-black uppercase opacity-40 leading-none tracking-widest italic text-center text-white uppercase">{label}</span>
-                    <input type="number" className="w-full bg-white/5 p-4 rounded-2xl text-center font-black text-lg outline-none border border-orange-500/50 text-center leading-none text-white text-center" value={val} onChange={e => set(e.target.value)} />
-                </div>
-            );
-        }
+        // --- 3. COMPONENTES VISUALES ---
 
-        function App() {
-            const [user, setUser] = useState(null);
-            const [view, setView] = useState('workouts'); 
-            const [workouts, setWorkouts] = useState([]);
-            const [history, setHistory] = useState([]);
-            const [loading, setLoading] = useState(true);
-            const [selectedWorkout, setSelectedWorkout] = useState(null);
-            const [editingWorkout, setEditingWorkout] = useState(null);
-            
-            // Estado global de música
-            const [musicMode, setMusicMode] = useState('off');
-            const [musicVolume, setMusicVolume] = useState(0.35);
-            const audioRef = useRef(null);
+        const WorkoutGraphic = ({ name, imgUrl, type, className = "w-24 h-24" }) => {
+            const n = name?.toLowerCase() || "";
+            let animClass = "anim-pulse";
+            if (type === 'bounce') animClass = "anim-bounce";
+            if (type === 'rotate' || n.includes('tobillo') || n.includes('giro')) animClass = "anim-rotate";
 
-            const INTERNAL_TRACKS = {
-                workout: "https://stream.zeno.fm/f36768a88h0uv",
-                lofi: "https://stream.zeno.fm/0r0xa792kwzuv"
-            };
-
-            // Función speak con ducking (bajar volumen de música)
-            const speak = (text) => {
-                if (!window.speechSynthesis) return;
-                window.speechSynthesis.cancel();
-                const msg = new SpeechSynthesisUtterance(text);
-                msg.lang = 'es-ES';
-                msg.rate = 1.15;
-
-                // Al empezar a hablar: Bajar volumen música
-                msg.onstart = () => {
-                    if (audioRef.current && musicMode !== 'off') {
-                        audioRef.current.volume = musicVolume * 0.1; // Baja al 10% del configurado
-                    }
-                };
-
-                // Al terminar de hablar: Restaurar volumen música
-                msg.onend = () => {
-                    if (audioRef.current && musicMode !== 'off') {
-                        audioRef.current.volume = musicVolume;
-                    }
-                };
-
-                window.speechSynthesis.speak(msg);
-            };
-
-            useEffect(() => {
-                const unsubscribe = auth.onAuthStateChanged((u) => {
-                    setUser(u && !u.isAnonymous ? u : null);
-                    setTimeout(() => setLoading(false), 3000);
-                });
-                return () => unsubscribe();
-            }, []);
-
-            useEffect(() => {
-                if (!user) return;
-                const pathBase = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
-                const unsubW = pathBase.collection('workouts').onSnapshot(s => setWorkouts(s.docs.map(d => ({id: d.id, ...d.data()}))));
-                const unsubH = pathBase.collection('history').onSnapshot(s => setHistory(s.docs.map(d => ({id: d.id, ...d.data()}))));
-                return () => { unsubW(); unsubH(); };
-            }, [user]);
-
-            useEffect(() => {
-                if (!audioRef.current) audioRef.current = new Audio();
-                const audio = audioRef.current;
-                audio.volume = musicVolume;
-                if (musicMode !== 'off' && INTERNAL_TRACKS[musicMode]) {
-                    if (audio.src !== INTERNAL_TRACKS[musicMode]) audio.src = INTERNAL_TRACKS[musicMode];
-                    audio.play().catch(() => {});
-                } else { audio.pause(); }
-            }, [musicMode, musicVolume]);
-
-            const startWorkout = async (w) => {
-                setSelectedWorkout(w);
-                try {
-                    const el = document.documentElement;
-                    if (el.requestFullscreen) await el.requestFullscreen();
-                    if (screen.orientation && screen.orientation.lock) {
-                        await screen.orientation.lock('landscape').catch(() => {});
-                    }
-                } catch (err) {}
-                setView('play');
-            };
-
-            if (loading) return (
-                <div className="h-full w-full flex flex-col items-center justify-center bg-slate-950 text-white overflow-hidden text-center text-center">
-                    <div className="relative z-10 flex flex-col items-center animate-fade-in text-center px-6 mx-auto">
-                        <div className="text-9xl mb-6 drop-shadow-[0_0_40px_rgba(249,115,22,0.4)] animate-pulse-slow">🏋️‍♂️</div>
-                        <h1 className="text-4xl font-black italic uppercase tracking-tighter mb-4 leading-tight">{APP_TITLE}</h1>
-                        <div className="mt-4 flex flex-col items-center gap-3">
-                            <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-                            <span className="text-slate-600 font-black text-[10px] tracking-[0.5em] uppercase italic text-center">Versión {APP_VERSION}</span>
-                        </div>
+            if (imgUrl) {
+                return (
+                    <div className={`${animClass} flex items-center justify-center`}>
+                        <img src={imgUrl} className={`${className} object-contain wger-img`} alt={name} />
                     </div>
-                </div>
-            );
+                );
+            }
 
-            if (!user) return <AuthView appId={appId} db={db} auth={auth} />;
+            // Respaldo SVG si no hay imagen
+            const silhouettes = {
+                'sentadilla': <g fill="currentColor"><circle cx="50" cy="15" r="7" /><path d="M50 25c-5 0-10 3-10 8v12h20v-12c0-5-5-8-10-8zM30 46l-5 15l15 28h10v-25h10v25h10l15-28l-5-15H30z" /></g>,
+                'flexion': <g fill="currentColor"><circle cx="85" cy="35" r="6" /><path d="M10 70l70-20l3-5l-73 18z" /><rect x="22" y="68" width="5" height="15" rx="2" /><rect x="68" y="55" width="5" height="15" rx="2" /></g>,
+                'tobillo': <g fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round"><path d="M50 20v55l20 15M50 75l-15 5" /><circle cx="50" cy="88" r="4" fill="currentColor" /></g>,
+                'default': <g fill="currentColor" opacity="0.6"><circle cx="50" cy="30" r="10" /><path d="M40 45h20v35H40zM35 80l15 15l15-15H35z" /></g>
+            };
+
+            let content = silhouettes['default'];
+            if (n.includes('sentadilla')) content = silhouettes['sentadilla'];
+            else if (n.includes('flexion') || n.includes('plancha')) content = silhouettes['flexion'];
+            else if (n.includes('tobillo')) content = silhouettes['tobillo'];
 
             return (
-                <div className="h-full w-full flex flex-col relative bg-slate-950 overflow-hidden text-center text-center">
-                    {view !== 'play' && (
-                        <header className="p-6 flex justify-between items-center bg-slate-900 shadow-2xl shrink-0 border-b border-white/5 text-white">
-                            <div onClick={() => setView('workouts')} className="cursor-pointer text-white text-left">
-                                <h1 className="text-lg font-black italic uppercase leading-none tracking-tight">{APP_TITLE}</h1>
-                                <p className="text-[9px] font-bold text-slate-500 lowercase italic tracking-wider mt-1">{user.email}</p>
-                            </div>
-                            <div className="flex gap-2 leading-none text-center">
-                                <button onClick={() => auth.signOut()} className="p-2 bg-red-500/10 rounded-xl text-red-500 font-bold border border-red-500/20 text-lg flex items-center justify-center text-white">🚪</button>
-                            </div>
-                        </header>
-                    )}
-
-                    <main className={`flex-1 overflow-y-auto scrollbar-hide w-full ${view === 'play' ? 'p-0 h-full' : 'p-4 max-w-2xl mx-auto'}`}>
-                        {view === 'avance' && <AvanceView history={history} />}
-                        {view === 'workouts' && <WorkoutsView workouts={workouts} setWorkout={startWorkout} onEdit={(w) => { setEditingWorkout(w); setView('create'); }} onCreate={() => { setEditingWorkout(null); setView('create'); }} user={user} appId={appId} db={db} />}
-                        {view === 'history' && <HistoryListView history={history} user={user} appId={appId} db={db} />}
-                        {view === 'create' && <CreateView onCancel={() => { setView('workouts'); setEditingWorkout(null); }} user={user} appId={appId} db={db} workoutToEdit={editingWorkout} />}
-                        {view === 'music' && <MusicHubView mode={musicMode} setMode={setMusicMode} volume={musicVolume} setVolume={setMusicVolume} onBack={() => setView('workouts')} />}
-                        {view === 'play' && <PlayerView workout={selectedWorkout} speak={speak} onExit={() => {
-                            if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
-                            setView('workouts');
-                        }} onComplete={(name, time) => {
-                            db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('history').add({ workoutName: name, totalTime: time, date: new Date().toISOString() });
-                            if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
-                            setView('workouts');
-                        }} />}
-                    </main>
-
-                    {view !== 'play' && (
-                        <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-white/5 p-4 flex justify-around items-center z-50 shadow-2xl">
-                            <button onClick={() => setView('workouts')} className={`flex flex-col items-center text-[9px] font-black ${view === 'workouts' ? 'text-orange-500' : 'text-slate-500'}`}>
-                                <span className="text-xl mb-1 text-center">🏋️</span> MIS RUTINAS
-                            </button>
-                            <button onClick={() => setView('music')} className={`flex flex-col items-center text-[9px] font-black ${view === 'music' ? 'text-orange-500' : 'text-slate-500'}`}>
-                                <span className="text-xl mb-1 text-center">🎵</span> MÚSICA
-                            </button>
-                            <button onClick={() => setView('avance')} className={`flex flex-col items-center text-[9px] font-black ${view === 'avance' ? 'text-orange-500' : 'text-slate-500'}`}>
-                                <span className="text-xl mb-1 text-center">📊</span> AVANCE
-                            </button>
-                            <button onClick={() => setView('history')} className={`flex flex-col items-center text-[9px] font-black ${view === 'history' ? 'text-orange-500' : 'text-slate-500'}`}>
-                                <span className="text-xl mb-1 text-center">📜</span> HISTORIAL
-                            </button>
-                        </nav>
-                    )}
+                <div className={animClass}>
+                    <svg viewBox="0 0 100 100" className={className} xmlns="http://www.w3.org/2000/svg">
+                        {content}
+                    </svg>
                 </div>
             );
-        }
+        };
 
-        function AuthView({ appId, db, auth }) {
+        const InputField = ({ label, val, set }) => (
+            <div className="flex flex-col gap-1 items-center text-center">
+                <span className="text-[7px] font-black uppercase opacity-40 text-white tracking-widest">{label}</span>
+                <input type="number" className="w-full bg-white/5 p-3 rounded-2xl text-center font-black text-lg outline-none border border-white/5 focus:border-orange-500 text-white" value={val} onChange={e => set(e.target.value)} />
+            </div>
+        );
+
+        // --- 4. VISTAS ---
+
+        function AuthView() {
+            const [isLogin, setIsLogin] = useState(true);
             const [email, setEmail] = useState('');
             const [password, setPassword] = useState('');
-            const [showPass, setShowPass] = useState(false);
-            const [isRegister, setIsRegister] = useState(false);
+            const [busy, setBusy] = useState(false);
+
             const handleAuth = async (e) => {
                 e.preventDefault();
+                setBusy(true);
                 try {
-                    let res;
-                    if (isRegister) res = await auth.createUserWithEmailAndPassword(email.trim(), password);
-                    else res = await auth.signInWithEmailAndPassword(email.trim(), password);
-                    await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('users_metadata').doc(res.user.uid).set({
-                        email: email.trim(), password, lastActivity: new Date().toISOString()
-                    }, { merge: true });
-                } catch (err) {}
+                    if (isLogin) await auth.signInWithEmailAndPassword(email.trim(), password);
+                    else await auth.createUserWithEmailAndPassword(email.trim(), password);
+                } catch (err) { alert("Error de acceso: " + err.message); } 
+                finally { setBusy(false); }
             };
+
             return (
-                <div className="h-full w-full flex flex-col items-center bg-slate-950 overflow-y-auto px-10 pb-40 pt-16 scrollbar-hide text-center text-white">
-                    <div className="text-7xl mb-6 animate-pulse-slow mx-auto text-center text-white">🏃‍♂️</div>
-                    <h1 className="text-3xl font-black italic uppercase leading-none mb-1 tracking-tighter text-white italic text-center">{APP_TITLE}</h1>
-                    <p className="text-orange-500 font-bold uppercase text-[9px] tracking-[0.3em] mb-12 italic text-center">Fuerte y Saludable</p>
-                    <form onSubmit={handleAuth} className="space-y-4 max-w-sm w-full text-center">
-                        <input type="email" placeholder="EMAIL" className="w-full p-6 bg-slate-900 border border-white/5 rounded-3xl font-bold outline-none focus:border-orange-500 text-xs shadow-inner text-white text-center" value={email} onChange={e => setEmail(e.target.value)} required />
-                        <div className="relative text-center">
-                            <input type={showPass ? "text" : "password"} placeholder="PASSWORD" className="w-full p-6 bg-slate-900 border border-white/5 rounded-3xl font-bold outline-none focus:border-orange-500 text-xs shadow-inner text-white text-center" value={password} onChange={e => setPassword(e.target.value)} required />
-                            <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-6 top-6 text-xl leading-none flex items-center justify-center text-white/50">{showPass ? '🙈' : '👁️'}</button>
-                        </div>
-                        <button type="submit" className="w-full bg-orange-500 py-6 rounded-full font-black uppercase shadow-xl tracking-widest italic leading-none active:scale-95 transition-transform text-white text-center">ENTRAR</button>
+                <div className="h-screen flex flex-col justify-center p-10 bg-slate-950 text-center text-white">
+                    <div className="bg-orange-500 w-24 h-24 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-2xl animate-pulse-slow text-3xl font-black italic">fs</div>
+                    <h1 className="text-4xl font-black uppercase mb-2 italic tracking-tighter">{APP_TITLE}</h1>
+                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] mb-12 italic">Tu Entrenador Personal</p>
+                    <form onSubmit={handleAuth} className="space-y-4 max-w-sm mx-auto w-full">
+                        <input type="email" placeholder="CORREO" className="w-full bg-slate-900 border-2 border-slate-800 p-5 rounded-[1.5rem] outline-none font-bold text-white text-center" value={email} onChange={e => setEmail(e.target.value)} required />
+                        <input type="password" placeholder="CONTRASEÑA" className="w-full bg-slate-900 border-2 border-slate-800 p-5 rounded-[1.5rem] outline-none font-bold text-white text-center" value={password} onChange={e => setPassword(e.target.value)} required />
+                        <button type="submit" disabled={busy} className="w-full bg-orange-500 py-6 rounded-full font-black uppercase shadow-xl active:scale-95 disabled:opacity-50 text-white">
+                            {busy ? 'Procesando...' : (isLogin ? 'Entrar' : 'Registrarme')}
+                        </button>
                     </form>
-                    <button onClick={() => setIsRegister(!isRegister)} className="mt-8 text-slate-500 text-[10px] font-black uppercase border-b border-orange-500/30 pb-1 mx-auto italic text-center">{isRegister ? 'Ya tengo cuenta' : 'Regístrate gratis'}</button>
-                </div>
-            );
-        }
-
-        function AvanceView({ history }) {
-            const chartRef = useRef(null);
-            const [filter, setFilter] = useState('semana');
-            useEffect(() => {
-                const ctx = document.getElementById('progressChart')?.getContext('2d');
-                if (!ctx) return;
-                let labels = [], dataPoints = [];
-                const now = new Date();
-                if (filter === 'semana') {
-                    labels = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-                    dataPoints = Array(7).fill(0);
-                    history.forEach(h => {
-                        const d = new Date(h.date);
-                        if (Math.abs(now - d) <= (7 * 24 * 60 * 60 * 1000)) dataPoints[d.getDay()] += Math.floor(h.totalTime / 60);
-                    });
-                } else if (filter === 'mes') {
-                    const days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-                    labels = Array.from({length: days}, (_, i) => (i + 1).toString());
-                    dataPoints = Array(days).fill(0);
-                    history.forEach(h => {
-                        const d = new Date(h.date);
-                        if (d.getMonth() === now.getMonth()) dataPoints[d.getDate() - 1] += Math.floor(h.totalTime / 60);
-                    });
-                } else {
-                    labels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-                    dataPoints = Array(12).fill(0);
-                    history.forEach(h => {
-                        const d = new Date(h.date);
-                        if (d.getFullYear() === now.getFullYear()) dataPoints[d.getMonth()] += Math.floor(h.totalTime / 60);
-                    });
-                }
-                if (chartRef.current) chartRef.current.destroy();
-                chartRef.current = new Chart(ctx, {
-                    type: 'bar',
-                    data: { labels, datasets: [{ data: dataPoints, backgroundColor: '#f97316', borderRadius: 4 }] },
-                    options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b', font: { size: 9 } } }, x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 9 } } } } }
-                });
-                return () => chartRef.current?.destroy();
-            }, [history, filter]);
-            return (
-                <div className="space-y-6 animate-fade-in pb-20 text-center text-white">
-                    <section>
-                        <div className="flex justify-between items-end mb-4 px-2 text-center text-center">
-                            <h2 className="text-[10px] font-black uppercase text-slate-500 tracking-widest italic leading-none text-left text-center">Mi Avance (Min)</h2>
-                            <div className="flex gap-1 bg-slate-900 p-1 rounded-xl border border-white/5 leading-none">
-                                {['semana', 'mes', 'año'].map(f => (
-                                    <button key={f} onClick={() => setFilter(f)} className={`px-3 py-1.5 rounded-lg text-[8px] font-black uppercase transition-all leading-none ${filter === f ? 'btn-filter-active' : 'text-slate-500'}`}>{f}</button>
-                                ))}
-                            </div>
-                        </div>
-                        <div className="glass-card p-6 h-64 shadow-2xl relative overflow-hidden mx-auto w-full text-center">
-                             <canvas id="progressChart"></canvas>
-                        </div>
-                    </section>
-                </div>
-            );
-        }
-
-        function WorkoutsView({ workouts, setWorkout, onEdit, onCreate, user, appId, db }) {
-            return (
-                <div className="space-y-4 animate-fade-in pb-32 text-center text-white">
-                    <div className="grid grid-cols-1 gap-3 text-center mx-auto w-full">
-                        {workouts.map(w => (
-                            <div key={w.id} className="glass-card p-6 flex justify-between items-center border-white/10 text-left text-center">
-                                <div className="flex-1 cursor-pointer truncate text-center" onClick={() => setWorkout(w)}>
-                                    <h3 className="font-black italic uppercase text-md leading-none mb-2 truncate text-white">{w.name}</h3>
-                                    <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest italic leading-none text-center text-center">Duración: {formatTime(w.totalTime || 0)}</p>
-                                </div>
-                                <div className="flex gap-2 leading-none text-center">
-                                    <button onClick={() => setWorkout(w)} className="bg-white text-black px-5 py-3 rounded-2xl font-black text-[10px] italic leading-none flex items-center justify-center text-center text-white">GO</button>
-                                    <button onClick={() => onEdit(w)} className="bg-slate-800 text-white p-3 rounded-2xl leading-none flex items-center justify-center text-center text-white">📝</button>
-                                    <button onClick={() => db.collection(`artifacts/${appId}/users/${user.uid}/workouts`).doc(w.id).delete()} className="bg-red-500/10 text-red-500 p-3 rounded-2xl leading-none flex items-center justify-center text-center text-white text-center">🗑️</button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                    <button onClick={onCreate} className="w-full bg-white/5 border border-white/10 text-white py-5 rounded-full font-black uppercase shadow-xl italic tracking-widest active:scale-95 transition-transform flex items-center justify-center gap-2 leading-none mt-4 text-center">
-                        <span className="text-xl leading-none">➕</span> NUEVA RUTINA
+                    <button onClick={() => setIsLogin(!isLogin)} className="mt-8 text-slate-500 text-[10px] font-black uppercase border-b-2 border-orange-500/30 pb-1 mx-auto italic">
+                        {isLogin ? 'Crear cuenta nueva' : 'Ya tengo cuenta'}
                     </button>
                 </div>
             );
         }
 
-        function MusicHubView({ mode, setMode, volume, setVolume, onBack }) {
-            const SERVICES = [
-                { name: 'Gospel Library', url: 'gospellibrary://', fallback: 'https://www.churchofjesuschrist.org/study' },
-                { name: 'Spotify', url: 'spotify:', fallback: 'https://open.spotify.com' },
-                { name: 'Amazon Music', url: 'https://music.amazon.com' },
-                { name: 'YouTube Music', url: 'https://music.youtube.com' }
-            ];
-            const openMusic = (url, fallback) => {
-                window.location.assign(url);
-                setTimeout(() => { if (fallback) window.location.assign(fallback); }, 1500);
+        function ExerciseSelectionView({ onSave }) {
+            const [selected, setSelected] = useState({ piernas: [], brazos: [], tronco: [] });
+            const toggle = (sec, item) => {
+                setSelected(prev => {
+                    const list = prev[sec] || [];
+                    if (list.some(i => i.name === item.name)) return { ...prev, [sec]: list.filter(i => i.name !== item.name) };
+                    if (list.length >= 3) return prev;
+                    return { ...prev, [sec]: [...list, item] };
+                });
             };
-            return (
-                <div className="flex-1 flex flex-col items-center bg-slate-950 px-6 pt-10 pb-40 animate-fade-in text-center text-white">
-                    <h2 className="text-2xl font-black italic uppercase tracking-tight mb-8 text-white">Centro de Música</h2>
-                    <div className="w-full max-w-sm glass-card p-8 mb-8 space-y-6">
-                        <div className="space-y-4 text-center">
-                            <div className="flex justify-between text-[10px] font-black uppercase opacity-60 italic text-white text-center text-center">
-                                <span>Volumen Canales Internos</span>
-                                <span>{Math.round(volume * 100)}%</span>
-                            </div>
-                            <input type="range" min="0" max="1" step="0.05" value={volume} onChange={(e) => setVolume(parseFloat(e.target.value))} className="w-full" />
-                            <p className="text-[8px] font-bold text-orange-500 opacity-60 uppercase italic text-center">* La música bajará sola cuando el entrenador hable.</p>
-                        </div>
-                        <div className="grid gap-3 pt-4 text-center">
-                            <button onClick={() => setMode('off')} className={`py-4 rounded-2xl text-xs font-black uppercase transition-all ${mode === 'off' ? 'bg-orange-500 text-white shadow-xl shadow-orange-500/20' : 'bg-white/5 text-slate-400'}`}>Silencio</button>
-                            <button onClick={() => setMode('workout')} className={`py-4 rounded-2xl text-xs font-black uppercase transition-all ${mode === 'workout' ? 'bg-orange-500 text-white shadow-xl shadow-orange-500/20' : 'bg-white/5 text-slate-400'}`}>Workout Mix 🔥</button>
-                            <button onClick={() => setMode('lofi')} className={`py-4 rounded-2xl text-xs font-black uppercase transition-all ${mode === 'lofi' ? 'bg-orange-500 text-white shadow-xl shadow-orange-500/20' : 'bg-white/5 text-slate-400'}`}>Lofi Chill ☕</button>
-                        </div>
-                    </div>
-                    <div className="w-full max-w-sm text-center">
-                        <p className="text-[10px] font-black uppercase opacity-40 mb-4 tracking-[0.3em] text-center italic text-white">Streaming Externo</p>
-                        <div className="grid grid-cols-2 gap-3 text-center text-white">
-                            {SERVICES.map(s => (
-                                <button key={s.name} onClick={() => { setMode('off'); openMusic(s.url, s.fallback); }} className="bg-slate-900 border border-white/5 p-5 rounded-3xl text-[9px] font-black uppercase hover:bg-white/10 transition-all text-center">
-                                    {s.name}
-                                </button>
-                            ))}
-                        </div>
-                        <p className="text-[7px] mt-4 opacity-40 uppercase italic text-center leading-relaxed">* Nota: Las apps externas (Spotify, etc.) se gestionan desde el sistema de tu celular.</p>
-                    </div>
-                </div>
-            );
-        }
+            const isReady = selected.piernas.length === 3 && selected.brazos.length === 3 && selected.tronco.length === 3;
 
-        function CreateView({ onCancel, user, appId, db, workoutToEdit }) {
-            const [name, setName] = useState(workoutToEdit ? workoutToEdit.name : '');
-            const [transition, setTransition] = useState(workoutToEdit?.transition || 10);
-            const [sectionTransition, setSectionTransition] = useState(workoutToEdit?.sectionTransition || 10);
-            const [phases, setPhases] = useState(workoutToEdit ? workoutToEdit.phases : {
-                calentamiento: { action: 10, change: 3, rounds: 8, cycles: 1, rest: 0 },
-                entrenamiento: { action: 30, change: 10, rounds: 9, cycles: 4, rest: 60 },
-                estiramientos: { action: 30, change: 5, rounds: 17, cycles: 1, rest: 0 }
-            });
-            const update = (p, f, v) => setPhases(prev => ({...prev, [p]: {...prev[p], [f]: parseInt(v) || 0}}));
-            const handleSave = async () => {
-                if (!name.trim()) return;
-                const col = db.collection(`artifacts/${appId}/users/${user.uid}/workouts`);
-                const data = { 
-                    name, phases, 
-                    transition: parseInt(transition) || 10, 
-                    sectionTransition: parseInt(sectionTransition) || 10,
-                    updatedAt: new Date().toISOString() 
-                };
-                if (workoutToEdit) await col.doc(workoutToEdit.id).update(data);
-                else await col.add({ ...data, createdAt: new Date().toISOString() });
-                onCancel();
-            };
             return (
-                <div className="flex-1 flex flex-col items-center bg-slate-950 overflow-y-auto px-4 pb-40 scrollbar-hide text-center mx-auto w-full text-white italic text-center text-center">
-                    <header className="w-full flex items-center gap-4 py-6 text-center text-white italic text-center">
-                        <button onClick={onCancel} className="p-3 bg-slate-900 rounded-2xl font-bold border border-white/5 leading-none flex items-center justify-center text-white">⬅</button>
-                        <h2 className="text-xl font-black uppercase italic leading-none text-center flex-1 text-white text-center text-center text-center text-center">{workoutToEdit ? 'EDITAR RUTINA' : 'NUEVA RUTINA'}</h2>
-                    </header>
-                    <div className="w-full space-y-6 max-w-lg mx-auto text-center italic text-center">
-                        <div className="bg-slate-900/60 p-6 rounded-[2rem] border border-white/5 space-y-4 text-white">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-orange-500 block leading-none text-center text-center">Nombre del Plan</label>
-                            <input type="text" placeholder="NOMBRE DE RUTINA" className="w-full bg-slate-800/40 p-4 rounded-2xl font-black text-center uppercase focus:border-orange-500 outline-none text-white text-center text-center" value={name} onChange={e => setName(e.target.value)} />
-                            <div className="grid grid-cols-2 gap-4 pt-2 text-center text-white">
-                                <div className="text-center text-white">
-                                    <label className="text-[9px] font-black uppercase tracking-widest text-orange-500 block leading-tight mb-2 text-center text-center">Transición fases (S)</label>
-                                    <input type="number" className="w-full bg-slate-800/40 p-4 rounded-2xl font-black text-center focus:border-orange-500 outline-none text-white text-center text-center" value={transition} onChange={e => setTransition(e.target.value)} />
-                                </div>
-                                <div className="text-center text-white text-center">
-                                    <label className="text-[9px] font-black uppercase tracking-widest text-orange-500 block leading-tight mb-2 text-center text-center">Transición secciones (S)</label>
-                                    <input type="number" className="w-full bg-slate-800/40 p-4 rounded-2xl font-black text-center focus:border-orange-500 outline-none text-white text-center text-center" value={sectionTransition} onChange={e => setSectionTransition(e.target.value)} />
-                                </div>
+                <div className="h-full w-full bg-slate-950 flex flex-col p-6 overflow-y-auto scrollbar-hide text-white pb-40 text-center">
+                    <h2 className="text-3xl font-black italic uppercase text-orange-500 mb-2">Preparar Sesión</h2>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-10 italic">Elige 3 movimientos de cada zona</p>
+                    {Object.entries(EXERCISE_CATALOG).map(([sec, items]) => (
+                        <div key={sec} className="mb-12">
+                            <h3 className="text-sm font-black uppercase italic tracking-[0.4em] mb-6 border-b border-white/10 pb-2 inline-block mx-auto">{sec} ({selected[sec].length}/3)</h3>
+                            <div className="grid grid-cols-2 gap-3">
+                                {items.map(item => {
+                                    const isSel = selected[sec].some(i => i.name === item.name);
+                                    return (
+                                        <button key={item.name} onClick={() => toggle(sec, item)} className={`p-4 rounded-[2rem] flex flex-col items-center gap-3 transition-all border ${isSel ? "bg-orange-500 border-orange-400 shadow-xl scale-105" : "bg-white/5 border-white/5 opacity-40"}`}>
+                                            <img src={item.img} alt={item.name} className="w-16 h-16 object-contain wger-img" />
+                                            <span className="text-[10px] font-black uppercase italic">{item.name}</span>
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
-                        {['calentamiento', 'entrenamiento', 'estiramientos'].map((p) => (
-                            <div key={p} className="glass-card p-6 italic mb-4 text-center text-center text-center text-center text-center">
-                                <span className="font-black uppercase text-xs tracking-widest text-orange-500 border-b border-white/5 block mb-6 pb-2 leading-none mx-auto w-fit text-center uppercase">{p}</span>
-                                <div className="grid grid-cols-2 gap-4 mt-4 text-center text-center">
-                                    <InputField label="ACCIÓN (S)" val={phases[p].action} set={v => update(p, 'action', v)} />
-                                    <InputField label="CAMBIO (S)" val={phases[p].change} set={v => update(p, 'change', v)} />
-                                    <InputField label="RONDAS" val={phases[p].rounds} set={v => update(p, 'rounds', v)} />
-                                    <InputField label="CICLOS" val={phases[p].cycles} set={v => update(p, 'cycles', v)} />
-                                    <div className="col-span-2 text-center text-center text-center"><InputField label="DESCANSO AL FINAL DE CICLO (S)" val={phases[p].rest} set={v => update(p, 'rest', v)} /></div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                    <div className="fixed bottom-0 left-0 right-0 p-6 bg-slate-950/90 backdrop-blur-xl border-t border-white/5 z-50 text-center">
-                        <button onClick={handleSave} className="w-full bg-white text-black py-6 rounded-full font-black uppercase shadow-2xl italic tracking-[0.2em] leading-none active:scale-95 transition-transform max-w-sm mx-auto text-center text-white text-center text-center text-center text-center">
-                            {workoutToEdit ? 'GUARDAR MODIFICACIONES' : 'CREAR RUTINA'}
+                    ))}
+                    <div className="fixed bottom-0 left-0 right-0 p-8 bg-slate-950/95 backdrop-blur-xl border-t border-white/10 z-50">
+                        <button disabled={!isReady} onClick={() => onSave(selected)} className={`w-full py-6 rounded-full font-black uppercase italic tracking-widest shadow-2xl transition-all ${isReady ? "bg-white text-black" : "bg-slate-800 text-slate-600 opacity-50"}`}>
+                            {isReady ? "¡A ENTRENAR!" : "Faltan Selecciones"}
                         </button>
                     </div>
                 </div>
             );
         }
 
-        function HistoryListView({ history, user, appId, db }) {
+        function WorkoutsView({ workouts, onStart, onEdit, onCreate, onDelete }) {
             return (
-                <div className="space-y-4 animate-fade-in pb-20 text-center mx-auto w-full text-white italic text-center text-center">
-                    <h2 className="text-[10px] font-black uppercase text-slate-500 mb-2 italic tracking-widest leading-none text-center italic text-center">Historial de Sesiones</h2>
-                    {history.sort((a,b) => new Date(b.date) - new Date(a.date)).map(h => (
-                        <div key={h.id} className="glass-card p-5 flex justify-between items-center border-white/5 text-left text-center text-center">
-                            <div className="flex-1 pr-4 truncate text-center text-center text-center">
-                                <h3 className="font-black uppercase italic text-xs leading-none mb-1 truncate text-center text-white italic">{h.workoutName}</h3>
-                                <p className="text-[8px] font-bold text-slate-500 uppercase leading-none italic text-center tracking-tighter text-center text-center">{new Date(h.date).toLocaleDateString()} • {formatTime(h.totalTime)}</p>
+                <div className="space-y-4 animate-fade-in pb-32 text-white text-center">
+                    {workouts.map(w => (
+                        <div key={w.id} className="glass-card p-6 flex justify-between items-center border-white/10">
+                            <div className="flex-1 cursor-pointer truncate text-left" onClick={() => onStart(w)}>
+                                <h3 className="font-black uppercase italic text-md truncate">{w.name}</h3>
+                                <span className="text-[9px] font-black text-orange-500 uppercase tracking-widest italic block">Tiempo total: {formatTime(w.totalTime || 1200)}</span>
                             </div>
-                            <button onClick={() => db.collection(`artifacts/${appId}/users/${user.uid}/history`).doc(h.id).delete()} className="text-slate-700 p-2 leading-none flex items-center justify-center text-center text-center text-center">✕</button>
+                            <div className="flex gap-2">
+                                <button onClick={() => onStart(w)} className="bg-white text-black px-6 py-4 rounded-2xl font-black text-[10px] italic flex items-center justify-center">ENTRENAR</button>
+                                <button onClick={() => onEdit(w)} className="bg-slate-800 p-4 rounded-2xl leading-none">📝</button>
+                                <button onClick={() => onDelete(w.id)} className="bg-red-500/10 text-red-500 p-4 rounded-2xl leading-none">🗑️</button>
+                            </div>
                         </div>
                     ))}
+                    <button onClick={onCreate} className="w-full bg-white/5 border border-white/10 py-6 rounded-full font-black uppercase shadow-xl italic tracking-widest active:scale-95 flex items-center justify-center gap-2 mt-4 text-white text-center">
+                        <span className="text-xl">➕</span> NUEVA RUTINA
+                    </button>
                 </div>
             );
         }
 
-        function PlayerView({ workout, speak, onExit, onComplete }) {
+        function PlayerView({ workout, exercises, onExit, onComplete }) {
             const [status, setStatus] = useState('paused');
             const [idx, setIdx] = useState(0);
             const [timeLeft, setTimeLeft] = useState(0);
             const [elapsed, setElapsed] = useState(0);
             const [steps, setSteps] = useState([]);
-            const wakeLockRef = useRef(null); 
             const savedRef = useRef(false);
 
             useEffect(() => {
@@ -524,59 +326,49 @@
                 const transTime = workout.transition || 10;
                 const secTransTime = workout.sectionTransition || 10;
                 const REGIONS = ['Piernas', 'Brazos', 'Tronco'];
-                const WARMUP_ORDER = ['tobillos', 'tobillos', 'rodillas', 'rodillas', 'cintura', 'brazos', 'brazos', 'cabeza'];
 
-                s.push({ label: 'PREPARACIÓN', sec: 30, color: 'bg-slate-800', voice: 'Prepárate', phase: 'Iniciando', r: 1, tr: 1, cy: 1, tc: 1, bodySection: 'PREPARACIÓN' });
+                s.push({ label: 'PREPARACIÓN', sec: 30, color: 'bg-slate-800', voice: 'Prepárate', phase: 'Inicio', r: 1, tr: 1, bodySection: 'LISTO', currentExercise: { name: 'Respira' } });
 
-                const phasesOrder = [{ id: 'calentamiento', label: 'Calentamiento' }, { id: 'entrenamiento', label: 'Entrenamiento' }, { id: 'estiramientos', label: 'Estiramiento' }];
-
-                phasesOrder.forEach((pInfo, pIdx) => {
-                    const c = ph[pInfo.id];
+                ['calentamiento', 'entrenamiento', 'estiramientos'].forEach((phaseId, pIdx) => {
+                    const c = ph[phaseId];
                     for(let cy=1; cy<=c.cycles; cy++) {
                         for(let r=1; r<=c.rounds; r++) {
-                            let voiceMsg = 'Empieza';
-                            let bodySection = pInfo.label.toUpperCase();
+                            let currentEx = { name: "" };
+                            let nextEx = { name: "" };
+                            let voiceMsg = "";
                             
-                            if (pInfo.id === 'calentamiento') {
-                                const joint = WARMUP_ORDER[(r-1) % WARMUP_ORDER.length];
-                                bodySection = joint.toUpperCase();
-                                voiceMsg = "Calienta " + joint;
-                            } else if (pInfo.id === 'entrenamiento') {
-                                const regionIdx = Math.floor((r - 1) / 3) % 3;
-                                bodySection = REGIONS[regionIdx].toUpperCase();
-                                voiceMsg = "Ejercita " + REGIONS[regionIdx];
-                            } else if (pInfo.id === 'estiramientos') voiceMsg = "Estira";
+                            if (phaseId === 'calentamiento') {
+                                currentEx = { name: WARMUP_STEPS[(r-1) % WARMUP_STEPS.length] };
+                                voiceMsg = "Calienta " + currentEx.name;
+                            } else if (phaseId === 'entrenamiento') {
+                                const sectionIdx = Math.floor((r - 1) / 3) % 3;
+                                const exIdx = (r - 1) % 3;
+                                const list = exercises[REGIONS[sectionIdx].toLowerCase()] || [];
+                                currentEx = list[exIdx] || { name: "Ejercicio" };
+                                nextEx = list[(exIdx + 1) % 3] || { name: "Siguiente" };
+                                voiceMsg = "Ejercita " + currentEx.name;
+                            } else {
+                                currentEx = { name: "Estiramiento" };
+                                voiceMsg = "Estira";
+                            }
 
-                            s.push({ label: bodySection, sec: c.action, color: 'bg-emerald-600', voice: voiceMsg, phase: pInfo.label, r, tr: c.rounds, cy, tc: c.cycles, bodySection });
+                            s.push({ label: phaseId.toUpperCase(), sec: c.action, color: 'bg-emerald-600', voice: voiceMsg, phase: phaseId, r, tr: c.rounds, cy, tc: c.cycles, bodySection: (phaseId === 'entrenamiento' ? REGIONS[Math.floor((r-1)/3)%3].toUpperCase() : phaseId.toUpperCase()), currentExercise: currentEx, nextExercise: nextEx });
                             
                             if(r < c.rounds) {
-                                if (pInfo.id === 'entrenamiento' && r % 3 === 0) {
-                                    const nextRegionIdx = Math.floor(r / 3) % 3;
-                                    s.push({ label: 'CAMBIO SECCIÓN', sec: secTransTime, color: 'bg-yellow-500', voice: "Prepárate para ejercitar " + REGIONS[nextRegionIdx], phase: pInfo.label, r, tr: c.rounds, cy, tc: c.cycles, bodySection: 'CAMBIO SECCIÓN' });
-                                } else if (pInfo.id === 'calentamiento') {
-                                    const currentJoint = WARMUP_ORDER[(r-1) % WARMUP_ORDER.length];
-                                    const nextJointIdx = r % WARMUP_ORDER.length;
-                                    const nextJoint = WARMUP_ORDER[nextJointIdx];
-                                    const transitionVoice = (currentJoint !== nextJoint) ? "Prepárate para calentar " + nextJoint : "Cambio";
-                                    s.push({ label: 'CAMBIO', sec: c.change, color: 'bg-yellow-500', voice: transitionVoice, phase: pInfo.label, r, tr: c.rounds, cy, tc: c.cycles, bodySection: 'CAMBIO' });
+                                if (phaseId === 'entrenamiento' && r % 3 === 0) {
+                                    const nextSec = REGIONS[Math.floor(r/3)%3].toLowerCase();
+                                    const nex = (exercises[nextSec] || [])[0] || { name: "Siguiente" };
+                                    s.push({ label: 'CAMBIO', sec: secTransTime, color: 'bg-yellow-500', voice: "Prepárate para ejercitar " + nex.name, phase: phaseId, r, tr: c.rounds, cy, tc: c.cycles, bodySection: 'CAMBIO', currentExercise: { name: 'Cambio' }, nextExercise: nex });
                                 } else {
-                                    s.push({ label: 'CAMBIO', sec: c.change, color: 'bg-yellow-500', voice: 'Cambio', phase: pInfo.label, r, tr: c.rounds, cy, tc: c.cycles, bodySection: 'CAMBIO' });
+                                    s.push({ label: 'CAMBIO', sec: c.change, color: 'bg-yellow-500', voice: 'Cambio', phase: phaseId, r, tr: c.rounds, cy, tc: c.cycles, bodySection: 'CAMBIO', currentExercise: { name: 'Cambio' } });
                                 }
                             }
                         }
-                        if(cy < c.cycles) s.push({ label: 'DESCANSO', sec: c.rest, color: 'bg-red-600', voice: 'Descanso', phase: pInfo.label, r: 'R', tr: c.rounds, cy, tc: c.cycles, bodySection: 'DESCANSO' });
-                    }
-                    if(pIdx < phasesOrder.length - 1) {
-                        const nextPhase = phasesOrder[pIdx+1];
-                        let transitionVoice = "Prepárate para ejercitar ";
-                        if (nextPhase.id === 'entrenamiento') transitionVoice += "piernas";
-                        else if (nextPhase.id === 'estiramientos') transitionVoice += "estiramientos";
-                        s.push({ label: 'TRANSICIÓN', sec: transTime, color: 'bg-yellow-500', voice: transitionVoice, phase: 'Transición', r: 0, tr: 0, cy: 0, tc: 0, bodySection: 'SIGUIENTE FASE' });
                     }
                 });
                 setSteps(s);
                 if (s.length > 0) setTimeLeft(s[0].sec);
-            }, [workout]);
+            }, [workout, exercises]);
 
             useEffect(() => {
                 if (status !== 'running') return;
@@ -588,7 +380,6 @@
             useEffect(() => {
                 let timer = null;
                 if (status === 'running') {
-                    if ('wakeLock' in navigator) navigator.wakeLock.request('screen').then(lock => { wakeLockRef.current = lock; }).catch(() => {});
                     timer = setInterval(() => {
                         setElapsed(e => e + 1);
                         if (timeLeft > 0) setTimeLeft(t => t - 1);
@@ -597,112 +388,255 @@
                                 setIdx(i => i + 1); setTimeLeft(steps[idx+1].sec); 
                                 if('vibrate' in navigator) navigator.vibrate(200); 
                             } else {
-                                // FINALIZACIÓN DEL WORKOUT
                                 speak("ejercicio terminado, lo lograste");
                                 setStatus('finished');
                                 if (!savedRef.current) { onComplete(workout.name, elapsed + 1); savedRef.current = true; }
-                                if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
                             }
                         }
                     }, 1000);
-                } else { if (wakeLockRef.current) { wakeLockRef.current.release().catch(()=>{}); wakeLockRef.current = null; } }
+                }
                 return () => clearInterval(timer);
             }, [status, timeLeft, idx, steps, workout, elapsed, onComplete]);
 
-            const totalWorkoutSeconds = useMemo(() => steps.reduce((acc, curr) => acc + curr.sec, 0), [steps]);
+            const curr = steps[idx];
+            const pieCirc = 2 * Math.PI * 20;
+            const roundPercentage = curr?.tr ? (Math.min(1, (parseInt(curr.r) || 0) / curr.tr)) : 0;
+            const timerPercentage = curr?.sec ? (Math.min(1, (curr.sec - timeLeft) / curr.sec)) : 0;
+            const totalSecs = steps.reduce((acc, c) => acc + c.sec, 0);
+            const sessionPercentage = totalSecs ? (elapsed / totalSecs) : 0;
 
             if (status === 'finished') return (
-                <div className="h-full w-full flex flex-col items-center justify-center p-8 text-center bg-slate-950 overflow-hidden text-white italic">
-                    <div className="text-9xl mb-4 animate-bounce text-center mx-auto leading-none flex items-center justify-center text-white text-center text-center">🏆</div>
-                    <h2 className="text-5xl font-black uppercase italic leading-none mb-10 tracking-tighter text-center text-white text-center text-center">¡HECHO!</h2>
-                    <div className="glass-card p-10 w-full mb-12 shadow-2xl border-orange-500/20 text-center uppercase italic text-center mx-auto text-center">
-                        <p className="text-[10px] font-black text-slate-500 mb-2 tracking-[0.4em] text-center leading-none italic text-center text-center">Resumen de sesión</p>
-                        <p className="text-7xl font-black text-orange-500 leading-none text-center pt-2 italic">{formatTime(elapsed)}</p>
+                <div className="h-full w-full flex flex-col items-center justify-center p-8 bg-slate-950 text-white italic text-center">
+                    <div className="text-9xl mb-10 animate-bounce">🏆</div>
+                    <h2 className="text-5xl font-black uppercase mb-10 tracking-tighter">¡LOGRADO!</h2>
+                    <div className="glass-card p-10 w-full mb-12 shadow-2xl border-orange-500/20 text-center">
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic mb-2 text-center">Tiempo Final</p>
+                        <p className="text-7xl font-black text-orange-500 leading-none text-center italic text-center">{formatTime(elapsed)}</p>
                     </div>
-                    <button onClick={() => onExit()} className="w-full bg-white text-black py-8 rounded-full font-black uppercase shadow-2xl italic tracking-widest max-w-sm text-xl active:scale-95 transition-transform text-center mx-auto leading-none italic text-center">FINALIZAR</button>
+                    <button onClick={onExit} className="w-full bg-white text-black py-8 rounded-full font-black uppercase shadow-2xl active:scale-95 transition-transform italic tracking-widest">FINALIZAR</button>
                 </div>
             );
 
-            const curr = steps[idx];
-            const roundPercentage = curr?.tr ? (Math.min(1, (parseInt(curr.r) || 0) / curr.tr)) : 0;
-            const cyclePercentage = curr?.tc ? (Math.min(1, (parseInt(curr.cy) || 0) / curr.tc)) : 0;
-            const sessionPercentage = totalWorkoutSeconds ? (Math.min(1, elapsed / totalWorkoutSeconds)) : 0;
-            const timerPercentage = curr?.sec ? (Math.min(1, (curr.sec - timeLeft) / curr.sec)) : 0;
-
-            const pieCirc = 2 * Math.PI * 20;
-            const roundPieOffset = pieCirc - (roundPercentage * pieCirc);
-            const cyclePieOffset = pieCirc - (cyclePercentage * pieCirc);
-            const sessionPieOffset = pieCirc - (sessionPercentage * pieCirc);
-            const timerPieOffset = pieCirc - (timerPercentage * pieCirc);
-
             return (
-                <div className={`h-screen w-screen flex flex-col transition-colors duration-1000 ${curr?.color || 'bg-slate-950'} text-white overflow-hidden text-center text-center`}>
-                    <div className="flex justify-between items-start p-4 z-30 relative shrink-0 h-[15vh] text-center text-center text-center text-center">
-                        <button onClick={onExit} className="bg-black/20 px-6 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest border border-white/5 active:scale-90 transition-transform italic leading-none flex items-center justify-center text-center text-center text-center text-center">✖ SALIR</button>
-                        <div className="flex flex-col items-center text-center text-center text-center">
-                            <div className="relative flex items-center justify-center w-[20vh] h-[20vh] mx-auto scale-75 mt-[-2vh] text-center text-center">
-                                <svg className="absolute w-full h-full transform -rotate-90 text-center text-center" viewBox="0 0 100 100">
+                <div className={`h-screen w-screen flex flex-col transition-colors duration-1000 ${curr?.color || 'bg-slate-950'} text-white overflow-hidden text-center`}>
+                    <div className="flex justify-between items-start p-4 z-30 relative h-[15vh]">
+                        <button onClick={onExit} className="bg-black/20 px-6 py-3 rounded-xl font-black text-[10px] uppercase border border-white/5 active:scale-90 italic">✖ SALIR</button>
+                        <div className="flex flex-col items-center">
+                            <div className="relative flex items-center justify-center w-[16vh] h-[16vh] scale-75 mt-[-2vh]">
+                                <svg className="absolute w-full h-full transform -rotate-90 text-center" viewBox="0 0 100 100">
                                     <circle cx="50" cy="50" r="20" className="pie-background" strokeWidth="40" fill="none" />
-                                    <circle cx="50" cy="50" r="20" stroke="var(--accent)" strokeWidth="40" fill="none" style={{ strokeDasharray: pieCirc, strokeDashoffset: sessionPieOffset, transition: 'stroke-dashoffset 1s linear' }} />
+                                    <circle cx="50" cy="50" r="20" stroke="var(--accent)" strokeWidth="40" fill="none" style={{ strokeDasharray: pieCirc, strokeDashoffset: pieCirc - (sessionPercentage * pieCirc), transition: 'stroke-dashoffset 1s linear' }} />
                                 </svg>
                             </div>
-                            <span className="text-[3.5vh] font-black italic neon-text-orange leading-none mt-[-3vh] text-center text-center">{formatTime(totalWorkoutSeconds)}</span>
+                            <span className="text-[2.5vh] font-black italic neon-text-orange leading-none mt-[-2vh] text-center text-center">{formatTime(elapsed)}</span>
                         </div>
                     </div>
 
-                    <div className="flex-1 grid grid-cols-3 items-center w-full px-6 landscape:px-12 relative overflow-hidden text-center text-center text-center text-center text-center">
-                        
-                        {/* IZQUIERDA: RONDAS */}
-                        <div className="flex flex-col items-center justify-center h-[55vh] relative text-center mx-auto w-full text-center text-center text-center text-center text-center">
-                            <span className="text-[2.5vh] font-black uppercase tracking-[0.4em] text-white/50 mb-4 italic leading-none text-center text-center text-center text-center text-center">RONDAS</span>
-                            <div className="relative flex items-center justify-center w-[38vh] h-[38vh] mx-auto text-center text-center text-center text-center text-center text-center text-center">
-                                <svg className="absolute w-full h-full transform -rotate-90 text-center text-center text-center text-center text-center" viewBox="0 0 100 100">
+                    <div className="flex-1 grid grid-cols-3 items-center w-full px-6 landscape:px-12 relative text-center">
+                        <div className="flex flex-col items-center justify-center h-[55vh] relative text-center">
+                            <span className="text-[2vh] font-black uppercase tracking-[0.4em] text-white/50 mb-4 italic leading-none">RONDAS</span>
+                            <div className="relative flex items-center justify-center w-[38vh] h-[38vh] mx-auto text-center">
+                                <svg className="absolute w-full h-full transform -rotate-90 text-center" viewBox="0 0 100 100">
                                     <circle cx="50" cy="50" r="20" className="pie-background" strokeWidth="40" fill="none" />
-                                    <circle cx="50" cy="50" r="20" stroke="var(--neon-cyan)" strokeWidth="40" fill="none" style={{ strokeDasharray: pieCirc, strokeDashoffset: roundPieOffset, transition: 'stroke-dashoffset 0.8s ease' }} />
+                                    <circle cx="50" cy="50" r="20" stroke="var(--neon-cyan)" strokeWidth="40" fill="none" style={{ strokeDasharray: pieCirc, strokeDashoffset: pieCirc - (roundPercentage * pieCirc), transition: 'stroke-dashoffset 0.8s ease' }} />
                                 </svg>
                             </div>
-                            <div className="mt-4 text-center text-center text-center text-center text-center">
-                                <span className="text-[10vh] font-black italic leading-none neon-text-cyan tabular-nums text-center text-center text-center text-center text-center">{curr?.tr || 0}</span>
-                            </div>
+                            <div className="mt-4"><span className="text-[10vh] font-black italic leading-none neon-text-cyan tabular-nums text-center text-center">{curr?.r || 0}</span></div>
                         </div>
 
-                        {/* CENTRO: TIMER DINÁMICO */}
-                        <div className="flex flex-col items-center justify-center h-full relative text-center mx-auto w-full text-center text-center text-center text-center text-center">
-                            <div className="absolute top-[0vh] w-full text-center text-center text-center text-center text-center">
-                                 <h2 className="text-[5vh] font-black uppercase italic tracking-tighter drop-shadow-2xl leading-none text-white text-center italic text-center text-center text-center text-center">{curr?.bodySection || curr?.phase}</h2>
+                        <div className="flex flex-col items-center justify-center h-full relative text-center">
+                            <div className="absolute top-[0vh] w-full text-center flex flex-col items-center px-4">
+                                 <div className="flex items-center gap-6 text-white/40 font-black uppercase italic leading-none max-w-full">
+                                    <span className="text-[1.8vh] truncate max-w-[10vh]">{curr?.currentExercise?.name}</span>
+                                    <h2 className="text-[5vh] text-white drop-shadow-2xl">{curr?.bodySection || curr?.phase}</h2>
+                                    <span className="text-[1.8vh] truncate max-w-[10vh]">{curr?.nextExercise?.name}</span>
+                                 </div>
                             </div>
-                            <div className="relative flex items-center justify-center w-[58vh] h-[58vh] mt-[4vh] mx-auto text-center text-center text-center text-center text-center text-center">
-                                <svg className="absolute w-full h-full transform -rotate-90 text-center text-center text-center text-center text-center" viewBox="0 0 100 100">
+                            <div className="relative flex items-center justify-center w-[65vh] h-[65vh] mt-[4vh] mx-auto text-center silhouette">
+                                <svg className="absolute w-full h-full transform -rotate-90 text-center" viewBox="0 0 100 100">
                                     <circle cx="50" cy="50" r="20" className="pie-background" strokeWidth="40" fill="none" />
-                                    <circle cx="50" cy="50" r="20" stroke="var(--accent)" strokeWidth="40" fill="none" style={{ strokeDasharray: pieCirc, strokeDashoffset: timerPieOffset, transition: 'stroke-dashoffset 1s linear' }} />
+                                    <circle cx="50" cy="50" r="20" stroke="var(--accent)" strokeWidth="40" fill="none" style={{ strokeDasharray: pieCirc, strokeDashoffset: pieCirc - (timerPercentage * pieCirc), transition: 'stroke-dashoffset 1s linear' }} />
                                 </svg>
-                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-center text-center text-center text-center text-center text-center">
-                                    <span className="text-[20vh] font-black tabular-nums drop-shadow-2xl leading-none neon-text-orange italic text-center text-center text-center text-center text-center">{timeLeft}</span>
+                                <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                                    <div className="mb-[-2vh]">
+                                        {curr?.currentExercise?.img ? 
+                                            <img src={curr.currentExercise.img} className="w-[24vh] h-[24vh] object-contain wger-img" alt="ejercicio" /> :
+                                            <WorkoutGraphic name={curr?.currentExercise?.name} type={curr?.currentExercise?.type} className="w-[20vh] h-[20vh]" />
+                                        }
+                                    </div>
+                                    <span className="text-[25vh] font-black tabular-nums drop-shadow-2xl leading-none neon-text-orange italic text-center text-center">{timeLeft}</span>
                                 </div>
                             </div>
-                            <div className="mt-[3vh] flex items-center gap-[5vh] mx-auto text-center text-center text-center text-center text-center text-center">
-                                <button onClick={() => setStatus(s => s === 'running' ? 'paused' : 'running')} className="bg-white text-black w-[9vh] h-[9vh] rounded-full flex items-center justify-center shadow-2xl active:scale-95 transition-all text-[4vh] leading-none flex items-center justify-center text-center text-center text-center text-center">
+                            <div className="mt-[3vh] flex items-center gap-10">
+                                <button onClick={() => setStatus(s => s === 'running' ? 'paused' : 'running')} className="bg-white text-black w-[8vh] h-[8vh] rounded-full flex items-center justify-center shadow-2xl text-[4vh] text-center">
                                     {status === 'running' ? '⏸' : '▶'}
                                 </button>
-                                <button onClick={() => setTimeLeft(0)} className="bg-white/20 w-[6vh] h-[6vh] rounded-full text-[2.5vh] flex items-center justify-center border border-white/10 active:scale-90 italic leading-none flex items-center justify-center text-center text-center text-center text-center">⏭</button>
+                                <button onClick={() => setTimeLeft(0)} className="bg-white/20 w-[6vh] h-[6vh] rounded-full text-[2.5vh] flex items-center justify-center border border-white/10 active:scale-90 italic text-center leading-none">⏭</button>
                             </div>
                         </div>
 
-                        {/* DERECHA: CICLOS */}
-                        <div className="flex flex-col items-center justify-center h-[55vh] relative text-center mx-auto w-full text-center text-center text-center text-center text-center text-center">
-                            <span className="text-[2.5vh] font-black uppercase tracking-[0.4em] text-white/50 mb-4 italic leading-none text-center text-center text-center text-center text-center text-center">CICLOS</span>
-                            <div className="relative flex items-center justify-center w-[38vh] h-[38vh] mx-auto text-center text-center text-center text-center text-center text-center text-center text-center text-center">
-                                <svg className="absolute w-full h-full transform -rotate-90 text-center text-center text-center text-center text-center" viewBox="0 0 100 100">
+                        <div className="flex flex-col items-center justify-center h-[55vh] relative text-center">
+                            <span className="text-[1.8vh] font-black uppercase tracking-[0.4em] text-white/50 mb-4 italic leading-none text-center">CICLOS</span>
+                            <div className="relative flex items-center justify-center w-[40vh] h-[40vh] mx-auto text-center">
+                                <svg className="absolute w-full h-full transform -rotate-90 text-center" viewBox="0 0 100 100">
                                     <circle cx="50" cy="50" r="20" className="pie-background" strokeWidth="40" fill="none" />
-                                    <circle cx="50" cy="50" r="20" stroke="var(--neon-green)" strokeWidth="40" fill="none" style={{ strokeDasharray: pieCirc, strokeDashoffset: cyclePieOffset, transition: 'stroke-dashoffset 0.8s ease' }} />
+                                    <circle cx="50" cy="50" r="20" stroke="var(--neon-green)" strokeWidth="40" fill="none" style={{ strokeDasharray: pieCirc, strokeDashoffset: pieCirc - (0.8 * pieCirc), transition: 'stroke-dashoffset 0.8s ease' }} />
                                 </svg>
                             </div>
-                            <div className="mt-4 text-center text-center text-center text-center text-center text-center text-center">
-                                <span className="text-[10vh] font-black italic leading-none neon-text-green tabular-nums text-center text-center text-center text-center text-center text-center">{curr?.tc || 0}</span>
-                            </div>
+                            <div className="mt-4 text-center"><span className="text-[10vh] font-black italic leading-none neon-text-green tabular-nums text-center text-center">{curr?.cy || 1}</span></div>
                         </div>
                     </div>
-                    <div className="h-[3vh] shrink-0 text-center text-center text-center text-center text-center text-center text-center text-center"></div>
+                </div>
+            );
+        }
+
+        function HistoryView({ history, onBack }) {
+            return (
+                <div className="flex-1 flex flex-col pt-6 text-white text-center">
+                    <header className="flex items-center gap-4 mb-8 px-2 text-center text-center">
+                        <button onClick={onBack} className="bg-slate-900 p-4 rounded-xl active:scale-90 text-white">⬅</button>
+                        <h1 className="text-2xl font-black italic uppercase flex-1 text-center">Historial</h1>
+                    </header>
+                    <div className="space-y-3 overflow-y-auto flex-1 pb-10 scrollbar-hide text-center">
+                        {history.map(e => (
+                            <div key={e.id} className="glass-card p-5 flex justify-between items-center text-center text-white">
+                                <div className="flex-1 text-center text-white">
+                                    <h3 className="font-black uppercase italic text-xs mb-1 text-center text-white">{e.workoutName}</h3>
+                                    <p className="text-[8px] font-bold opacity-40 text-center text-white">{new Date(e.date).toLocaleDateString()} • {formatTime(e.totalTime)}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        function AvanceView({ history }) {
+            return (
+                <div className="space-y-6 pt-10 text-white text-center">
+                    <h2 className="text-3xl font-black italic uppercase text-orange-500">Mi Avance</h2>
+                    <div className="glass-card p-10 text-center text-white text-center">
+                        <p className="text-[10px] font-black uppercase opacity-40 mb-2">Sesiones Realizadas</p>
+                        <p className="text-6xl font-black text-center">{history.length}</p>
+                    </div>
+                </div>
+            );
+        }
+
+        function CreateView({ workout, onCancel, user }) {
+            const [name, setName] = useState(workout?.name || '');
+            const [phases, setPhases] = useState(workout?.phases || DEFAULT_PARAMS);
+            const update = (p, f, v) => setPhases(prev => ({...prev, [p]: {...prev[p], [f]: parseInt(v) || 0}}));
+
+            const save = async () => {
+                if (!name.trim()) return;
+                const path = db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('workouts');
+                const data = { name, phases, totalTime: 0, createdAt: new Date().toISOString() };
+                if (workout?.id) await path.doc(workout.id).update(data);
+                else await path.add(data);
+                onCancel();
+            };
+
+            return (
+                <div className="flex-1 flex flex-col pb-32 text-white text-center">
+                    <header className="flex items-center gap-4 py-8 text-center text-white text-center">
+                        <button onClick={onCancel} className="bg-slate-900 p-3 rounded-xl text-white">⬅</button>
+                        <h2 className="text-xl font-black uppercase italic leading-none flex-1 text-white text-center">{workout ? 'Editar' : 'Nueva'} Rutina</h2>
+                    </header>
+                    <div className="space-y-8 overflow-y-auto pr-1 scrollbar-hide text-center">
+                        <input type="text" placeholder="NOMBRE DEL PLAN" className="w-full bg-slate-900 border-2 border-slate-800 p-5 rounded-[1.5rem] focus:border-orange-500 outline-none font-black text-center text-white" value={name} onChange={e => setName(e.target.value)} />
+                        {['calentamiento', 'entrenamiento', 'estiramientos'].map((p) => (
+                            <div key={p} className="glass-card p-6 italic space-y-6 text-center text-white">
+                                <span className="font-black uppercase text-xs tracking-widest text-orange-500 border-b border-white/5 block mb-4 uppercase">{p}</span>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <InputField label="ACCIÓN (S)" val={phases[p].action} set={v => update(p, 'action', v)} />
+                                    <InputField label="CAMBIO (S)" val={phases[p].change} set={v => update(p, 'change', v)} />
+                                    <InputField label="RONDAS" val={phases[p].rounds} set={v => update(p, 'rounds', v)} />
+                                    <InputField label="CICLOS" val={phases[p].cycles} set={v => update(p, 'cycles', v)} />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="fixed bottom-0 left-0 right-0 p-8 bg-slate-950/95 border-t border-white/5 z-50 text-center">
+                        <button onClick={save} className="w-full bg-white text-black py-6 rounded-full font-black uppercase shadow-2xl italic tracking-widest text-center">GUARDAR RUTINA</button>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- 5. COMPONENTE PRINCIPAL (App) ---
+        function App() {
+            const [user, setUser] = useState(null);
+            const [view, setView] = useState('workouts'); 
+            const [workouts, setWorkouts] = useState([]);
+            const [history, setHistory] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [selectedWorkout, setSelectedWorkout] = useState(null);
+            const [editingWorkout, setEditingWorkout] = useState(null);
+            const [userExercises, setUserExercises] = useState({ piernas: [], brazos: [], tronco: [] });
+
+            useEffect(() => {
+                const unsub = auth.onAuthStateChanged((u) => {
+                    setUser(u && !u.isAnonymous ? u : null);
+                    setTimeout(() => setLoading(false), 2000);
+                });
+                return unsub;
+            }, []);
+
+            useEffect(() => {
+                if (!user) return;
+                const path = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
+                const unsubW = path.collection('workouts').onSnapshot(s => setWorkouts(s.docs.map(d => ({id: d.id, ...d.data()}))));
+                const unsubH = path.collection('history').onSnapshot(s => setHistory(s.docs.map(d => ({id: d.id, ...d.data()}))));
+                return () => { unsubW(); unsubH(); };
+            }, [user]);
+
+            const startT = (w) => {
+                setSelectedWorkout(w);
+                setView('exercise_selection');
+            };
+
+            if (loading) return (
+                <div className="h-full w-full flex flex-col items-center justify-center bg-slate-950 text-white p-10 text-center">
+                    <div className="animate-pulse-slow text-9xl mb-8 text-center text-white">⚡</div>
+                    <h1 className="text-4xl font-black italic uppercase tracking-tighter mb-4 leading-tight text-center text-white">{APP_TITLE}</h1>
+                    <div className="mt-4 flex flex-col items-center gap-3 text-center">
+                        <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-slate-600 font-black text-[10px] tracking-[0.5em] uppercase italic text-center text-white text-center">CARGANDO V{APP_VERSION}</span>
+                    </div>
+                </div>
+            );
+
+            if (!user) return <AuthView />;
+
+            return (
+                <div className="h-full w-full flex flex-col bg-slate-950 overflow-hidden text-center text-white">
+                    {view !== 'play' && view !== 'exercise_selection' && (
+                        <header className="p-6 flex justify-between items-center bg-slate-900 border-b border-white/5 text-white">
+                            <div className="text-left text-white">
+                                <h1 className="text-lg font-black italic uppercase leading-none tracking-tight text-white">{APP_TITLE}</h1>
+                                <p className="text-[9px] font-bold text-slate-500 truncate mt-1 text-white">{user.email}</p>
+                            </div>
+                            <button onClick={() => auth.signOut()} className="p-2 bg-red-500/10 rounded-xl text-red-500 font-bold border border-red-500/20 text-lg">🚪</button>
+                        </header>
+                    )}
+
+                    <main className={`flex-1 overflow-y-auto scrollbar-hide w-full ${view === 'play' || view === 'exercise_selection' ? 'p-0 h-full' : 'p-4 max-w-2xl mx-auto'}`}>
+                        {view === 'exercise_selection' && <ExerciseSelectionView onSave={(ex) => { setUserExercises(ex); setView('play'); }} />}
+                        {view === 'workouts' && <WorkoutsView workouts={workouts} onStart={startT} onEdit={(w) => { setEditingWorkout(w); setView('create'); }} onCreate={() => { setEditingWorkout(null); setView('create'); }} onDelete={(id) => db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('workouts').doc(id).delete()} />}
+                        {view === 'history' && <HistoryView history={history} onBack={() => setView('workouts')} />}
+                        {view === 'avance' && <AvanceView history={history} />}
+                        {view === 'create' && <CreateView workout={editingWorkout} onCancel={() => setView('workouts')} user={user} />}
+                        {view === 'play' && <PlayerView workout={selectedWorkout} exercises={userExercises} onExit={() => setView('workouts')} onComplete={(name, time) => { db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('history').add({ workoutName: name, totalTime: time, date: new Date().toISOString() }); setView('workouts'); }} />}
+                    </main>
+
+                    {view !== 'play' && view !== 'exercise_selection' && (
+                        <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-white/5 p-4 flex justify-around z-50 shadow-2xl text-white">
+                            <button onClick={() => setView('workouts')} className={`flex flex-col items-center text-[9px] font-black ${view === 'workouts' ? 'text-orange-500' : 'text-slate-500'}`}><span className="text-xl mb-1 text-center text-white">🏋️</span> MIS RUTINAS</button>
+                            <button onClick={() => setView('avance')} className={`flex flex-col items-center text-[9px] font-black ${view === 'avance' ? 'text-orange-500' : 'text-slate-500'}`}><span className="text-xl mb-1 text-center text-white">📊</span> AVANCE</button>
+                            <button onClick={() => setView('history')} className={`flex flex-col items-center text-[9px] font-black ${view === 'history' ? 'text-orange-500' : 'text-slate-500'}`}><span className="text-xl mb-1 text-center text-white">📜</span> HISTORIAL</button>
+                        </nav>
+                    )}
                 </div>
             );
         }
