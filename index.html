@@ -43,10 +43,9 @@
 
         #root { height: 100%; width: 100%; background-color: var(--bg-main); }
 
-        /* Tarjetas con espaciado garantizado */
         .glass-card {
             background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.05);
             border-radius: 1.5rem;
             margin-bottom: 1rem; 
@@ -64,15 +63,10 @@
         :-webkit-full-screen { background-color: #020617; }
 
         .neon-text-orange { text-shadow: 0 0 40px rgba(249, 115, 22, 0.9); }
-        .neon-text-cyan { text-shadow: 0 0 40px rgba(34, 211, 238, 0.7); }
-        .neon-text-green { text-shadow: 0 0 40px rgba(74, 222, 128, 0.7); }
+        .neon-text-cyan { text-shadow: 0 0 40px rgba(34, 211, 238, 0.9); }
+        .neon-text-green { text-shadow: 0 0 40px rgba(74, 222, 128, 0.9); }
         
         .pie-background { fill: rgba(255, 255, 255, 0.03); }
-
-        /* Slider de volumen personalizado */
-        input[type=range] { -webkit-appearance: none; background: transparent; }
-        input[type=range]::-webkit-slider-runnable-track { background: rgba(255,255,255,0.1); height: 6px; border-radius: 3px; }
-        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 18px; width: 18px; background: #f97316; border-radius: 50%; margin-top: -6px; cursor: pointer; box-shadow: 0 0 10px rgba(249, 115, 22, 0.5); }
     </style>
 </head>
 <body>
@@ -102,7 +96,7 @@
         const db = firebase.firestore();
         const appId = "mientrenador-v3"; 
         const APP_TITLE = "Mi entrenador Fuerte y saludable";
-        const APP_VERSION = "17.4.1"; 
+        const APP_VERSION = "18.0.0"; 
 
         // --- CONSTANTES DE ENTRENAMIENTO ---
         const WARMUP_STEPS = [
@@ -129,15 +123,6 @@
             const [loading, setLoading] = useState(true);
             const [selectedWorkout, setSelectedWorkout] = useState(null);
             const [editingWorkout, setEditingWorkout] = useState(null);
-            
-            const [musicMode, setMusicMode] = useState('off');
-            const [musicVolume, setMusicVolume] = useState(0.35);
-            const audioRef = useRef(null);
-
-            const INTERNAL_TRACKS = {
-                workout: "https://stream.zeno.fm/f36768a88h0uv",
-                lofi: "https://stream.zeno.fm/0r0xa792kwzuv"
-            };
 
             const speak = (text) => {
                 if (!window.speechSynthesis) return;
@@ -145,8 +130,6 @@
                 const msg = new SpeechSynthesisUtterance(text);
                 msg.lang = 'es-ES';
                 msg.rate = 1.15;
-                msg.onstart = () => { if (audioRef.current && musicMode !== 'off') audioRef.current.volume = musicVolume * 0.1; };
-                msg.onend = () => { if (audioRef.current && musicMode !== 'off') audioRef.current.volume = musicVolume; };
                 window.speechSynthesis.speak(msg);
             };
 
@@ -167,17 +150,6 @@
             }, [user]);
 
             useEffect(() => {
-                if (!audioRef.current) audioRef.current = new Audio();
-                const audio = audioRef.current;
-                audio.volume = musicVolume;
-                if (musicMode !== 'off' && INTERNAL_TRACKS[musicMode]) {
-                    if (audio.src !== INTERNAL_TRACKS[musicMode]) audio.src = INTERNAL_TRACKS[musicMode];
-                    audio.play().catch(() => {});
-                } else { audio.pause(); }
-            }, [musicMode, musicVolume]);
-
-            // Listener global para cambiar vistas desde componentes hijos si fuera necesario
-            useEffect(() => {
                 const handleViewChange = (e) => setView(e.detail);
                 window.addEventListener('setView', handleViewChange);
                 return () => window.removeEventListener('setView', handleViewChange);
@@ -197,13 +169,11 @@
 
             if (loading) return (
                 <div className="h-full w-full flex flex-col items-center justify-center bg-slate-950 text-white overflow-hidden text-center">
-                    <div className="relative z-10 flex flex-col items-center animate-fade-in text-center px-6 mx-auto">
-                        <div className="text-9xl mb-6 drop-shadow-[0_0_40px_rgba(249,115,22,0.4)] animate-pulse-slow">🏋️‍♂️</div>
-                        <h1 className="text-4xl font-black italic uppercase tracking-tighter mb-4 leading-tight">{APP_TITLE}</h1>
-                        <div className="mt-4 flex flex-col items-center gap-3">
-                            <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-                            <span className="text-slate-600 font-black text-[10px] tracking-[0.5em] uppercase italic">VERSIÓN {APP_VERSION}</span>
-                        </div>
+                    <div className="animate-pulse-slow text-9xl mb-6">🏋️‍♂️</div>
+                    <h1 className="text-4xl font-black italic uppercase tracking-tighter mb-4 leading-tight">{APP_TITLE}</h1>
+                    <div className="mt-4 flex flex-col items-center gap-3">
+                        <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-slate-600 font-black text-[10px] tracking-[0.5em] uppercase italic">VERSIÓN {APP_VERSION}</span>
                     </div>
                 </div>
             );
@@ -227,7 +197,6 @@
                         {view === 'avance' && <AvanceView history={history} />}
                         {view === 'history' && <HistoryListView history={history} user={user} appId={appId} db={db} />}
                         {view === 'create' && <CreateView onCancel={() => { setView('workouts'); setEditingWorkout(null); }} user={user} appId={appId} db={db} workoutToEdit={editingWorkout} />}
-                        {view === 'music' && <MusicHubView mode={musicMode} setMode={setMusicMode} volume={musicVolume} setVolume={setMusicVolume} onBack={() => setView('workouts')} />}
                         {view === 'play' && <PlayerView workout={selectedWorkout} speak={speak} onExit={() => {
                             if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
                             setView('workouts');
@@ -235,15 +204,13 @@
                             db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('history').add({ workoutName: name, totalTime: time, date: new Date().toISOString() });
                             setView('workouts');
                         }} />}
+                        {view === 'admin' && <AdminView onBack={() => setView('workouts')} appId={appId} db={db} />}
                     </main>
 
                     {view !== 'play' && (
                         <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-white/5 p-4 flex justify-around items-center z-50 shadow-2xl">
                             <button onClick={() => setView('workouts')} className={`flex flex-col items-center text-[9px] font-black ${view === 'workouts' ? 'text-orange-500' : 'text-slate-500'}`}>
                                 <span className="text-xl mb-1 text-center leading-none">🏋️</span> MIS RUTINAS
-                            </button>
-                            <button onClick={() => setView('music')} className={`flex flex-col items-center text-[9px] font-black ${view === 'music' ? 'text-orange-500' : 'text-slate-500'}`}>
-                                <span className="text-xl mb-1 text-center leading-none">🎵</span> MÚSICA
                             </button>
                             <button onClick={() => setView('avance')} className={`flex flex-col items-center text-[9px] font-black ${view === 'avance' ? 'text-orange-500' : 'text-slate-500'}`}>
                                 <span className="text-xl mb-1 text-center leading-none">📊</span> AVANCE
@@ -273,9 +240,9 @@
                     <div className="text-7xl mb-6 animate-pulse-slow mx-auto text-center text-white">🏃‍♂️</div>
                     <h1 className="text-3xl font-black italic uppercase mb-1 tracking-tighter text-white italic text-center">{APP_TITLE}</h1>
                     <form onSubmit={handleAuth} className="space-y-4 w-full max-w-sm mt-8 text-center text-white">
-                        <input type="email" placeholder="EMAIL" className="w-full p-6 bg-slate-900 border border-white/5 rounded-3xl font-bold outline-none focus:border-orange-500 text-center text-white text-center" value={email} onChange={e => setEmail(e.target.value)} required />
-                        <input type="password" placeholder="CLAVE" className="w-full p-6 bg-slate-900 border border-white/5 rounded-3xl font-bold outline-none focus:border-orange-500 text-center text-white text-center" value={password} onChange={e => setPassword(e.target.value)} required />
-                        <button type="submit" className="w-full bg-orange-500 py-6 rounded-full font-black uppercase shadow-xl italic text-white text-center">
+                        <input type="email" placeholder="EMAIL" className="w-full p-6 bg-slate-900 border border-white/5 rounded-3xl font-bold outline-none focus:border-orange-500 text-center text-white" value={email} onChange={e => setEmail(e.target.value)} required />
+                        <input type="password" placeholder="CLAVE" className="w-full p-6 bg-slate-900 border border-white/5 rounded-3xl font-bold outline-none focus:border-orange-500 text-center text-white" value={password} onChange={e => setPassword(e.target.value)} required />
+                        <button type="submit" className="w-full bg-orange-500 py-6 rounded-full font-black uppercase shadow-xl italic text-white">
                             {isRegister ? 'REGISTRARME' : 'ENTRAR'}
                         </button>
                     </form>
@@ -286,7 +253,7 @@
             );
         }
 
-        function WorkoutsView({ workouts, setWorkout, user, appId, db }) {
+        function WorkoutsView({ workouts, setWorkout, appId, db, user }) {
             return (
                 <div className="space-y-4 pb-32 animate-fade-in text-white text-center">
                     {workouts.map(w => (
@@ -395,7 +362,6 @@
                                 setStatus('finished');
                                 releaseWakeLock();
                                 if (!savedRef.current) { onComplete(workout.name, elapsed + 1); savedRef.current = true; }
-                                speak("¡Ejercicio terminado!");
                             }
                         }
                     }, 1000);
@@ -406,7 +372,7 @@
             if (status === 'finished') return (
                 <div className="h-screen flex flex-col items-center justify-center p-8 bg-slate-950 text-white italic text-center text-center">
                     <div className="text-9xl mb-10 animate-bounce text-white">🏆</div>
-                    <h1 className="text-6xl font-black mb-4 uppercase tracking-tighter text-white">¡LOGRADO!</h1>
+                    <h1 className="text-6xl font-black mb-4 uppercase tracking-tighter text-white text-center">¡LOGRADO!</h1>
                     <div className="glass-card p-10 w-full mb-12 shadow-2xl border-orange-500/20 text-center text-white text-center">
                         <p className="text-[10px] font-black opacity-40 uppercase text-center text-white">Total Entrenamiento</p>
                         <p className="text-7xl font-black text-orange-500 leading-none text-center text-white">{formatTime(elapsed)}</p>
@@ -469,27 +435,6 @@
                             {status === 'running' ? '⏸' : '▶'}
                         </button>
                         <button onClick={() => setTimeLeft(0)} className="bg-white/20 w-12 h-12 landscape:w-14 landscape:h-14 rounded-full flex items-center justify-center border border-white/10 active:scale-90 transition-transform text-white text-center shadow-lg">⏭</button>
-                    </div>
-                </div>
-            );
-        }
-
-        function MusicHubView({ mode, setMode, volume, setVolume, onBack }) {
-            const openMusic = (url, fallback) => { window.location.assign(url); setTimeout(() => { if (fallback) window.location.assign(fallback); }, 1500); };
-            return (
-                <div className="flex-1 flex flex-col items-center bg-slate-950 px-6 pt-10 pb-40 animate-fade-in text-white text-center text-white">
-                    <h2 className="text-2xl font-black italic uppercase tracking-tight mb-8 text-white">Radio & Streaming</h2>
-                    <div className="w-full max-w-sm glass-card p-8 mb-8 space-y-6 text-center text-white shadow-2xl">
-                        <div className="flex justify-between text-[10px] font-black uppercase opacity-40 mb-2 italic">
-                            <span>Volumen Radio</span>
-                            <span>{Math.round(volume * 100)}%</span>
-                        </div>
-                        <input type="range" min="0" max="1" step="0.05" value={volume} onChange={(e) => setVolume(parseFloat(e.target.value))} className="w-full" />
-                        <div className="grid gap-3 pt-4 text-center text-white">
-                            <button onClick={() => setMode('off')} className={`py-4 rounded-2xl text-xs font-black uppercase ${mode === 'off' ? 'bg-orange-500 text-white shadow-xl shadow-orange-500/20' : 'bg-white/5 text-slate-400 opacity-50'}`}>Silencio</button>
-                            <button onClick={() => setMode('workout')} className={`py-4 rounded-2xl text-xs font-black uppercase ${mode === 'workout' ? 'bg-orange-500 text-white shadow-xl shadow-orange-500/20' : 'bg-white/5 text-slate-400'}`}>Mix Workout 🔥</button>
-                            <button onClick={() => setMode('lofi')} className={`py-4 rounded-2xl text-xs font-black uppercase ${mode === 'lofi' ? 'bg-orange-500 text-white shadow-xl shadow-orange-500/20' : 'bg-white/5 text-slate-400'}`}>Lofi Chill ☕</button>
-                        </div>
                     </div>
                 </div>
             );
@@ -595,10 +540,6 @@
                     </div>
                 </div>
             );
-        }
-
-        function AdminViewWrapper({ onBack, appId, db }) {
-             return <AdminView onBack={onBack} appId={appId} db={db} />;
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
