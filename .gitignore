@@ -1,0 +1,19 @@
+# Archivos del sistema
+Thumbs.db
+.DS_Store
+
+# Dependencias (si usas npm)
+node_modules/
+
+# Archivos de configuración local
+.vscode/
+*.code-workspace
+
+# Archivos de token o contraseñas (¡MUY IMPORTANTE!)
+*.txt
+*.log
+*.env
+
+# Archivos temporales
+*.tmp
+*.temp
