@@ -55,9 +55,9 @@
         :fullscreen { background-color: #020617; }
         :-webkit-full-screen { background-color: #020617; }
 
-        /* Cronómetro Masivo */
+        /* Cronómetro Masivo sin minutos */
         .timer-huge {
-            font-size: 45vw; /* Mucho más grande en móvil */
+            font-size: 55vw; 
             line-height: 0.8;
             font-weight: 900;
             letter-spacing: -0.05em;
@@ -67,7 +67,7 @@
         }
         
         @media (orientation: landscape) {
-            .timer-huge { font-size: 60vh; }
+            .timer-huge { font-size: 70vh; }
         }
 
         .btn-control {
@@ -106,14 +106,15 @@
         const db = firebase.firestore();
         const appId = "mientrenador-v3"; 
         const APP_TITLE = "Mi entrenador Fuerte y saludable";
-        const APP_VERSION = "19.2.0"; 
+        const APP_VERSION = "20.0.0"; 
 
+        // --- CONSTANTES DE ENTRENAMIENTO ---
         const WARMUP_STEPS = [
             'tobillo derecho', 'tobillo izquierdo', 
-            'rodilla derecha', 'rodilla izquierda', 
+            'rodillas a la izquierda', 'rodillas a la derecha', 
             'cintura', 
             'brazo derecho', 'brazo izquierdo', 
-            'cabeza'
+            'cuello'
         ];
 
         const DEFAULT_PARAMS = {
@@ -196,7 +197,7 @@
                     <h1 className="text-4xl font-black italic uppercase tracking-tighter mb-4 leading-tight">{APP_TITLE}</h1>
                     <div className="mt-4 flex flex-col items-center gap-3">
                         <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-                        <span className="text-slate-600 font-black text-[10px] tracking-[0.5em] uppercase italic">VERSIÓN {APP_VERSION}</span>
+                        <span className="text-slate-600 font-black text-[10px] tracking-[0.5em] uppercase italic text-white">VERSIÓN {APP_VERSION}</span>
                     </div>
                 </div>
             );
@@ -204,21 +205,25 @@
             if (!user) return <AuthView appId={appId} db={db} auth={auth} />;
 
             return (
-                <div className="h-full w-full flex flex-col relative bg-slate-950 overflow-hidden text-center">
+                <div className="h-full w-full flex flex-col relative bg-slate-950 overflow-hidden text-center text-white">
                     {view !== 'play' && (
                         <header className="p-6 flex justify-between items-center bg-slate-900 shrink-0 border-b border-white/5 text-white">
                             <div onClick={() => setView('workouts')} className="cursor-pointer text-white text-left text-center">
-                                <h1 className="text-lg font-black italic uppercase leading-none tracking-tight">{APP_TITLE}</h1>
+                                <h1 className="text-lg font-black italic uppercase leading-none tracking-tight text-white">{APP_TITLE}</h1>
                                 <p className="text-[9px] font-bold text-slate-500 lowercase italic tracking-wider mt-1">{user.email}</p>
                             </div>
-                            <button onClick={() => auth.signOut()} className="p-2 bg-red-500/10 rounded-xl text-red-500 font-bold border border-red-500/20 text-lg flex items-center justify-center text-center text-white">🚪</button>
+                            <div className="flex gap-2 leading-none text-white">
+                                {user.email?.toLowerCase() === "cumorahnet@gmail.com" && (
+                                    <button onClick={() => setView('admin')} className="p-2 bg-slate-800 rounded-xl font-bold text-lg flex items-center justify-center text-white">🛡️</button>
+                                )}
+                                <button onClick={() => auth.signOut()} className="p-2 bg-red-500/10 rounded-xl text-red-500 font-bold border border-red-500/20 text-lg flex items-center justify-center text-center text-white">🚪</button>
+                            </div>
                         </header>
                     )}
 
                     <main className={`flex-1 overflow-y-auto scrollbar-hide w-full ${view === 'play' ? 'p-0 h-full' : 'p-4 max-w-2xl mx-auto'}`}>
                         {view === 'workouts' && <WorkoutsView workouts={workouts} setWorkout={startWorkout} appId={appId} db={db} user={user} onEdit={(w) => { setEditingWorkout(w); setView('create'); }} onCreate={() => { setEditingWorkout(null); setView('create'); }} />}
                         {view === 'avance' && <AvanceView history={history} />}
-                        {view === 'history' && <HistoryListView history={history} user={user} appId={appId} db={db} />}
                         {view === 'create' && <CreateView onCancel={() => { setView('workouts'); setEditingWorkout(null); }} user={user} appId={appId} db={db} workoutToEdit={editingWorkout} />}
                         {view === 'play' && <PlayerView workout={selectedWorkout} speak={speak} onExit={() => {
                             if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
@@ -231,15 +236,12 @@
                     </main>
 
                     {view !== 'play' && (
-                        <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-white/5 p-4 flex justify-around items-center z-50 shadow-2xl">
+                        <nav className="fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-white/5 p-4 flex justify-around items-center z-50 shadow-2xl text-white">
                             <button onClick={() => setView('workouts')} className={`flex flex-col items-center text-[9px] font-black ${view === 'workouts' ? 'text-orange-500' : 'text-slate-500'}`}>
-                                <span className="text-xl mb-1 text-center leading-none">🏋️</span> MIS RUTINAS
+                                <span className="text-xl mb-1 text-center text-white">🏋️</span> MIS RUTINAS
                             </button>
                             <button onClick={() => setView('avance')} className={`flex flex-col items-center text-[9px] font-black ${view === 'avance' ? 'text-orange-500' : 'text-slate-500'}`}>
-                                <span className="text-xl mb-1 text-center leading-none">📊</span> AVANCE
-                            </button>
-                            <button onClick={() => setView('history')} className={`flex flex-col items-center text-[9px] font-black ${view === 'history' ? 'text-orange-500' : 'text-slate-500'}`}>
-                                <span className="text-xl mb-1 text-center leading-none">📜</span> HISTORIAL
+                                <span className="text-xl mb-1 text-center text-white">📊</span> AVANCE
                             </button>
                         </nav>
                     )}
@@ -260,16 +262,14 @@
             };
             return (
                 <div className="h-full w-full flex flex-col items-center bg-slate-950 p-10 pt-20 text-white text-center">
-                    <div className="text-7xl mb-6 animate-pulse-slow mx-auto text-center text-white text-center">🏃‍♂️</div>
-                    <h1 className="text-3xl font-black italic uppercase mb-1 tracking-tighter text-white italic text-center">{APP_TITLE}</h1>
+                    <div className="text-7xl mb-6 animate-pulse-slow mx-auto text-center text-white">🏃‍♂️</div>
+                    <h1 className="text-4xl font-black italic uppercase mb-1 tracking-tighter text-white italic text-center">{APP_TITLE}</h1>
                     <form onSubmit={handleAuth} className="space-y-4 w-full max-w-sm mt-8 text-center text-white">
                         <input type="email" placeholder="EMAIL" className="w-full p-6 bg-slate-900 border border-white/5 rounded-3xl font-bold outline-none focus:border-orange-500 text-center text-white text-center text-center text-center" value={email} onChange={e => setEmail(e.target.value)} required />
                         <input type="password" placeholder="CLAVE" className="w-full p-6 bg-slate-900 border border-white/5 rounded-3xl font-bold outline-none focus:border-orange-500 text-center text-white text-center text-center text-center" value={password} onChange={e => setPassword(e.target.value)} required />
                         <button type="submit" className="w-full bg-orange-500 py-6 rounded-full font-black uppercase shadow-xl italic text-white text-center">ENTRAR</button>
                     </form>
-                    <button onClick={() => setIsRegister(!isRegister)} className="mt-8 text-slate-500 text-[10px] font-black uppercase border-b border-orange-500/30 pb-1 italic text-center text-white">
-                        {isRegister ? 'Ya tengo cuenta' : 'Crear cuenta nueva'}
-                    </button>
+                    <button onClick={() => setIsRegister(!isRegister)} className="mt-8 text-slate-500 text-[10px] font-black uppercase border-b border-orange-500/30 pb-1 italic text-center text-white">{isRegister ? 'Ya tengo cuenta' : 'Crear cuenta nueva'}</button>
                 </div>
             );
         }
@@ -278,12 +278,12 @@
             return (
                 <div className="space-y-4 pb-32 animate-fade-in text-white text-center">
                     {workouts.map(w => (
-                        <div key={w.id} className="glass-card p-6 flex justify-between items-center text-left text-white shadow-xl">
-                            <div className="flex-1 cursor-pointer truncate text-left text-white" onClick={() => setWorkout(w)}>
-                                <h3 className="font-black italic uppercase text-md mb-2 truncate text-white">{w.name}</h3>
-                                <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest italic leading-none">PLAN ACTIVO</span>
+                        <div key={w.id} className="glass-card p-6 flex justify-between items-center text-left text-white shadow-xl text-center">
+                            <div className="flex-1 cursor-pointer truncate text-left text-white text-center" onClick={() => setWorkout(w)}>
+                                <h3 className="font-black italic uppercase text-md mb-2 truncate text-white text-center">{w.name}</h3>
+                                <span className="text-[10px] font-black text-orange-500 uppercase tracking-widest italic leading-none text-center">PLAN ACTIVO</span>
                             </div>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 text-white">
                                 <button onClick={() => setWorkout(w)} className="bg-white text-black px-5 py-3 rounded-2xl font-black text-[10px] italic text-center text-black active:scale-90 transition-transform">GO</button>
                                 <button onClick={() => onEdit(w)} className="bg-slate-800 text-white p-3 rounded-2xl flex items-center justify-center text-xs active:scale-90 text-white">📝</button>
                                 <button onClick={() => db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('workouts').doc(w.id).delete()} className="bg-red-500/10 text-red-500 p-3 rounded-2xl flex items-center justify-center text-xs active:scale-90 text-red-500">🗑️</button>
@@ -339,53 +339,74 @@
                 }
             };
 
+            const handleJumpToStretches = () => {
+                const stretchIdx = steps.findIndex(s => s.phaseId === 'estiramientos');
+                if (stretchIdx !== -1) {
+                    setIdx(stretchIdx);
+                    setTimeLeft(steps[stretchIdx].seconds);
+                    speak("Entrenamiento parado. Vamos a estirar.");
+                }
+            };
+
             useEffect(() => {
                 const s = [];
                 const ph = workout.phases;
-                const REGIONS = ['Piernas', 'Brazos', 'Tronco'];
+                const REGIONS = ['piernas', 'tronco', 'brazos'];
 
-                const getLabelOfNextAction = (phaseId, roundIdx) => {
-                    if (phaseId === 'calentamiento') return WARMUP_STEPS[roundIdx % WARMUP_STEPS.length];
-                    if (phaseId === 'entrenamiento') return REGIONS[Math.floor(roundIdx / 3) % 3];
-                    return "estiramiento";
-                };
-
+                // Fase de Preparación Inicial
                 s.push({ 
-                    label: 'PREPARACIÓN', 
+                    label: 'PREPÁRATE', 
                     seconds: 30, 
                     color: 'bg-yellow-400', 
-                    voice: 'Prepárate para ' + getLabelOfNextAction('calentamiento', 0), 
+                    voice: 'Vamos a calentar. Prepárate para ' + WARMUP_STEPS[0], 
                     phaseId: 'inicio', r: 0, tr: 0, cy: 0, tc: 0 
                 });
 
                 ['calentamiento', 'entrenamiento', 'estiramientos'].forEach((pId) => {
                     const c = ph[pId];
                     const phaseColor = pId === 'calentamiento' ? 'bg-yellow-400' : pId === 'entrenamiento' ? 'bg-emerald-400' : 'bg-blue-400';
+                    const phaseWelcome = pId === 'calentamiento' ? 'Vamos a calentar' : pId === 'entrenamiento' ? 'Vamos a ejercitar' : 'Vamos a estirar';
                     
                     for(let cy = 1; cy <= c.cycles; cy++) {
                         for(let r = 1; r <= c.rounds; r++) {
                             let label = pId.toUpperCase();
+                            let actionVoice = "Empieza";
+                            
                             if (pId === 'entrenamiento') label = REGIONS[Math.floor((r-1)/3) % 3].toUpperCase();
                             else if (pId === 'calentamiento') label = WARMUP_STEPS[(r-1) % WARMUP_STEPS.length].toUpperCase();
 
+                            // Al inicio de cada fase (ronda 1, ciclo 1), dar el mensaje de etapa
+                            const isFirstAction = (cy === 1 && r === 1);
+                            
                             s.push({ 
                                 label, seconds: c.action, color: phaseColor, 
-                                voice: "Empieza", phaseId: pId, r, tr: c.rounds, cy, tc: c.cycles 
+                                voice: isFirstAction ? phaseWelcome + ". " + actionVoice : actionVoice, 
+                                phaseId: pId, r, tr: c.rounds, cy, tc: c.cycles 
                             });
 
                             if(r < c.rounds) {
-                                const nextLabel = getLabelOfNextAction(pId, r);
+                                let nextLabel = "";
+                                if (pId === 'calentamiento') nextLabel = WARMUP_STEPS[r % WARMUP_STEPS.length];
+                                else if (pId === 'entrenamiento') {
+                                    // Indicar zona cada 3 rondas
+                                    if (r % 3 === 0) {
+                                        nextLabel = "Ejercita " + REGIONS[Math.floor(r/3) % 3];
+                                    } else {
+                                        nextLabel = "Cambio";
+                                    }
+                                } else nextLabel = "Sigue estirando";
+
                                 s.push({ 
                                     label: 'CAMBIO', seconds: c.change, color: 'bg-yellow-300', 
-                                    voice: 'Cambio, ' + nextLabel, phaseId: pId, r, tr: c.rounds, cy, tc: c.cycles 
+                                    voice: nextLabel, phaseId: pId, r, tr: c.rounds, cy, tc: c.cycles 
                                 });
                             }
                         }
                         if(cy < c.cycles && c.rest > 0) {
-                            const nextLabel = getLabelOfNextAction(pId, 0);
                             s.push({ 
                                 label: 'DESCANSO', seconds: c.rest, color: 'bg-rose-500', 
-                                voice: 'Descanso largo. Prepárate para ' + nextLabel, phaseId: pId, r: 'R', tr: c.rounds, cy, tc: c.cycles 
+                                voice: 'Descanso largo. Prepárate para el siguiente ciclo.', 
+                                phaseId: pId, r: 'R', tr: c.rounds, cy, tc: c.cycles 
                             });
                         }
                     }
@@ -432,15 +453,15 @@
 
             if (status === 'finished') return (
                 <div className="h-screen flex flex-col items-center justify-center p-8 bg-slate-950 text-white italic text-center">
-                    <div className="text-9xl mb-10 animate-bounce text-center mx-auto">🏆</div>
-                    <h1 className="text-6xl font-black mb-4 uppercase tracking-tighter leading-none">¡LOGRADO!</h1>
-                    <div className="glass-card p-10 w-full mb-12 shadow-2xl border-orange-500/20 text-center">
-                        <p className="text-[10px] font-black opacity-40 uppercase">Total Entrenamiento</p>
-                        <p className="text-7xl font-black text-orange-500 leading-none">{formatTime(elapsed)}</p>
+                    <div className="text-9xl mb-10 animate-bounce">🏆</div>
+                    <h1 className="text-6xl font-black mb-4 uppercase tracking-tighter leading-none text-white text-center">¡LOGRADO!</h1>
+                    <div className="glass-card p-10 w-full mb-12 shadow-2xl border-orange-500/20 text-center text-white text-center">
+                        <p className="text-[10px] font-black opacity-40 uppercase text-center text-white">Total Entrenamiento</p>
+                        <p className="text-7xl font-black text-orange-500 leading-none text-center text-white">{formatTime(elapsed)}</p>
                     </div>
                     <div className="flex flex-col gap-4 w-full max-w-sm">
-                        <button onClick={handleRestart} className="w-full bg-orange-500 text-white py-5 rounded-full font-black uppercase shadow-xl italic tracking-widest active:scale-95">VOLVER A EMPEZAR</button>
-                        <button onClick={onExit} className="w-full bg-white text-black py-5 rounded-full font-black uppercase shadow-2xl active:scale-95 italic">FINALIZAR</button>
+                        <button onClick={handleRestart} className="w-full bg-orange-500 text-white py-5 rounded-full font-black uppercase shadow-xl italic tracking-widest text-center text-white active:scale-95 transition-transform">VOLVER A EMPEZAR</button>
+                        <button onClick={onExit} className="w-full bg-white text-black py-5 rounded-full font-black uppercase shadow-2xl active:scale-95 transition-transform italic tracking-widest text-center text-black">FINALIZAR</button>
                     </div>
                 </div>
             );
@@ -450,12 +471,12 @@
             const sessionPercentage = totalS ? (elapsed / totalS) : 0;
 
             return (
-                <div className="h-screen w-screen flex flex-col bg-slate-950 overflow-hidden select-none text-center">
+                <div className="h-screen w-screen flex flex-col bg-slate-950 overflow-hidden select-none text-center text-white">
                     
-                    {/* CABECERA (ESTILO TIMER+) */}
+                    {/* CABECERA NEGRA (TIMER+ STYLE) */}
                     <div className="bg-slate-950 p-4 pt-8 flex justify-between items-center text-white shrink-0 border-b border-white/5">
                         <div className="flex flex-col items-start">
-                             <span className="text-[10px] font-black uppercase tracking-widest text-orange-500">TABATA</span>
+                             <span className="text-[10px] font-black uppercase tracking-widest text-orange-500">TIEMPO</span>
                              <span className="text-xl font-black italic">{formatTime(elapsed)}</span>
                         </div>
                         <h2 className="text-xs font-black uppercase italic tracking-widest truncate max-w-[150px]">{workout.name}</h2>
@@ -464,27 +485,27 @@
 
                     {/* ÁREA DEL TIMER GIGANTE (USA TODO EL ESPACIO CENTRAL) */}
                     <div className={`flex-1 flex flex-col items-center justify-center ${curr?.color || 'bg-yellow-400'} transition-colors duration-500 relative`}>
-                        <h2 className="text-[8vw] landscape:text-[8vh] font-black uppercase italic tracking-tighter text-black mb-1 leading-none">
+                        <h2 className="text-[12vw] landscape:text-[10vh] font-black uppercase italic tracking-tighter text-black mb-1 leading-none">
                             {curr?.label || 'LISTO'}
                         </h2>
                         <span className="timer-huge tabular-nums">
-                            {formatTime(timeLeft)}
+                            {timeLeft}
                         </span>
                     </div>
 
                     {/* ÁREA INFERIOR NEGRA: ESTADÍSTICAS Y CONTROLES */}
                     <div className="bg-slate-950 p-6 pb-12 flex flex-col items-center shrink-0">
-                        <div className="w-full max-w-md grid grid-cols-3 items-center mb-6">
+                        <div className="w-full max-w-md grid grid-cols-3 items-center mb-8">
                             {/* RONDAS */}
                             <div className="flex flex-col items-center">
-                                <span className="text-[20vw] landscape:text-[15vh] font-black text-sky-400 leading-none">{curr?.r || 0}</span>
+                                <span className="text-[18vw] landscape:text-[14vh] font-black text-sky-400 leading-none">{curr?.r || 0}</span>
                                 <span className="text-[8px] font-black uppercase text-slate-500 tracking-widest mt-1">RONDAS RESTANT...</span>
                             </div>
 
                             {/* CONTROLES CENTRALES */}
                             <div className="flex flex-col items-center gap-4">
                                 <div className="flex items-center gap-3">
-                                    <button onClick={handleRestart} className="bg-slate-800 p-3 rounded-full border border-white/10 text-yellow-400 text-xs shadow-xl active:scale-75">
+                                    <button onClick={handleRestart} title="Reiniciar" className="bg-slate-800 p-3 rounded-full border border-white/10 text-yellow-400 text-xs shadow-xl active:scale-75">
                                         🔄
                                     </button>
                                     <button 
@@ -495,7 +516,7 @@
                                             {status === 'running' ? '❚❚' : '▶'}
                                         </div>
                                     </button>
-                                    <button onClick={() => setTimeLeft(0)} className="bg-slate-800 p-3 rounded-full border border-white/10 text-white text-xs shadow-xl active:scale-75">
+                                    <button onClick={() => setTimeLeft(0)} title="Siguiente Ejercicio" className="bg-slate-800 p-3 rounded-full border border-white/10 text-white text-xs shadow-xl active:scale-75">
                                         ⏭
                                     </button>
                                 </div>
@@ -506,34 +527,88 @@
 
                             {/* CICLOS */}
                             <div className="flex flex-col items-center">
-                                <span className="text-[20vw] landscape:text-[15vh] font-black text-yellow-400 leading-none">{curr?.cy || 0}</span>
+                                <span className="text-[18vw] landscape:text-[14vh] font-black text-yellow-400 leading-none">{curr?.cy || 0}</span>
                                 <span className="text-[8px] font-black uppercase text-slate-500 tracking-widest mt-1">CICLOS RESTANTES</span>
                             </div>
                         </div>
 
-                        {/* BOTÓN STOP */}
-                        <button onClick={handleStopManually} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-red-500 transition-colors">
-                            <span className="text-lg">⏹</span> PARAR SESIÓN
-                        </button>
+                        {/* BOTÓN STOP Y SALTO ESTIRAMIENTOS */}
+                        <div className="w-full flex justify-center gap-8">
+                            <button onClick={handleJumpToStretches} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-blue-400 hover:text-blue-300 transition-colors">
+                                <span className="text-lg">🧘</span> IR A ESTIRAR
+                            </button>
+                            <button onClick={handleStopManually} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-red-500 transition-colors">
+                                <span className="text-lg">⏹</span> PARAR SESIÓN
+                            </button>
+                        </div>
                     </div>
                 </div>
             );
         }
 
-        function HistoryListView({ history, user, appId, db }) {
+        function AvanceView({ history }) {
+            const chartRef = useRef(null);
+
+            useEffect(() => {
+                const ctx = document.getElementById('advanceChart')?.getContext('2d');
+                if (!ctx || history.length === 0) return;
+
+                // Agrupar por fecha
+                const dailyData = {};
+                history.forEach(h => {
+                    const date = new Date(h.date).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' });
+                    dailyData[date] = (dailyData[date] || 0) + (h.totalTime || 0);
+                });
+
+                const labels = Object.keys(dailyData).slice(-7); // Últimos 7 días
+                const data = labels.map(l => Math.floor(dailyData[l] / 60)); // Minutos
+
+                if (chartRef.current) chartRef.current.destroy();
+                chartRef.current = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: 'Minutos',
+                            data,
+                            backgroundColor: '#f97316',
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } },
+                            x: { grid: { display: false }, ticks: { color: '#64748b' } }
+                        }
+                    }
+                });
+                return () => chartRef.current?.destroy();
+            }, [history]);
+
+            const totalSeconds = history.reduce((acc, h) => acc + (h.totalTime || 0), 0);
+
             return (
-                <div className="space-y-4 animate-fade-in pb-20 text-center mx-auto w-full text-white italic text-center">
-                    <h2 className="text-[10px] font-black uppercase text-slate-500 mb-2 italic tracking-widest leading-none text-center text-white">HISTORIAL</h2>
-                    {history.sort((a,b) => new Date(b.date) - new Date(a.date)).map(h => (
-                        <div key={h.id} className="glass-card p-5 flex justify-between items-center border-white/5 text-center text-white shadow-md">
-                            <div className="flex-1 text-left text-white text-left">
-                                <h3 className="font-black uppercase italic text-xs mb-1 truncate text-white">{h.workoutName}</h3>
-                                <p className="text-[8px] font-bold text-slate-500 uppercase leading-none">{new Date(h.date).toLocaleDateString()} • {formatTime(h.totalTime)}</p>
-                            </div>
-                            <button onClick={() => db.collection(`artifacts`).doc(appId).collection('users').doc(user.uid).collection('history').doc(h.id).delete()} className="text-slate-700 p-2 text-white text-center hover:text-red-500 transition-colors">✕</button>
+                <div className="space-y-6 animate-fade-in pb-32 text-center text-white">
+                    <h2 className="text-[10px] font-black uppercase text-slate-500 italic tracking-[0.3em] mb-4">Métricas de Rendimiento</h2>
+                    
+                    <div className="grid grid-cols-1 gap-4 text-white">
+                        <div className="glass-card p-8 flex flex-col items-center text-white">
+                            <span className="text-[10px] font-black uppercase opacity-40 mb-2 text-white">Tiempo Total Acumulado</span>
+                            <span className="text-5xl font-black text-orange-500 neon-text-orange italic leading-none">{formatTime(totalSeconds)}</span>
+                            <span className="text-[8px] font-bold text-slate-500 mt-2 uppercase">Desde que empezaste</span>
                         </div>
-                    ))}
-                    {history.length === 0 && <p className="p-20 opacity-20 text-[10px] font-black italic uppercase text-white">Sin historial aún</p>}
+
+                        <div className="glass-card p-6 h-64 w-full text-white">
+                            <span className="text-[10px] font-black uppercase opacity-40 mb-4 block text-center text-white">Entrenamiento por Día (Minutos)</span>
+                            {history.length > 0 ? (
+                                <canvas id="advanceChart"></canvas>
+                            ) : (
+                                <div className="h-full flex items-center justify-center opacity-20 text-[10px] font-black uppercase italic">Sin datos suficientes</div>
+                            )}
+                        </div>
+                    </div>
                 </div>
             );
         }
@@ -574,7 +649,7 @@
                         ))}
                     </div>
                     <div className="fixed bottom-0 left-0 right-0 p-6 bg-slate-950/95 backdrop-blur-xl border-t border-white/5 z-50 text-center text-white">
-                        <button onClick={save} className="w-full max-w-sm mx-auto bg-white text-black py-6 rounded-full font-black uppercase shadow-2xl italic tracking-widest text-center text-black active:scale-95 transition-transform">GUARDAR RUTINA</button>
+                        <button onClick={save} className="w-full max-w-sm mx-auto bg-white text-black py-6 rounded-full font-black uppercase shadow-2xl italic tracking-widest text-center text-black active:scale-95 transition-transform text-center">GUARDAR RUTINA</button>
                     </div>
                 </div>
             );
@@ -585,18 +660,6 @@
                 <div className="flex flex-col items-center text-center text-white">
                     <span className="text-[8px] font-bold uppercase opacity-40 mb-1 tracking-widest leading-none text-center text-white">{label}</span>
                     <input type="number" className="w-full bg-slate-800/40 border border-white/5 p-4 rounded-xl text-center font-black text-lg outline-none text-white text-center shadow-inner" value={val} onChange={e => set(e.target.value)} />
-                </div>
-            );
-        }
-
-        function AvanceView({ history }) {
-            return (
-                <div className="space-y-6 pb-24 animate-fade-in text-white text-center text-white">
-                    <h2 className="text-[10px] font-black uppercase text-slate-500 italic tracking-widest text-center text-white">ESTADÍSTICAS</h2>
-                    <div className="glass-card p-10 flex flex-col items-center text-center text-white shadow-2xl">
-                        <p className="text-[10px] font-black uppercase opacity-40 mb-2 text-center text-white">SESIONES REALIZADAS</p>
-                        <p className="text-7xl font-black text-orange-500 text-center text-white neon-text-orange">{history.length}</p>
-                    </div>
                 </div>
             );
         }
@@ -617,7 +680,7 @@
                                     <h4 className="font-bold text-[11px] text-white/90 truncate leading-none mb-1 text-center">{u.email}</h4>
                                     <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-1 italic text-center">PASS: {u.password}</p>
                                 </div>
-                                <button onClick={async () => { if(confirm("¿Borrar?")) await db.collection(`artifacts`).doc(appId).collection('public').doc('data').collection('users_metadata').doc(u.id).delete(); }} className="bg-red-500/20 text-red-500 px-4 py-2 rounded-xl text-[10px] font-black border border-red-500/30 uppercase italic text-center hover:bg-red-500 hover:text-white transition-colors text-center text-white">Borrar</button>
+                                <button onClick={async () => { if(confirm("¿Borrar?")) await db.collection(`artifacts`).doc(appId).collection('public').doc('data').collection('users_metadata').doc(u.id).delete(); }} className="bg-red-500/20 text-red-500 px-4 py-2 rounded-xl text-[10px] font-black border border-red-500/30 uppercase italic text-center hover:bg-red-500 hover:text-white transition-colors text-center text-white text-center">Borrar</button>
                             </div>
                         ))}
                     </div>
