@@ -10,7 +10,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#020617">
     
-    <title>Mi Entrenador Fuerte y Saludable</title>
+    <title>Mi Entrenador | Fuerte y Saludable</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -56,7 +56,7 @@
             font-weight: 900;
             letter-spacing: -0.06em;
             color: #000;
-            pointer-events: none; /* No bloquea clics */
+            pointer-events: none;
         }
         
         @media (orientation: landscape) {
@@ -75,7 +75,6 @@
 <body>
     <div id="root"></div>
 
-    <!-- Firebase Compat -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -97,7 +96,7 @@
         const db = firebase.firestore();
         const appId = "mientrenador-v3"; 
         const APP_TITLE = "Mi Entrenador";
-        const APP_VERSION = "22.1.0"; 
+        const APP_VERSION = "21.7.0 (Restaurada)"; 
 
         const WARMUP_STEPS = [
             'tobillo derecho', 'tobillo izquierdo', 
@@ -126,6 +125,17 @@
             msg.lang = 'es-ES';
             msg.rate = 1.1;
             window.speechSynthesis.speak(msg);
+        };
+
+        const timeToWords = (totalSeconds) => {
+            const h = Math.floor(totalSeconds / 3600);
+            const m = Math.floor((totalSeconds % 3600) / 60);
+            const s = totalSeconds % 60;
+            let res = "";
+            if (h > 0) res += `${h} ${h === 1 ? 'hora' : 'horas'}`;
+            if (m > 0) res += (res ? " con " : "") + `${m} ${m === 1 ? 'minuto' : 'minutos'}`;
+            if (h === 0 && m === 0) res = `${s} segundos`;
+            return res || "cero segundos";
         };
 
         function App() {
@@ -172,7 +182,7 @@
             if (!user) return <AuthView APP_TITLE={APP_TITLE} APP_VERSION={APP_VERSION} />;
 
             return (
-                <div className="h-full w-full flex flex-col bg-slate-950 text-white">
+                <div className="h-full w-full flex flex-col bg-slate-950 text-white overflow-hidden">
                     {view !== 'play' && (
                         <header className="p-6 flex justify-between items-center bg-slate-900 shrink-0 border-b border-white/5">
                             <div onClick={() => setView('workouts')} className="cursor-pointer text-left leading-none">
@@ -199,7 +209,7 @@
                     {view !== 'play' && (
                         <nav className="shrink-0 bg-slate-900 border-t border-white/5 p-4 flex justify-around items-center z-50">
                             <button onClick={() => setView('workouts')} className={`flex flex-col items-center text-[9px] font-black ${view === 'workouts' ? 'text-orange-500' : 'text-slate-500'}`}>
-                                <span className="text-xl mb-1">🏋️</span> MIS RUTINAS
+                                <span className="text-xl mb-1">🏋️</span> RUTINAS
                             </button>
                             <button onClick={() => setView('avance')} className={`flex flex-col items-center text-[9px] font-black ${view === 'avance' ? 'text-orange-500' : 'text-slate-500'}`}>
                                 <span className="text-xl mb-1">📊</span> AVANCE
@@ -222,16 +232,16 @@
                 } catch (err) { alert("Error: " + err.message); }
             };
             return (
-                <div className="h-full w-full flex flex-col items-center bg-slate-950 p-10 pt-20 text-center overflow-y-auto scrollbar-hide">
+                <div className="h-full w-full flex flex-col items-center bg-slate-950 p-10 pt-20 text-center">
                     <div className="text-7xl mb-6 animate-pulse">🏃‍♂️</div>
                     <h1 className="text-4xl font-black italic uppercase mb-1 tracking-tighter">{APP_TITLE}</h1>
-                    <p className="text-[8px] font-black text-slate-600 tracking-[0.3em] uppercase mb-8">VERSIÓN {APP_VERSION}</p>
+                    <p className="text-[8px] font-black text-slate-600 tracking-widest mb-8">VERSIÓN {APP_VERSION}</p>
                     <form onSubmit={handleAuth} className="space-y-4 w-full max-w-sm">
                         <input type="email" placeholder="EMAIL" className="w-full p-6 bg-slate-900 border border-white/5 rounded-3xl font-bold text-center text-white" value={email} onChange={e => setEmail(e.target.value)} required />
                         <input type="password" placeholder="CLAVE" className="w-full p-6 bg-slate-900 border border-white/5 rounded-3xl font-bold text-center text-white" value={password} onChange={e => setPassword(e.target.value)} required />
-                        <button type="submit" className="w-full bg-orange-500 py-6 rounded-full font-black uppercase shadow-xl active:scale-95 italic">ENTRAR</button>
+                        <button type="submit" className="w-full bg-orange-500 py-6 rounded-full font-black uppercase shadow-xl active:scale-95 italic text-white">ENTRAR</button>
                     </form>
-                    <button onClick={() => setIsRegister(!isRegister)} className="mt-8 text-slate-500 text-[10px] font-black uppercase border-b border-orange-500/30 pb-1 italic">{isRegister ? 'Ya tengo cuenta' : 'Crear cuenta nueva'}</button>
+                    <button onClick={() => setIsRegister(!isRegister)} className="mt-8 text-slate-500 text-[10px] font-black uppercase border-b border-orange-500/30 pb-1">{isRegister ? 'Ya tengo cuenta' : 'Crear cuenta nueva'}</button>
                 </div>
             );
         }
@@ -252,7 +262,7 @@
                             </div>
                         </div>
                     ))}
-                    <button onClick={onCreate} className="w-full bg-white/5 border border-white/10 py-6 rounded-full font-black uppercase shadow-xl italic active:scale-95 flex items-center justify-center gap-2 mt-4 text-white">
+                    <button onClick={onCreate} className="w-full bg-white/5 border border-white/10 py-6 rounded-full font-black uppercase shadow-xl italic active:scale-95 flex items-center justify-center gap-2 mt-4 text-white text-center">
                         <span className="text-xl">➕</span> NUEVA RUTINA
                     </button>
                 </div>
@@ -270,18 +280,19 @@
             const wakeLockRef = useRef(null); 
 
             const requestWakeLock = async () => {
-                if ('wakeLock' in navigator) {
-                    try { if (!wakeLockRef.current) wakeLockRef.current = await navigator.wakeLock.request('screen'); } catch (err) {}
+                if ('wakeLock' in navigator && !wakeLockRef.current) {
+                    try { wakeLockRef.current = await navigator.wakeLock.request('screen'); } catch (err) {}
                 }
             };
 
             const releaseWakeLock = async () => {
-                if (wakeLockRef.current !== null) { await wakeLockRef.current.release(); wakeLockRef.current = null; }
+                if (wakeLockRef.current) { await wakeLockRef.current.release(); wakeLockRef.current = null; }
             };
 
             useEffect(() => {
                 const s = [];
                 const ph = workout.phases;
+                // ORDEN: Piernas, Brazos, Tronco
                 const REGIONS = ['piernas', 'brazos', 'tronco'];
                 
                 s.push({ label: 'PREPÁRATE', seconds: 15, color: 'bg-yellow-400', phaseId: 'inicio', r: 0, tr: 0, cy: 0, tc: 0 });
@@ -328,17 +339,13 @@
                     }
                 }
 
-                // 2. Anticipación a los 5 segundos antes de terminar cambio/descanso/preparación
-                if (timeLeft === 5 && ['CAMBIO', 'DESCANSO', 'PREPÁRATE', 'LISTO'].includes(current.label)) {
-                    if (next) {
-                        if (next.phaseId === 'calentamiento') speak(`Vamos a calentar ${next.label.toLowerCase()}`);
-                        else if (next.phaseId === 'entrenamiento') {
-                            if ((next.r - 1) % 3 === 0) speak(`Vamos a ejercitar ${next.label.toLowerCase()}`);
-                            else speak("Cambio");
-                        } else {
-                            speak("Cambio");
-                        }
-                    }
+                // 2. Anticipación a los 5 segundos
+                if (timeLeft === 5 && ['CAMBIO', 'DESCANSO', 'PREPÁRATE'].includes(current.label) && next) {
+                    if (next.phaseId === 'calentamiento') speak(`Vamos a calentar ${next.label.toLowerCase()}`);
+                    else if (next.phaseId === 'entrenamiento') {
+                        if ((next.r - 1) % 3 === 0) speak(`Vamos a ejercitar ${next.label.toLowerCase()}`);
+                        else speak("Cambio");
+                    } else speak("Cambio");
                 }
 
                 // 3. Conteo final
@@ -372,35 +379,37 @@
                     <div className="text-9xl mb-10 animate-bounce">🏆</div>
                     <h1 className="text-6xl font-black mb-4 uppercase tracking-tighter text-center leading-none">¡LOGRADO!</h1>
                     <div className="glass-card p-10 w-full mb-12 shadow-2xl border-orange-500/20 text-center">
-                        <p className="text-[10px] font-black opacity-40 uppercase">Tiempo de Sesión</p>
+                        <p className="text-[10px] font-black opacity-40 uppercase tracking-widest">Total Entrenamiento</p>
                         <p className="text-7xl font-black text-orange-500 leading-none">{formatTime(elapsed)}</p>
                     </div>
                     <button onClick={() => {setIdx(0); setTimeLeft(steps[0].seconds); setElapsed(0); setStatus('paused'); savedRef.current=false;}} className="w-full bg-orange-500 text-white py-5 rounded-full font-black uppercase mb-4 italic active:scale-95">VOLVER A EMPEZAR</button>
-                    <button onClick={onExit} className="w-full bg-white text-black py-5 rounded-full font-black uppercase italic active:scale-95">FINALIZAR</button>
+                    <button onClick={onExit} className="w-full bg-white text-black py-5 rounded-full font-black uppercase active:scale-95 italic">FINALIZAR</button>
                 </div>
             );
 
+            const curr = steps[idx];
+
             return (
-                <div className={`h-full flex flex-col transition-colors duration-1000 ${steps[idx]?.color || 'bg-slate-950'} select-none overflow-hidden`}>
+                <div className={`h-full flex flex-col transition-colors duration-1000 ${curr?.color || 'bg-slate-950'} select-none overflow-hidden text-white`}>
                     <div className="bg-black/10 p-4 pt-8 flex justify-between items-center shrink-0 border-b border-white/5">
                         <div className="text-left leading-none"><span className="text-[10px] font-black uppercase text-orange-500">TIEMPO</span><p className="text-xl font-black italic">{formatTime(elapsed)}</p></div>
                         <h2 className="text-xs font-black uppercase italic truncate max-w-[150px]">{workout.name}</h2>
                         <button onClick={onExit} className="text-white opacity-40 text-xl px-2">✕</button>
                     </div>
                     <div className="flex-1 flex flex-col items-center justify-center relative">
-                        <h2 className="text-[12vw] font-black uppercase italic tracking-tighter text-black mb-1 leading-none">{steps[idx]?.label || 'LISTO'}</h2>
+                        <h2 className="text-[12vw] font-black uppercase italic tracking-tighter text-black mb-1 leading-none">{curr?.label || 'LISTO'}</h2>
                         <span className="timer-huge tabular-nums">{timeLeft}</span>
                     </div>
                     <div className="bg-slate-950 p-6 pb-12 flex flex-col items-center shrink-0">
                         <div className="w-full max-w-md grid grid-cols-3 items-center mb-8">
-                            <div className="flex flex-col items-center"><span className="text-[18vw] font-black text-sky-400 leading-none">{steps[idx]?.r || 0}</span><span className="text-[8px] font-black uppercase text-slate-500 mt-1">RONDAS</span></div>
+                            <div className="flex flex-col items-center"><span className="text-[18vw] font-black text-sky-400 leading-none">{curr?.r || 0}</span><span className="text-[8px] font-black uppercase text-slate-500 mt-1">RONDAS</span></div>
                             <div className="flex flex-col items-center gap-2">
                                 <button onClick={() => setStatus(s => s === 'running' ? 'paused' : 'running')} className="w-20 h-20 rounded-full border-4 border-yellow-400 flex items-center justify-center bg-transparent active:scale-95 transition-transform"><div className="text-yellow-400 text-4xl leading-none">{status === 'running' ? '❚❚' : '▶'}</div></button>
                                 <span className="text-[10px] font-black uppercase text-yellow-400/60 tracking-widest">{status === 'running' ? 'PAUSAR' : 'EMPEZAR'}</span>
                             </div>
-                            <div className="flex flex-col items-center"><span className="text-[18vw] font-black text-yellow-400 leading-none">{steps[idx]?.cy || 0}</span><span className="text-[8px] font-black uppercase text-slate-500 mt-1">CICLOS</span></div>
+                            <div className="flex flex-col items-center"><span className="text-[18vw] font-black text-yellow-400 leading-none">{curr?.cy || 0}</span><span className="text-[8px] font-black uppercase text-slate-500 mt-1">CICLOS</span></div>
                         </div>
-                        <div className="w-full flex justify-center gap-4">
+                        <div className="w-full flex justify-center gap-6">
                             <button onClick={() => {setStatus('paused'); setIdx(0); setTimeLeft(steps[0].seconds); setElapsed(0); speak("Reiniciado");}} className="bg-slate-800 p-4 rounded-full text-yellow-400 text-xl btn-control">🔄</button>
                             <button onClick={handleStopManually} className="bg-red-500/20 p-4 rounded-full text-red-500 text-xl btn-control">⏹</button>
                             <button onClick={() => {const sid=steps.findIndex(s=>s.phaseId==='estiramientos'); if(sid!==-1){setIdx(sid); setTimeLeft(steps[sid].seconds); speak("Vamos a estirar");}}} className="bg-blue-500/20 p-4 rounded-full text-blue-400 text-xl btn-control">🧘</button>
@@ -439,7 +448,7 @@
             }, [history]);
 
             return (
-                <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-32 scrollbar-hide">
+                <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-32 scrollbar-hide text-white">
                     <div className="glass-card p-8 flex flex-col items-center shadow-2xl">
                         <span className="text-[10px] font-black uppercase opacity-40 mb-2 tracking-widest">TIEMPO TOTAL ENTRENADO</span>
                         <span className="text-4xl font-black text-orange-500 neon-text-orange italic leading-none">{formatTotalTimeLong(totalSec)}</span>
@@ -480,11 +489,11 @@
                     
                     <div className="flex-1 overflow-y-auto scrollbar-hide p-4 space-y-6">
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase text-orange-500 tracking-widest block italic">Nombre del Plan</label>
-                            <input type="text" placeholder="EJ: RUTINA EXCEL" className="w-full p-6 bg-slate-900 border border-white/10 rounded-[2rem] font-black uppercase italic outline-none focus:border-orange-500 shadow-inner" value={name} onChange={e => setName(e.target.value)} />
+                            <label className="text-[10px] font-black uppercase text-orange-500 tracking-widest block italic text-white text-center">Nombre del Plan</label>
+                            <input type="text" placeholder="EJ: RUTINA EXCEL" className="w-full p-6 bg-slate-900 border border-white/10 rounded-[2rem] font-black uppercase italic outline-none focus:border-orange-500 shadow-inner text-white text-center" value={name} onChange={e => setName(e.target.value)} />
                         </div>
                         {['calentamiento', 'entrenamiento', 'estiramientos'].map((p) => (
-                            <div key={p} className="glass-card p-6 italic space-y-6 border border-white/5">
+                            <div key={p} className="glass-card p-6 italic space-y-6 border border-white/5 text-center">
                                 <span className="font-black uppercase text-xs tracking-widest text-orange-500 border-b border-white/5 block pb-2 mx-auto w-fit">{p}</span>
                                 <div className="grid grid-cols-2 gap-4">
                                     <InputField label="ACCIÓN (S)" val={phases[p].action} set={v => update(p, 'action', v)} />
@@ -498,7 +507,7 @@
                     </div>
 
                     <div className="shrink-0 p-6 bg-slate-950 border-t border-white/5 shadow-[0_-15px_30px_rgba(0,0,0,0.8)]">
-                        <button onClick={save} disabled={saving} className="w-full bg-white text-black py-6 rounded-full font-black uppercase shadow-xl active:scale-95 disabled:opacity-50 italic">
+                        <button onClick={save} disabled={saving} className="w-full bg-white text-black py-6 rounded-full font-black uppercase shadow-xl active:scale-95 disabled:opacity-50 italic text-center">
                             {saving ? 'GUARDANDO...' : 'GUARDAR RUTINA'}
                         </button>
                     </div>
@@ -509,8 +518,8 @@
         function InputField({ label, val, set }) {
             return (
                 <div className="flex flex-col items-center space-y-1.5">
-                    <span className="text-[8px] font-bold uppercase opacity-40 leading-none">{label}</span>
-                    <input type="number" className="w-full bg-slate-800/40 border border-white/5 p-4 rounded-xl text-center font-black text-lg outline-none focus:border-orange-500 shadow-inner" value={val} onChange={e => set(e.target.value)} />
+                    <span className="text-[8px] font-bold uppercase opacity-40 leading-none text-white text-center">{label}</span>
+                    <input type="number" className="w-full bg-slate-800/40 border border-white/5 p-4 rounded-xl text-center font-black text-lg outline-none focus:border-orange-500 shadow-inner text-white" value={val} onChange={e => set(e.target.value)} />
                 </div>
             );
         }
