@@ -75,6 +75,7 @@
 <body>
     <div id="root"></div>
 
+    <!-- Firebase Compat -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -96,7 +97,7 @@
         const db = firebase.firestore();
         const appId = "mientrenador-v3"; 
         const APP_TITLE = "Mi Entrenador";
-        const APP_VERSION = "21.7.0 (Restaurada)"; 
+        const APP_VERSION = "22.2.0"; 
 
         const WARMUP_STEPS = [
             'tobillo derecho', 'tobillo izquierdo', 
@@ -115,7 +116,8 @@
         const formatTotalTimeLong = (ts) => {
             const h = Math.floor(ts / 3600);
             const m = Math.floor((ts % 3600) / 60);
-            return h > 0 ? `${h}h ${m}m` : `${m}m ${ts % 60}s`;
+            if (h > 0) return `${h}h ${m}m`;
+            return `${m}m ${ts % 60}s`;
         };
 
         const speak = (text) => {
@@ -131,11 +133,11 @@
             const h = Math.floor(totalSeconds / 3600);
             const m = Math.floor((totalSeconds % 3600) / 60);
             const s = totalSeconds % 60;
-            let res = "";
-            if (h > 0) res += `${h} ${h === 1 ? 'hora' : 'horas'}`;
-            if (m > 0) res += (res ? " con " : "") + `${m} ${m === 1 ? 'minuto' : 'minutos'}`;
-            if (h === 0 && m === 0) res = `${s} segundos`;
-            return res || "cero segundos";
+            let result = "";
+            if (h > 0) result += `${h} ${h === 1 ? 'hora' : 'horas'}`;
+            if (m > 0) result += (result ? " con " : "") + `${m} ${m === 1 ? 'minuto' : 'minutos'}`;
+            if (h === 0 && m === 0) result = `${s} segundos`;
+            return result || "cero segundos";
         };
 
         function App() {
@@ -174,7 +176,7 @@
 
             if (loading) return (
                 <div className="h-full w-full flex flex-col items-center justify-center bg-slate-950 text-white">
-                    <div className="animate-pulse text-9xl mb-4 text-center">🏋️‍♂️</div>
+                    <div className="animate-pulse text-9xl mb-4">🏋️‍♂️</div>
                     <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
                 </div>
             );
@@ -182,7 +184,7 @@
             if (!user) return <AuthView APP_TITLE={APP_TITLE} APP_VERSION={APP_VERSION} />;
 
             return (
-                <div className="h-full w-full flex flex-col bg-slate-950 text-white overflow-hidden">
+                <div className="h-full w-full flex flex-col bg-slate-950 text-white">
                     {view !== 'play' && (
                         <header className="p-6 flex justify-between items-center bg-slate-900 shrink-0 border-b border-white/5">
                             <div onClick={() => setView('workouts')} className="cursor-pointer text-left leading-none">
@@ -239,7 +241,7 @@
                     <form onSubmit={handleAuth} className="space-y-4 w-full max-w-sm">
                         <input type="email" placeholder="EMAIL" className="w-full p-6 bg-slate-900 border border-white/5 rounded-3xl font-bold text-center text-white" value={email} onChange={e => setEmail(e.target.value)} required />
                         <input type="password" placeholder="CLAVE" className="w-full p-6 bg-slate-900 border border-white/5 rounded-3xl font-bold text-center text-white" value={password} onChange={e => setPassword(e.target.value)} required />
-                        <button type="submit" className="w-full bg-orange-500 py-6 rounded-full font-black uppercase shadow-xl active:scale-95 italic text-white">ENTRAR</button>
+                        <button type="submit" className="w-full bg-orange-500 py-6 rounded-full font-black uppercase italic text-white">ENTRAR</button>
                     </form>
                     <button onClick={() => setIsRegister(!isRegister)} className="mt-8 text-slate-500 text-[10px] font-black uppercase border-b border-orange-500/30 pb-1">{isRegister ? 'Ya tengo cuenta' : 'Crear cuenta nueva'}</button>
                 </div>
@@ -250,8 +252,8 @@
             return (
                 <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-32 animate-fade-in scrollbar-hide">
                     {workouts.map(w => (
-                        <div key={w.id} className="glass-card p-6 flex justify-between items-center text-left shadow-xl">
-                            <div className="flex-1 cursor-pointer truncate pr-2" onClick={() => setWorkout(w)}>
+                        <div key={w.id} className="glass-card p-6 flex justify-between items-center text-left">
+                            <div className="flex-1 cursor-pointer truncate mr-2" onClick={() => setWorkout(w)}>
                                 <h3 className="font-black uppercase italic truncate text-sm">{w.name}</h3>
                                 <span className="text-[10px] font-black text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded-lg">{formatTime(w.totalTime || 0)}</span>
                             </div>
@@ -262,7 +264,7 @@
                             </div>
                         </div>
                     ))}
-                    <button onClick={onCreate} className="w-full bg-white/5 border border-white/10 py-6 rounded-full font-black uppercase shadow-xl italic active:scale-95 flex items-center justify-center gap-2 mt-4 text-white text-center">
+                    <button onClick={onCreate} className="w-full bg-white/5 border border-white/10 py-6 rounded-full font-black uppercase flex items-center justify-center gap-2 mt-4 text-white">
                         <span className="text-xl">➕</span> NUEVA RUTINA
                     </button>
                 </div>
@@ -275,7 +277,6 @@
             const [timeLeft, setTimeLeft] = useState(0);
             const [elapsed, setElapsed] = useState(0);
             const [steps, setSteps] = useState([]);
-            const savedRef = useRef(false);
             const lastSpokenKey = useRef(""); 
             const wakeLockRef = useRef(null); 
 
@@ -329,17 +330,14 @@
                 if (lastSpokenKey.current === key) return;
                 lastSpokenKey.current = key;
 
-                // 1. Al inicio de cada bloque
+                // LOGICA DE VOZ
                 if (timeLeft === current.seconds) {
                     if (idx === 0) speak("Prepárate");
                     else if (['CAMBIO', 'DESCANSO'].includes(current.label)) {
-                        if (current.seconds > 5) speak("Cambio");
-                    } else {
-                        speak("Empieza");
-                    }
+                         if (current.seconds > 5) speak("Cambio");
+                    } else speak("Empieza");
                 }
 
-                // 2. Anticipación a los 5 segundos
                 if (timeLeft === 5 && ['CAMBIO', 'DESCANSO', 'PREPÁRATE'].includes(current.label) && next) {
                     if (next.phaseId === 'calentamiento') speak(`Vamos a calentar ${next.label.toLowerCase()}`);
                     else if (next.phaseId === 'entrenamiento') {
@@ -348,9 +346,7 @@
                     } else speak("Cambio");
                 }
 
-                // 3. Conteo final
                 if (timeLeft <= 3 && timeLeft > 0) speak(timeLeft.toString());
-
             }, [timeLeft, status, idx, steps]);
 
             useEffect(() => {
@@ -360,14 +356,10 @@
                     timer = setInterval(() => {
                         setElapsed(e => e + 1);
                         if (timeLeft > 0) setTimeLeft(t => t - 1);
-                        else if (idx < steps.length - 1) { 
-                            setIdx(i => i + 1); 
-                            setTimeLeft(steps[idx+1].seconds);
-                            if ('vibrate' in navigator) navigator.vibrate(200);
-                        } else {
+                        else if (idx < steps.length - 1) { setIdx(i => i + 1); setTimeLeft(steps[idx+1].seconds); }
+                        else {
                             setStatus('finished'); releaseWakeLock();
-                            const totalWords = timeToWords(elapsed + 1);
-                            if (!savedRef.current) { onComplete(workout.name, elapsed + 1); savedRef.current = true; speak(`Felicidades, entrenaste ${totalWords}`); }
+                            onComplete(workout.name, elapsed + 1); speak(`Felicidades, entrenaste ${timeToWords(elapsed + 1)}`);
                         }
                     }, 1000);
                 } else releaseWakeLock();
@@ -375,39 +367,38 @@
             }, [status, timeLeft, idx, steps]);
 
             if (status === 'finished') return (
-                <div className="h-full flex flex-col items-center justify-center p-8 bg-slate-950 italic">
+                <div className="h-full flex flex-col items-center justify-center p-8 bg-slate-950 text-center">
                     <div className="text-9xl mb-10 animate-bounce">🏆</div>
-                    <h1 className="text-6xl font-black mb-4 uppercase tracking-tighter text-center leading-none">¡LOGRADO!</h1>
-                    <div className="glass-card p-10 w-full mb-12 shadow-2xl border-orange-500/20 text-center">
-                        <p className="text-[10px] font-black opacity-40 uppercase tracking-widest">Total Entrenamiento</p>
+                    <h1 className="text-6xl font-black mb-4 uppercase italic">¡LOGRADO!</h1>
+                    <div className="glass-card p-10 w-full mb-12 border-orange-500/20">
+                        <p className="text-[10px] font-black opacity-40 uppercase">Total Entrenamiento</p>
                         <p className="text-7xl font-black text-orange-500 leading-none">{formatTime(elapsed)}</p>
                     </div>
-                    <button onClick={() => {setIdx(0); setTimeLeft(steps[0].seconds); setElapsed(0); setStatus('paused'); savedRef.current=false;}} className="w-full bg-orange-500 text-white py-5 rounded-full font-black uppercase mb-4 italic active:scale-95">VOLVER A EMPEZAR</button>
-                    <button onClick={onExit} className="w-full bg-white text-black py-5 rounded-full font-black uppercase active:scale-95 italic">FINALIZAR</button>
+                    <button onClick={onExit} className="w-full bg-white text-black py-5 rounded-full font-black uppercase italic shadow-xl">FINALIZAR</button>
                 </div>
             );
 
-            const curr = steps[idx];
-
             return (
-                <div className={`h-full flex flex-col transition-colors duration-1000 ${curr?.color || 'bg-slate-950'} select-none overflow-hidden text-white`}>
-                    <div className="bg-black/10 p-4 pt-8 flex justify-between items-center shrink-0 border-b border-white/5">
+                <div className={`h-full flex flex-col transition-colors duration-1000 ${steps[idx]?.color || 'bg-slate-950'} select-none overflow-hidden`}>
+                    <div className="bg-black/10 p-4 pt-8 flex justify-between items-center shrink-0">
                         <div className="text-left leading-none"><span className="text-[10px] font-black uppercase text-orange-500">TIEMPO</span><p className="text-xl font-black italic">{formatTime(elapsed)}</p></div>
                         <h2 className="text-xs font-black uppercase italic truncate max-w-[150px]">{workout.name}</h2>
                         <button onClick={onExit} className="text-white opacity-40 text-xl px-2">✕</button>
                     </div>
                     <div className="flex-1 flex flex-col items-center justify-center relative">
-                        <h2 className="text-[12vw] font-black uppercase italic tracking-tighter text-black mb-1 leading-none">{curr?.label || 'LISTO'}</h2>
+                        <h2 className="text-[12vw] font-black uppercase italic text-black mb-1 leading-none">{steps[idx]?.label || 'LISTO'}</h2>
                         <span className="timer-huge tabular-nums">{timeLeft}</span>
                     </div>
                     <div className="bg-slate-950 p-6 pb-12 flex flex-col items-center shrink-0">
                         <div className="w-full max-w-md grid grid-cols-3 items-center mb-8">
-                            <div className="flex flex-col items-center"><span className="text-[18vw] font-black text-sky-400 leading-none">{curr?.r || 0}</span><span className="text-[8px] font-black uppercase text-slate-500 mt-1">RONDAS</span></div>
+                            <div className="flex flex-col items-center"><span className="text-[18vw] font-black text-sky-400 leading-none">{steps[idx]?.r || 0}</span><span className="text-[8px] font-black uppercase text-slate-500 mt-1">RONDAS</span></div>
                             <div className="flex flex-col items-center gap-2">
-                                <button onClick={() => setStatus(s => s === 'running' ? 'paused' : 'running')} className="w-20 h-20 rounded-full border-4 border-yellow-400 flex items-center justify-center bg-transparent active:scale-95 transition-transform"><div className="text-yellow-400 text-4xl leading-none">{status === 'running' ? '❚❚' : '▶'}</div></button>
-                                <span className="text-[10px] font-black uppercase text-yellow-400/60 tracking-widest">{status === 'running' ? 'PAUSAR' : 'EMPEZAR'}</span>
+                                <button onClick={() => setStatus(s => s === 'running' ? 'paused' : 'running')} className="w-20 h-20 rounded-full border-4 border-yellow-400 flex items-center justify-center bg-transparent active:scale-95 transition-transform">
+                                    <div className="text-yellow-400 text-4xl leading-none">{status === 'running' ? '❚❚' : '▶'}</div>
+                                </button>
+                                <span className="text-[10px] font-black uppercase text-yellow-400/60 tracking-widest">{status === 'running' ? 'PAUSA' : 'INICIO'}</span>
                             </div>
-                            <div className="flex flex-col items-center"><span className="text-[18vw] font-black text-yellow-400 leading-none">{curr?.cy || 0}</span><span className="text-[8px] font-black uppercase text-slate-500 mt-1">CICLOS</span></div>
+                            <div className="flex flex-col items-center"><span className="text-[18vw] font-black text-yellow-400 leading-none">{steps[idx]?.cy || 0}</span><span className="text-[8px] font-black uppercase text-slate-500 mt-1">CICLOS</span></div>
                         </div>
                         <div className="w-full flex justify-center gap-6">
                             <button onClick={() => {setStatus('paused'); setIdx(0); setTimeLeft(steps[0].seconds); setElapsed(0); speak("Reiniciado");}} className="bg-slate-800 p-4 rounded-full text-yellow-400 text-xl btn-control">🔄</button>
@@ -441,7 +432,7 @@
                 if (chartRef.current) chartRef.current.destroy();
                 chartRef.current = new Chart(ctx, {
                     type: 'bar',
-                    data: { labels: last14, datasets: [{ label: 'Minutos', data, backgroundColor: '#f97316', borderRadius: 8, hoverBackgroundColor: '#22d3ee' }] },
+                    data: { labels: last14, datasets: [{ label: 'Minutos', data, backgroundColor: '#f97316', borderRadius: 8 }] },
                     options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } }, x: { grid: { display: false }, ticks: { color: '#64748b', autoSkip: false, font: { size: 9 } } } } }
                 });
                 return () => chartRef.current?.destroy();
@@ -450,13 +441,12 @@
             return (
                 <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-32 scrollbar-hide text-white">
                     <div className="glass-card p-8 flex flex-col items-center shadow-2xl">
-                        <span className="text-[10px] font-black uppercase opacity-40 mb-2 tracking-widest">TIEMPO TOTAL ENTRENADO</span>
-                        <span className="text-4xl font-black text-orange-500 neon-text-orange italic leading-none">{formatTotalTimeLong(totalSec)}</span>
+                        <span className="text-[10px] font-black uppercase opacity-40 mb-2">TIEMPO TOTAL ENTRENADO</span>
+                        <span className="text-4xl font-black text-orange-500 italic leading-none">{formatTotalTimeLong(totalSec)}</span>
                     </div>
                     <div className="glass-card p-6 shadow-xl">
-                        <span className="text-[10px] font-black uppercase opacity-40 mb-4 block text-center">PROGRESO ÚLTIMAS 2 SEMANAS (MIN)</span>
+                        <span className="text-[10px] font-black uppercase opacity-40 mb-4 block text-center">PROGRESO 14 DÍAS (MIN)</span>
                         <div className="chart-container-scroll"><div style={{ minWidth: '600px', height: '220px' }}><canvas id="advanceChart"></canvas></div></div>
-                        <p className="text-[8px] text-slate-500 mt-4 italic text-center">Desliza para ver el historial completo</p>
                     </div>
                 </div>
             );
@@ -483,15 +473,11 @@
             return (
                 <div className="flex-1 flex flex-col bg-slate-950 overflow-hidden h-full">
                     <header className="shrink-0 p-6 flex items-center border-b border-white/5">
-                        <button onClick={onCancel} className="p-3 bg-slate-900 rounded-2xl active:scale-90">⬅</button>
+                        <button onClick={onCancel} className="p-3 bg-slate-900 rounded-2xl">⬅</button>
                         <h2 className="text-xl font-black uppercase italic flex-1 text-center">{workoutToEdit ? 'EDITAR' : 'NUEVA'} RUTINA</h2>
                     </header>
-                    
                     <div className="flex-1 overflow-y-auto scrollbar-hide p-4 space-y-6">
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase text-orange-500 tracking-widest block italic text-white text-center">Nombre del Plan</label>
-                            <input type="text" placeholder="EJ: RUTINA EXCEL" className="w-full p-6 bg-slate-900 border border-white/10 rounded-[2rem] font-black uppercase italic outline-none focus:border-orange-500 shadow-inner text-white text-center" value={name} onChange={e => setName(e.target.value)} />
-                        </div>
+                        <input type="text" placeholder="NOMBRE DEL PLAN" className="w-full p-6 bg-slate-900 border border-white/10 rounded-[2rem] font-black uppercase italic outline-none focus:border-orange-500 shadow-inner text-white text-center" value={name} onChange={e => setName(e.target.value)} />
                         {['calentamiento', 'entrenamiento', 'estiramientos'].map((p) => (
                             <div key={p} className="glass-card p-6 italic space-y-6 border border-white/5 text-center">
                                 <span className="font-black uppercase text-xs tracking-widest text-orange-500 border-b border-white/5 block pb-2 mx-auto w-fit">{p}</span>
@@ -505,9 +491,8 @@
                         ))}
                         <div className="h-20 shrink-0"></div>
                     </div>
-
-                    <div className="shrink-0 p-6 bg-slate-950 border-t border-white/5 shadow-[0_-15px_30px_rgba(0,0,0,0.8)]">
-                        <button onClick={save} disabled={saving} className="w-full bg-white text-black py-6 rounded-full font-black uppercase shadow-xl active:scale-95 disabled:opacity-50 italic text-center">
+                    <div className="shrink-0 p-6 bg-slate-950 border-t border-white/5 shadow-2xl">
+                        <button onClick={save} disabled={saving} className="w-full max-w-sm mx-auto bg-white text-black py-6 rounded-full font-black uppercase shadow-xl active:scale-95 italic">
                             {saving ? 'GUARDANDO...' : 'GUARDAR RUTINA'}
                         </button>
                     </div>
@@ -518,8 +503,8 @@
         function InputField({ label, val, set }) {
             return (
                 <div className="flex flex-col items-center space-y-1.5">
-                    <span className="text-[8px] font-bold uppercase opacity-40 leading-none text-white text-center">{label}</span>
-                    <input type="number" className="w-full bg-slate-800/40 border border-white/5 p-4 rounded-xl text-center font-black text-lg outline-none focus:border-orange-500 shadow-inner text-white" value={val} onChange={e => set(e.target.value)} />
+                    <span className="text-[8px] font-bold uppercase opacity-40 text-white text-center">{label}</span>
+                    <input type="number" className="w-full bg-slate-800/40 border border-white/5 p-4 rounded-xl text-center font-black text-lg outline-none focus:border-orange-500 text-white" value={val} onChange={e => set(e.target.value)} />
                 </div>
             );
         }
