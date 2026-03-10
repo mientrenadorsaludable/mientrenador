@@ -104,7 +104,7 @@
         const db = firebase.firestore();
         const appId = "mientrenador-v3"; 
         const APP_TITLE = "Mi Entrenador Fuerte y Saludable";
-        const APP_VERSION = "21.8.0"; 
+        const APP_VERSION = "21.9.0"; 
 
         const WARMUP_STEPS = [
             'tobillo derecho', 'tobillo izquierdo', 
@@ -139,17 +139,17 @@
             const hours = Math.floor(totalSeconds / 3600);
             const minutes = Math.floor((totalSeconds % 3600) / 60);
             const seconds = totalSeconds % 60;
-            let result = "";
+            let res = "";
             if (hours > 0) {
-                result += `${hours} ${hours === 1 ? 'hora' : 'horas'}`;
-                if (minutes > 0) result += ` con ${minutes} ${minutes === 1 ? 'minuto' : 'minutos'}`;
+                res += `${hours} ${hours === 1 ? 'hora' : 'horas'}`;
+                if (minutes > 0) res += ` con ${minutes} ${minutes === 1 ? 'minuto' : 'minutos'}`;
             } else {
                 if (minutes > 0) {
-                    result += `${minutes} ${minutes === 1 ? 'minuto' : 'minutos'}`;
-                    if (seconds > 0) result += ` con ${seconds} ${seconds === 1 ? 'segundo' : 'segundos'}`;
-                } else result += `${seconds} ${seconds === 1 ? 'segundo' : 'segundos'}`;
+                    res += `${minutes} ${minutes === 1 ? 'minuto' : 'minutos'}`;
+                    if (seconds > 0) res += ` con ${seconds} ${seconds === 1 ? 'segundo' : 'segundos'}`;
+                } else res += `${seconds} ${seconds === 1 ? 'segundo' : 'segundos'}`;
             }
-            return result || "cero segundos";
+            return res || "cero segundos";
         };
 
         function App() {
@@ -171,18 +171,18 @@
             };
 
             useEffect(() => {
-                const unsubscribe = auth.onAuthStateChanged((u) => {
+                const unsub = auth.onAuthStateChanged((u) => {
                     setUser(u && !u.isAnonymous ? u : null);
-                    setTimeout(() => setLoading(false), 2000);
+                    setTimeout(() => setLoading(false), 1500);
                 });
-                return () => unsubscribe();
+                return unsub;
             }, []);
 
             useEffect(() => {
                 if (!user) return;
-                const pathBase = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
-                const unsubW = pathBase.collection('workouts').onSnapshot(s => setWorkouts(s.docs.map(d => ({id: d.id, ...d.data()}))));
-                const unsubH = pathBase.collection('history').onSnapshot(s => setHistory(s.docs.map(d => ({id: d.id, ...d.data()}))));
+                const path = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
+                const unsubW = path.collection('workouts').onSnapshot(s => setWorkouts(s.docs.map(d => ({id: d.id, ...d.data()}))));
+                const unsubH = path.collection('history').onSnapshot(s => setHistory(s.docs.map(d => ({id: d.id, ...d.data()}))));
                 return () => { unsubW(); unsubH(); };
             }, [user]);
 
@@ -196,32 +196,27 @@
             };
 
             if (loading) return (
-                <div className="h-full w-full flex flex-col items-center justify-center bg-slate-950 text-white text-center p-10">
+                <div className="h-full w-full flex flex-col items-center justify-center bg-slate-950 text-white p-10">
                     <div className="animate-pulse text-9xl mb-6">🏋️‍♂️</div>
                     <h1 className="text-4xl font-black italic uppercase tracking-tighter mb-4 leading-tight">{APP_TITLE}</h1>
-                    <div className="mt-4 flex flex-col items-center gap-3">
-                        <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-                        <span className="text-slate-600 font-black text-[10px] tracking-[0.5em] uppercase italic">VERSIÓN {APP_VERSION}</span>
-                    </div>
+                    <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
                 </div>
             );
 
             if (!user) return <AuthView appId={appId} db={db} auth={auth} />;
 
             return (
-                <div className="h-full w-full flex flex-col bg-slate-950 overflow-hidden text-center text-white">
+                <div className="h-full w-full flex flex-col bg-slate-950 text-white overflow-hidden">
                     {view !== 'play' && (
                         <header className="p-6 flex justify-between items-center bg-slate-900 shrink-0 border-b border-white/5">
                             <div onClick={() => setView('workouts')} className="cursor-pointer text-left">
-                                <h1 className="text-lg font-black italic uppercase leading-none tracking-tight">{APP_TITLE}</h1>
+                                <h1 className="text-lg font-black italic uppercase leading-none">{APP_TITLE}</h1>
                                 <div className="flex items-center gap-2 mt-1">
                                     <p className="text-[9px] font-bold text-slate-500 truncate max-w-[100px]">{user.email}</p>
                                     <span className="text-[8px] font-black text-orange-500/50 border-l border-white/10 pl-2">V {APP_VERSION}</span>
                                 </div>
                             </div>
-                            <div className="flex gap-2">
-                                <button onClick={() => auth.signOut()} className="p-2 bg-red-500/10 rounded-xl text-red-500 font-bold active:scale-90">🚪</button>
-                            </div>
+                            <button onClick={() => auth.signOut()} className="p-2 bg-red-500/10 rounded-xl text-red-500 font-bold active:scale-90">🚪</button>
                         </header>
                     )}
 
@@ -236,7 +231,7 @@
                     </main>
 
                     {view !== 'play' && (
-                        <nav className="shrink-0 bg-slate-900 border-t border-white/5 p-4 flex justify-around items-center z-50">
+                        <nav className="shrink-0 bg-slate-900 border-t border-white/5 p-4 flex justify-around items-center">
                             <button onClick={() => setView('workouts')} className={`flex flex-col items-center text-[9px] font-black ${view === 'workouts' ? 'text-orange-500' : 'text-slate-500'}`}>
                                 <span className="text-xl mb-1">🏋️</span> MIS RUTINAS
                             </button>
@@ -261,14 +256,14 @@
                 } catch (err) { alert("Error: " + err.message); }
             };
             return (
-                <div className="h-full w-full flex flex-col items-center bg-slate-950 p-10 pt-20 text-center overflow-y-auto scrollbar-hide">
+                <div className="h-full w-full flex flex-col items-center bg-slate-950 p-10 pt-20 text-center">
                     <div className="text-7xl mb-6 animate-pulse">🏃‍♂️</div>
                     <h1 className="text-4xl font-black italic uppercase mb-1 tracking-tighter">{APP_TITLE}</h1>
-                    <p className="text-[8px] font-black text-slate-600 tracking-[0.3em] uppercase mb-8">VERSIÓN {APP_VERSION}</p>
+                    <p className="text-[8px] font-black text-slate-600 tracking-[0.3em] mb-8 uppercase text-white">VERSIÓN {APP_VERSION}</p>
                     <form onSubmit={handleAuth} className="space-y-4 w-full max-w-sm">
-                        <input type="email" placeholder="EMAIL" className="w-full p-6 bg-slate-900 border border-white/5 rounded-3xl font-bold outline-none focus:border-orange-500 text-center" value={email} onChange={e => setEmail(e.target.value)} required />
-                        <input type="password" placeholder="CLAVE" className="w-full p-6 bg-slate-900 border border-white/5 rounded-3xl font-bold outline-none focus:border-orange-500 text-center" value={password} onChange={e => setPassword(e.target.value)} required />
-                        <button type="submit" className="w-full bg-orange-500 py-6 rounded-full font-black uppercase shadow-xl active:scale-95 italic">ENTRAR</button>
+                        <input type="email" placeholder="EMAIL" className="w-full p-6 bg-slate-900 border border-white/5 rounded-3xl font-bold outline-none focus:border-orange-500 text-center text-white" value={email} onChange={e => setEmail(e.target.value)} required />
+                        <input type="password" placeholder="CLAVE" className="w-full p-6 bg-slate-900 border border-white/5 rounded-3xl font-bold outline-none focus:border-orange-500 text-center text-white" value={password} onChange={e => setPassword(e.target.value)} required />
+                        <button type="submit" className="w-full bg-orange-500 py-6 rounded-full font-black uppercase shadow-xl active:scale-95 italic text-white">ENTRAR</button>
                     </form>
                     <button onClick={() => setIsRegister(!isRegister)} className="mt-8 text-slate-500 text-[10px] font-black uppercase border-b border-orange-500/30 pb-1 italic">{isRegister ? 'Ya tengo cuenta' : 'Crear cuenta nueva'}</button>
                 </div>
@@ -319,30 +314,11 @@
             };
 
             useEffect(() => {
-                const handleVisibilityChange = () => {
-                    if (document.visibilityState === 'visible' && status === 'running') requestWakeLock();
-                };
-                document.addEventListener('visibilitychange', handleVisibilityChange);
-                return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-            }, [status]);
-
-            const handleRestart = () => {
-                setStatus('paused'); setIdx(0);
-                if (steps.length > 0) setTimeLeft(steps[0].seconds);
-                setElapsed(0); savedRef.current = false; speak("Rutina reiniciada");
-            };
-
-            const handleStopManually = () => {
-                setStatus('finished'); releaseWakeLock();
-                if (!savedRef.current) { onComplete(workout.name, elapsed); savedRef.current = true; speak(`Felicidades, entrenaste ${timeToWords(elapsed)}`); }
-            };
-
-            useEffect(() => {
                 const s = [];
                 const ph = workout.phases;
+                // ORDEN: Piernas, Brazos, Tronco
                 const REGIONS = ['piernas', 'brazos', 'tronco'];
                 
-                // 15 segundos de Preparación Inicial
                 s.push({ label: 'PREPÁRATE', seconds: 15, color: 'bg-yellow-400', phaseId: 'inicio', r: 0, tr: 0, cy: 0, tc: 0 });
 
                 ['calentamiento', 'entrenamiento', 'estiramientos'].forEach((pId) => {
@@ -376,33 +352,42 @@
                 const next = steps[idx + 1];
                 const key = `${idx}_${timeLeft}`;
                 if (lastSpokenKey.current === key) return;
+                lastSpokenKey.current = key;
 
-                // 1. "Prepárate" al inicio
-                if (idx === 0 && timeLeft === current.seconds) speak("Prepárate");
-
-                // 2. "Empieza" al iniciar acción real
-                if (current.label !== 'CAMBIO' && current.label !== 'DESCANSO' && current.label !== 'PREPÁRATE' && timeLeft === current.seconds) speak("Empieza");
-
-                // 3. "Cambio" al iniciar descanso
-                if ((current.label === 'CAMBIO' || current.label === 'DESCANSO') && timeLeft === current.seconds) speak("Cambio");
-
-                // 4. LÓGICA DE ANTICIPACIÓN (5 SEGUNDOS ANTES)
-                if (timeLeft === 5 && (current.label === 'CAMBIO' || current.label === 'DESCANSO' || current.label === 'PREPÁRATE')) {
-                    if (next) {
-                        if (next.phaseId === 'calentamiento') speak(`Vamos a calentar ${next.label.toLowerCase()}`);
-                        else if (next.phaseId === 'entrenamiento') {
-                            // Solo anuncia zona cada 3 rondas (al inicio de cada bloque muscular)
-                            if ((next.r - 1) % 3 === 0) speak(`Vamos a ejercitar ${next.label.toLowerCase()}`);
-                            else speak("Cambio");
-                        }
-                        else if (next.phaseId === 'estiramientos') speak("Cambio");
+                // 1. ANUNCIO DE INICIO DE PASO
+                if (timeLeft === current.seconds) {
+                    if (idx === 0) {
+                        speak("Prepárate");
+                    } else if (['CAMBIO', 'DESCANSO'].includes(current.label)) {
+                        // Solo dice "Cambio" si el cambio es mayor a 5 segundos, 
+                        // si es de 5s el anuncio del siguiente ejercicio (abajo) lo reemplazará.
+                        if (current.seconds > 5) speak("Cambio");
+                    } else {
+                        speak("Empieza");
                     }
                 }
 
-                // 5. Conteo 3, 2, 1
+                // 2. ANTICIPACIÓN (5 SEGUNDOS ANTES DEL FINAL DEL DESCANSO/PREP)
+                if (timeLeft === 5 && ['CAMBIO', 'DESCANSO', 'PREPÁRATE'].includes(current.label)) {
+                    if (next) {
+                        if (next.phaseId === 'calentamiento') {
+                            speak(`Vamos a calentar ${next.label.toLowerCase()}`);
+                        } else if (next.phaseId === 'entrenamiento') {
+                            // Anuncia zona muscular cada 3 rondas
+                            if ((next.r - 1) % 3 === 0) {
+                                speak(`Vamos a ejercitar ${next.label.toLowerCase()}`);
+                            } else {
+                                speak("Cambio");
+                            }
+                        } else {
+                            speak("Cambio");
+                        }
+                    }
+                }
+
+                // 3. CONTEO 3, 2, 1
                 if (timeLeft <= 3 && timeLeft > 0) speak(timeLeft.toString());
 
-                lastSpokenKey.current = key;
             }, [timeLeft, status, idx, steps]);
 
             useEffect(() => {
@@ -434,8 +419,8 @@
                         <p className="text-[10px] font-black opacity-40 uppercase">Total Entrenamiento</p>
                         <p className="text-7xl font-black text-orange-500 leading-none">{formatTime(elapsed)}</p>
                     </div>
-                    <button onClick={handleRestart} className="w-full bg-orange-500 text-white py-5 rounded-full font-black uppercase active:scale-95 mb-4 italic">VOLVER A EMPEZAR</button>
-                    <button onClick={onExit} className="w-full bg-white text-black py-5 rounded-full font-black uppercase active:scale-95 italic">FINALIZAR</button>
+                    <button onClick={handleRestart} className="w-full bg-orange-500 text-white py-5 rounded-full font-black active:scale-95 mb-4">VOLVER A EMPEZAR</button>
+                    <button onClick={onExit} className="w-full bg-white text-black py-5 rounded-full font-black active:scale-95">FINALIZAR</button>
                 </div>
             );
 
@@ -516,7 +501,7 @@
                         <span className="text-4xl font-black text-orange-500 italic leading-none">{formatTotalTimeLong(totalSeconds)}</span>
                     </div>
                     <div className="glass-card p-6">
-                        <span className="text-[10px] font-black uppercase opacity-40 mb-4 block">PROGRESO ÚLTIMAS 2 SEMANAS (MIN)</span>
+                        <span className="text-[10px] font-black uppercase opacity-40 mb-4 block text-white">PROGRESO ÚLTIMAS 2 SEMANAS (MIN)</span>
                         <div className="chart-container-scroll"><div style={{ minWidth: '600px', height: '220px' }}><canvas id="advanceChart"></canvas></div></div>
                     </div>
                 </div>
@@ -544,18 +529,18 @@
             return (
                 <div className="flex-1 flex flex-col h-full bg-slate-950 overflow-hidden">
                     <header className="shrink-0 p-6 flex items-center gap-4 border-b border-white/5">
-                        <button onClick={onCancel} className="p-3 bg-slate-900 rounded-2xl active:scale-90 shadow-lg">⬅</button>
+                        <button onClick={onCancel} className="p-3 bg-slate-900 rounded-2xl active:scale-90 shadow-lg text-white">⬅</button>
                         <h2 className="text-xl font-black uppercase italic flex-1 text-center">{workoutToEdit ? 'EDITAR' : 'NUEVA'} RUTINA</h2>
                     </header>
                     
                     <div className="flex-1 overflow-y-auto scrollbar-hide p-4 space-y-6">
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase text-orange-500 tracking-widest block">Nombre del Plan</label>
-                            <input type="text" placeholder="EJ: RUTINA EXCEL" className="w-full p-6 bg-slate-900 border border-white/10 rounded-[2rem] font-black uppercase italic outline-none focus:border-orange-500 shadow-inner" value={name} onChange={e => setName(e.target.value)} />
+                            <label className="text-[10px] font-black uppercase text-orange-500 tracking-widest block text-white">Nombre del Plan</label>
+                            <input type="text" placeholder="EJ: RUTINA EXCEL" className="w-full p-6 bg-slate-900 border border-white/10 rounded-[2rem] font-black uppercase italic outline-none focus:border-orange-500 shadow-inner text-white" value={name} onChange={e => setName(e.target.value)} />
                         </div>
                         {['calentamiento', 'entrenamiento', 'estiramientos'].map((p) => (
                             <div key={p} className="glass-card p-6 italic shadow-xl space-y-6">
-                                <span className="font-black uppercase text-xs tracking-widest text-orange-500 border-b border-white/5 block pb-2 mx-auto w-fit uppercase">{p}</span>
+                                <span className="font-black uppercase text-xs tracking-widest text-orange-500 border-b border-white/5 block pb-2 mx-auto w-fit text-white">{p}</span>
                                 <div className="grid grid-cols-2 gap-4">
                                     <InputField label="ACCIÓN (S)" val={phases[p].action} set={v => update(p, 'action', v)} />
                                     <InputField label="CAMBIO (S)" val={phases[p].change} set={v => update(p, 'change', v)} />
@@ -568,7 +553,7 @@
                     </div>
 
                     <div className="shrink-0 p-6 bg-slate-950 border-t border-white/5 shadow-2xl">
-                        <button onClick={save} disabled={saving} className="w-full max-w-sm mx-auto bg-white text-black py-6 rounded-full font-black uppercase shadow-xl active:scale-95 disabled:opacity-50 italic">
+                        <button onClick={save} disabled={saving} className="w-full max-w-sm mx-auto bg-white text-black py-6 rounded-full font-black uppercase shadow-xl active:scale-95 disabled:opacity-50 italic text-center">
                             {saving ? 'GUARDANDO...' : 'GUARDAR RUTINA'}
                         </button>
                     </div>
@@ -579,8 +564,8 @@
         function InputField({ label, val, set }) {
             return (
                 <div className="flex flex-col items-center space-y-1.5">
-                    <span className="text-[8px] font-bold uppercase opacity-40 leading-none">{label}</span>
-                    <input type="number" className="w-full bg-slate-800/40 border border-white/5 p-4 rounded-xl text-center font-black text-lg outline-none focus:border-orange-500" value={val} onChange={e => set(e.target.value)} />
+                    <span className="text-[8px] font-bold uppercase opacity-40 leading-none text-white">{label}</span>
+                    <input type="number" className="w-full bg-slate-800/40 border border-white/5 p-4 rounded-xl text-center font-black text-lg outline-none focus:border-orange-500 text-white" value={val} onChange={e => set(e.target.value)} />
                 </div>
             );
         }
