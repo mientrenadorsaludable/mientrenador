@@ -55,7 +55,7 @@
         :fullscreen { background-color: #020617; }
         :-webkit-full-screen { background-color: #020617; }
 
-        /* Cronómetro Masivo ajustado al ancho */
+        /* Cronómetro Masivo Proporcional al Ancho */
         .timer-huge {
             font-size: 60vw; 
             line-height: 0.75;
@@ -68,7 +68,7 @@
         }
         
         @media (orientation: landscape) {
-            .timer-huge { font-size: 75vh; }
+            .timer-huge { font-size: 70vh; }
         }
 
         .btn-control {
@@ -107,9 +107,8 @@
         const db = firebase.firestore();
         const appId = "mientrenador-v3"; 
         const APP_TITLE = "Mi entrenador Fuerte y saludable";
-        const APP_VERSION = "21.1.0"; 
+        const APP_VERSION = "21.2.0"; 
 
-        // --- CONSTANTES DE ENTRENAMIENTO ---
         const WARMUP_STEPS = [
             'tobillo derecho', 'tobillo izquierdo', 
             'rodillas a la izquierda', 'rodillas a la derecha', 
@@ -134,6 +133,7 @@
             const hours = Math.floor(totalSeconds / 3600);
             const minutes = Math.floor((totalSeconds % 3600) / 60);
             const seconds = totalSeconds % 60;
+            
             let result = "";
             if (hours > 0) {
                 result += `${hours} ${hours === 1 ? 'hora' : 'horas'}`;
@@ -195,7 +195,10 @@
                 try {
                     const el = document.documentElement;
                     if (el.requestFullscreen) await el.requestFullscreen();
-                } catch (err) {}
+                    else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
+                } catch (err) {
+                    console.warn("Fullscreen request denied", err);
+                }
                 setView('play');
             };
 
@@ -296,7 +299,7 @@
                                 <span className="text-[10px] font-black text-orange-400 uppercase bg-orange-500/10 px-2 py-0.5 rounded-lg">{formatTime(w.totalTime)}</span>
                             </div>
                             <div className="flex gap-2 text-white text-center text-center">
-                                <button onClick={() => setWorkout(w)} title="Iniciar" className="bg-white text-black p-4 rounded-xl shadow-xl active:scale-90"><i data-lucide="play" fill="black" className="w-5 h-5"></i>▶</button>
+                                <button onClick={() => setWorkout(w)} title="Iniciar" className="bg-white text-black p-4 rounded-xl shadow-xl active:scale-90 text-xl font-black">▶</button>
                                 <button onClick={() => onEdit(w)} title="Editar" className="bg-slate-800 text-white p-4 rounded-xl flex items-center justify-center text-xs active:scale-90">📝</button>
                                 <button onClick={() => db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('workouts').doc(w.id).delete()} title="Borrar" className="bg-red-500/10 text-red-500 p-4 rounded-xl flex items-center justify-center text-xs active:scale-90 text-red-500">🗑️</button>
                             </div>
@@ -324,6 +327,8 @@
                     const el = document.documentElement;
                     if (!document.fullscreenElement) {
                         if (el.requestFullscreen) await el.requestFullscreen();
+                    } else {
+                        if (document.exitFullscreen) await document.exitFullscreen();
                     }
                 } catch (err) {}
             };
@@ -381,7 +386,6 @@
             useEffect(() => {
                 const s = [];
                 const ph = workout.phases;
-                // ORDEN: piernas, brazos, tronco
                 const REGIONS = ['piernas', 'brazos', 'tronco'];
 
                 // PASO 0: PREPARACIÓN (15 segundos)
@@ -515,7 +519,7 @@
             return (
                 <div className="h-screen w-screen flex flex-col bg-slate-950 overflow-hidden select-none text-center text-white text-center text-center">
                     
-                    {/* CABECERA */}
+                    {/* CABECERA CON BOTÓN FULLSCREEN */}
                     <div className="bg-slate-950 p-4 pt-8 flex justify-between items-center text-white shrink-0 border-b border-white/5 text-center">
                         <div className="flex flex-col items-start text-white text-left text-center">
                              <span className="text-[10px] font-black uppercase tracking-widest text-orange-500 leading-none text-center">TIEMPO</span>
@@ -523,7 +527,7 @@
                         </div>
                         <h2 className="text-xs font-black uppercase italic tracking-widest truncate max-w-[150px] text-white text-center text-center">{workout.name}</h2>
                         <div className="flex gap-2">
-                             <button onClick={toggleFullScreen} className="text-white opacity-40 text-xl px-2">⛶</button>
+                             <button onClick={toggleFullScreen} title="Pantalla Completa" className="text-white opacity-40 text-xl px-2">⛶</button>
                              <button onClick={onExit} className="text-white opacity-40 text-xl px-2">✕</button>
                         </div>
                     </div>
