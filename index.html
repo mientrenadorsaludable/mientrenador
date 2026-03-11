@@ -96,7 +96,7 @@
         const db = firebase.firestore();
         const appId = "mientrenador-v3"; 
         const APP_TITLE = "Mi Entrenador";
-        const APP_VERSION = "23.1.0"; 
+        const APP_VERSION = "23.2.0"; 
 
         const WARMUP_STEPS = [
             'tobillo derecho', 'tobillo izquierdo', 
@@ -186,7 +186,7 @@
                                     <span className="text-[8px] font-black text-orange-500/50 border-l border-white/10 pl-2">V {APP_VERSION}</span>
                                 </div>
                             </div>
-                            <button onClick={() => auth.signOut()} className="p-2 bg-red-500/10 rounded-xl text-red-500 font-bold active:scale-90 text-sm px-4 uppercase italic">Salir</button>
+                            <button onClick={() => auth.signOut()} className="p-2 bg-red-500/10 rounded-xl text-red-500 font-bold active:scale-90 text-sm px-4 uppercase italic leading-none">Salir</button>
                         </header>
                     )}
 
@@ -247,7 +247,7 @@
                         <div key={w.id} className="glass-card p-6 flex justify-between items-center text-left shadow-lg">
                             <div className="flex-1 cursor-pointer truncate pr-2" onClick={() => setWorkout(w)}>
                                 <h3 className="font-black uppercase italic truncate text-sm">{w.name}</h3>
-                                <span className="text-[10px] font-black text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded-lg italic tracking-widest uppercase">Activa</span>
+                                <span className="text-[10px] font-black text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded-lg italic tracking-widest uppercase">Rutina Activa</span>
                             </div>
                             <div className="flex gap-2">
                                 <button onClick={() => setWorkout(w)} className="bg-white text-black p-4 rounded-xl font-black text-xl active:scale-90 shadow-lg">▶</button>
@@ -347,14 +347,14 @@
                             const vKey = `${idx}_${remaining}`;
                             
                             if (lastSpokenKey.current !== vKey) {
-                                // --- LOGICA DE VOZ INTELECTUAL (23.1.0) ---
+                                // --- LOGICA DE VOZ INTELECTUAL (23.2.0) ---
 
-                                // 1. Anuncio durante el lapso de CAMBIO / DESCANSO / PREPARACIÓN
+                                // 1. Anuncio de Anticipación: SÓLO durante CAMBIO / DESCANSO / PREPARACIÓN
                                 if (remaining === 5) {
-                                    if (current.label === 'PREPÁRATE' || current.label === 'CAMBIO' || current.label === 'DESCANSO') {
+                                    if (['PREPÁRATE', 'CAMBIO', 'DESCANSO'].includes(current.label)) {
                                         if (next) {
                                             if (next.phaseId === 'calentamiento') {
-                                                speak("Vamos a calentar " + next.label.toLowerCase());
+                                                speak("Calienta " + next.label.toLowerCase());
                                             } else if (next.phaseId === 'entrenamiento' && (next.r-1) % 3 === 0) {
                                                 const zone = next.r <= 3 ? "piernas" : (next.r <= 6 ? "brazos" : "tronco");
                                                 speak("Vamos a ejercitar " + zone);
@@ -364,29 +364,18 @@
                                                 speak("Cambio");
                                             }
                                         }
-                                    } else {
-                                        // Durante la acción, anuncia el siguiente calentamiento antes de terminar el lapso
-                                        if (current.phaseId === 'calentamiento' && next?.label === 'CAMBIO') {
-                                            const nextReal = steps[idx+2];
-                                            if (nextReal) speak("Calienta " + nextReal.label.toLowerCase());
-                                        }
-                                        // Anuncios de zona durante el entrenamiento antes del cambio
-                                        if (current.phaseId === 'entrenamiento') {
-                                            if (current.r === 3) speak("Vamos a ejercitar brazos");
-                                            else if (current.r === 6) speak("Vamos a ejercitar tronco");
-                                            else if (current.r === 9) speak("Vamos a estirar");
-                                        }
                                     }
+                                    // NO hay "else" aquí: Si estamos en acción (Acción), el entrenador no anuncia el siguiente paso hasta que empiece el descanso.
                                 }
 
-                                // 2. "Comienza" justo al iniciar el conteo de la ACCIÓN
+                                // 2. Comienzo de Acción (Independiente del nombre del ejercicio)
                                 if (remaining === stepDurationRef.current) {
                                     if (idx > 0 && !['CAMBIO', 'DESCANSO'].includes(current.label)) {
                                         speak("Comienza");
                                     }
                                 }
 
-                                // 3. Conteo final regresivo
+                                // 3. Conteo regresivo final
                                 if (remaining <= 3 && remaining > 0) speak(remaining.toString());
 
                                 lastSpokenKey.current = vKey;
@@ -525,10 +514,10 @@
             };
 
             return (
-                <div className="flex-1 flex flex-col bg-slate-950 overflow-hidden h-full">
+                <div className="flex-1 flex flex-col bg-slate-950 overflow-hidden h-full text-white text-center">
                     <header className="shrink-0 p-6 flex items-center border-b border-white/5">
                         <button onClick={onCancel} className="p-3 bg-slate-900 rounded-2xl active:scale-90 shadow-lg">⬅</button>
-                        <h2 className="text-xl font-black uppercase italic flex-1 text-center">{workoutToEdit ? 'EDITAR' : 'NUEVA'} RUTINA</h2>
+                        <h2 className="text-xl font-black uppercase italic flex-1 text-center">Configurar Rutina</h2>
                     </header>
                     <div className="flex-1 overflow-y-auto scrollbar-hide p-4 space-y-6">
                         <div className="px-1 text-left">
