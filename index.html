@@ -74,6 +74,7 @@
 <body>
     <div id="root"></div>
 
+    <!-- Firebase Compat -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -95,7 +96,7 @@
         const db = firebase.firestore();
         const appId = "mientrenador-v3"; 
         const APP_TITLE = "Mi Entrenador";
-        const APP_VERSION = "23.0.0"; 
+        const APP_VERSION = "23.1.0"; 
 
         const WARMUP_STEPS = [
             'tobillo derecho', 'tobillo izquierdo', 
@@ -185,7 +186,7 @@
                                     <span className="text-[8px] font-black text-orange-500/50 border-l border-white/10 pl-2">V {APP_VERSION}</span>
                                 </div>
                             </div>
-                            <button onClick={() => auth.signOut()} className="p-2 bg-red-500/10 rounded-xl text-red-500 font-bold active:scale-90 text-sm px-4 uppercase italic leading-none">Salir</button>
+                            <button onClick={() => auth.signOut()} className="p-2 bg-red-500/10 rounded-xl text-red-500 font-bold active:scale-90 text-sm px-4 uppercase italic">Salir</button>
                         </header>
                     )}
 
@@ -246,7 +247,7 @@
                         <div key={w.id} className="glass-card p-6 flex justify-between items-center text-left shadow-lg">
                             <div className="flex-1 cursor-pointer truncate pr-2" onClick={() => setWorkout(w)}>
                                 <h3 className="font-black uppercase italic truncate text-sm">{w.name}</h3>
-                                <span className="text-[10px] font-black text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded-lg italic tracking-widest">RUTINA ACTIVA</span>
+                                <span className="text-[10px] font-black text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded-lg italic tracking-widest uppercase">Activa</span>
                             </div>
                             <div className="flex gap-2">
                                 <button onClick={() => setWorkout(w)} className="bg-white text-black p-4 rounded-xl font-black text-xl active:scale-90 shadow-lg">▶</button>
@@ -299,7 +300,6 @@
                 const s = [];
                 const REGIONS = ['piernas', 'brazos', 'tronco'];
                 
-                // Preparación 15s
                 s.push({ label: 'PREPÁRATE', seconds: 15, color: 'bg-yellow-400', phaseId: 'inicio', r: 0, tr: 0, cy: 0, tc: 0 });
 
                 ['calentamiento', 'entrenamiento', 'estiramientos'].forEach((pId) => {
@@ -347,17 +347,14 @@
                             const vKey = `${idx}_${remaining}`;
                             
                             if (lastSpokenKey.current !== vKey) {
-                                // --- LÓGICA DE VOZ MEJORADA ---
-                                
-                                // 1. Anuncios de Anticipación (5s antes del cambio de lapso)
+                                // --- LOGICA DE VOZ INTELECTUAL (23.1.0) ---
+
+                                // 1. Anuncio durante el lapso de CAMBIO / DESCANSO / PREPARACIÓN
                                 if (remaining === 5) {
-                                    if (current.label === 'PREPÁRATE') {
-                                        speak("Vamos a calentar " + next.label.toLowerCase());
-                                    }
-                                    else if (current.label === 'CAMBIO' || current.label === 'DESCANSO') {
+                                    if (current.label === 'PREPÁRATE' || current.label === 'CAMBIO' || current.label === 'DESCANSO') {
                                         if (next) {
                                             if (next.phaseId === 'calentamiento') {
-                                                speak("Calienta " + next.label.toLowerCase());
+                                                speak("Vamos a calentar " + next.label.toLowerCase());
                                             } else if (next.phaseId === 'entrenamiento' && (next.r-1) % 3 === 0) {
                                                 const zone = next.r <= 3 ? "piernas" : (next.r <= 6 ? "brazos" : "tronco");
                                                 speak("Vamos a ejercitar " + zone);
@@ -367,33 +364,29 @@
                                                 speak("Cambio");
                                             }
                                         }
-                                    }
-                                    // Durante la acción, anunciar el siguiente antes de que termine el lapso
-                                    else if (current.phaseId === 'calentamiento' && current.label !== 'CAMBIO') {
-                                        if (next && steps[idx+2]) {
-                                            speak("Calienta " + steps[idx+2].label.toLowerCase());
+                                    } else {
+                                        // Durante la acción, anuncia el siguiente calentamiento antes de terminar el lapso
+                                        if (current.phaseId === 'calentamiento' && next?.label === 'CAMBIO') {
+                                            const nextReal = steps[idx+2];
+                                            if (nextReal) speak("Calienta " + nextReal.label.toLowerCase());
                                         }
-                                    }
-                                    else if (current.phaseId === 'entrenamiento' && current.label !== 'CAMBIO') {
-                                        if (current.r === 3) speak("Vamos a ejercitar brazos");
-                                        else if (current.r === 6) speak("Vamos a ejercitar tronco");
-                                        else if (current.r === 9) speak("Vamos a estirar");
+                                        // Anuncios de zona durante el entrenamiento antes del cambio
+                                        if (current.phaseId === 'entrenamiento') {
+                                            if (current.r === 3) speak("Vamos a ejercitar brazos");
+                                            else if (current.r === 6) speak("Vamos a ejercitar tronco");
+                                            else if (current.r === 9) speak("Vamos a estirar");
+                                        }
                                     }
                                 }
 
-                                // 2. Inicio de Lapso (No anuncia el ejercicio si ya se anticipó)
+                                // 2. "Comienza" justo al iniciar el conteo de la ACCIÓN
                                 if (remaining === stepDurationRef.current) {
-                                    if (idx > 0) {
-                                        if (['CAMBIO', 'DESCANSO'].includes(current.label)) {
-                                            // Silencio o "Cambio" si el lapso es largo
-                                            if (current.seconds > 5) speak("Cambio");
-                                        } else {
-                                            speak("Comienza"); // Siempre dice "Comienza" al iniciar la acción
-                                        }
+                                    if (idx > 0 && !['CAMBIO', 'DESCANSO'].includes(current.label)) {
+                                        speak("Comienza");
                                     }
                                 }
 
-                                // 3. Conteo final
+                                // 3. Conteo final regresivo
                                 if (remaining <= 3 && remaining > 0) speak(remaining.toString());
 
                                 lastSpokenKey.current = vKey;
@@ -424,24 +417,22 @@
                     <div className="text-9xl mb-10 animate-bounce">🏆</div>
                     <h1 className="text-6xl font-black mb-4 uppercase italic leading-none">¡LOGRADO!</h1>
                     <div className="glass-card p-10 w-full mb-12 shadow-2xl border-orange-500/20 text-center">
-                        <p className="text-[10px] font-black opacity-40 uppercase tracking-widest italic mb-2">Tiempo Total</p>
+                        <p className="text-[10px] font-black opacity-40 uppercase tracking-widest italic mb-2">Tiempo de Sesión</p>
                         <p className="text-7xl font-black text-orange-500 leading-none">{formatTime(elapsed)}</p>
                     </div>
-                    <button onClick={onExit} className="w-full bg-white text-black py-6 rounded-full font-black uppercase italic shadow-xl active:scale-95">FINALIZAR</button>
+                    <button onClick={onExit} className="w-full bg-white text-black py-6 rounded-full font-black uppercase italic shadow-xl active:scale-95 tracking-widest">Finalizar</button>
                 </div>
             );
 
             const curr = steps[idx];
-            
-            // Lógica de visualización "Los que faltan"
             const roundsLeft = (curr?.tr && typeof curr.r === 'number') ? (curr.tr - curr.r + 1) : (curr?.r || 0);
             const cyclesLeft = curr?.tc ? (curr.tc - curr.cy + 1) : (curr?.cy || 0);
 
             return (
                 <div className={`h-full flex flex-col transition-colors duration-1000 ${curr?.color || 'bg-slate-950'} select-none overflow-hidden text-white`}>
                     <div className="bg-black/10 p-4 pt-8 flex justify-between items-center shrink-0 border-b border-white/5">
-                        <div className="text-left leading-none"><span className="text-[10px] font-black uppercase text-orange-500">TIEMPO</span><p className="text-xl font-black italic">{formatTime(elapsed)}</p></div>
-                        <h2 className="text-xs font-black uppercase italic truncate max-w-[150px]">{workout.name}</h2>
+                        <div className="text-left leading-none"><span className="text-[10px] font-black uppercase text-orange-500 tracking-tighter">TIEMPO</span><p className="text-xl font-black italic">{formatTime(elapsed)}</p></div>
+                        <h2 className="text-xs font-black uppercase italic truncate max-w-[150px] tracking-tight">{workout.name}</h2>
                         <button onClick={onExit} className="text-white opacity-40 text-xl px-2 font-black">✕</button>
                     </div>
                     <div className="flex-1 flex flex-col items-center justify-center relative">
@@ -452,15 +443,15 @@
                         <div className="w-full max-w-md grid grid-cols-3 items-center mb-8 text-center">
                             <div className="flex flex-col items-center">
                                 <span className="text-[18vw] font-black text-sky-400 leading-none">{roundsLeft}</span>
-                                <span className="text-[8px] font-black uppercase text-slate-500 mt-1 italic tracking-widest leading-none">Rondas restantes</span>
+                                <span className="text-[8px] font-black uppercase text-slate-500 mt-1 italic leading-none tracking-widest">Rondas faltan</span>
                             </div>
                             <div className="flex flex-col items-center gap-2">
                                 <button onClick={() => setStatus(s => s === 'running' ? 'paused' : 'running')} className="w-20 h-20 rounded-full border-4 border-yellow-400 flex items-center justify-center bg-transparent active:scale-95 transition-transform"><div className="text-yellow-400 text-4xl leading-none">{status === 'running' ? '❚❚' : '▶'}</div></button>
-                                <span className="text-[10px] font-black uppercase text-yellow-400/60 tracking-widest italic">{status === 'running' ? 'PAUSA' : 'INICIO'}</span>
+                                <span className="text-[10px] font-black uppercase text-yellow-400/60 tracking-widest italic leading-none">{status === 'running' ? 'PAUSA' : 'INICIO'}</span>
                             </div>
                             <div className="flex flex-col items-center">
                                 <span className="text-[18vw] font-black text-yellow-400 leading-none">{cyclesLeft}</span>
-                                <span className="text-[8px] font-black uppercase text-slate-500 mt-1 italic tracking-widest leading-none">Ciclos restantes</span>
+                                <span className="text-[8px] font-black uppercase text-slate-500 mt-1 italic leading-none tracking-widest">Ciclos faltan</span>
                             </div>
                         </div>
                         <div className="w-full flex justify-center gap-6 pb-4">
@@ -508,7 +499,7 @@
                         <span className="text-4xl font-black text-orange-500 italic leading-none">{formatTotalTimeLong(totalSec)}</span>
                     </div>
                     <div className="glass-card p-6 shadow-xl">
-                        <span className="text-[10px] font-black uppercase opacity-40 mb-4 block text-center italic tracking-widest">PROGRESO 14 DÍAS (MIN)</span>
+                        <span className="text-[10px] font-black uppercase opacity-40 mb-4 block text-center italic tracking-widest leading-none">PROGRESO 14 DÍAS (MIN)</span>
                         <div className="chart-container-scroll"><div style={{ minWidth: '600px', height: '220px' }}><canvas id="advanceChart"></canvas></div></div>
                     </div>
                 </div>
@@ -570,7 +561,7 @@
             return (
                 <div className="flex flex-col items-center">
                     <span className="text-[8px] font-bold uppercase opacity-40 text-white text-center leading-none mb-2 tracking-widest italic">{label}</span>
-                    <input type="number" className="w-full bg-slate-800/40 border border-white/5 p-4 rounded-xl text-center font-black text-lg outline-none focus:border-orange-500 text-white" value={val} onChange={e => set(e.target.value)} />
+                    <input type="number" className="w-full bg-slate-800/40 border border-white/5 p-4 rounded-xl text-center font-black text-lg outline-none focus:border-orange-500 text-white shadow-inner" value={val} onChange={e => set(e.target.value)} />
                 </div>
             );
         }
