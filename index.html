@@ -74,7 +74,6 @@
 <body>
     <div id="root"></div>
 
-    <!-- Firebase Compat -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -96,7 +95,7 @@
         const db = firebase.firestore();
         const appId = "mientrenador-v3"; 
         const APP_TITLE = "Mi Entrenador";
-        const APP_VERSION = "23.3.0"; 
+        const APP_VERSION = "23.4.0"; 
 
         const WARMUP_STEPS = [
             'tobillo derecho', 'tobillo izquierdo', 
@@ -106,7 +105,7 @@
 
         const DEFAULT_PARAMS = {
             calentamiento: { action: 30, change: 5, rounds: 8, cycles: 1, rest: 0 },
-            entrenamiento: { action: 30, change: 10, rounds: 9, cycles: 4, rest: 60 },
+            entrenamiento: { action: 30, change: 5, rounds: 9, cycles: 4, rest: 60 },
             estiramientos: { action: 30, change: 5, rounds: 17, cycles: 1, rest: 0 }
         };
 
@@ -186,7 +185,7 @@
                                     <span className="text-[8px] font-black text-orange-500/50 border-l border-white/10 pl-2">V {APP_VERSION}</span>
                                 </div>
                             </div>
-                            <button onClick={() => auth.signOut()} className="p-2 bg-red-500/10 rounded-xl text-red-500 font-bold active:scale-90 text-sm px-4 uppercase italic">Salir</button>
+                            <button onClick={() => auth.signOut()} className="p-2 bg-red-500/10 rounded-xl text-red-500 font-bold active:scale-90 text-sm px-4 uppercase italic leading-none">Salir</button>
                         </header>
                     )}
 
@@ -295,7 +294,7 @@
                 return () => document.removeEventListener('visibilitychange', handleVisibility);
             }, [status]);
 
-            // --- GENERADOR DE PASOS CON TRANSICIONES ---
+            // --- GENERADOR DE PASOS CON TRANSICIONES DE 10S ---
             useEffect(() => {
                 if (!workout || !workout.phases) return;
                 const s = [];
@@ -309,10 +308,13 @@
                 for(let r = 1; r <= c1.rounds; r++) {
                     const label = WARMUP_STEPS[(r-1) % WARMUP_STEPS.length].toUpperCase();
                     s.push({ label, seconds: c1.action, color: 'bg-yellow-400', phaseId: 'calentamiento', r, tr: c1.rounds, cy: 1, tc: 1 });
-                    if(r < c1.rounds) s.push({ label: 'CAMBIO', seconds: c1.change, color: 'bg-yellow-300', phaseId: 'calentamiento', r, tr: c1.rounds, cy: 1, tc: 1 });
+                    if(r < c1.rounds) {
+                        s.push({ label: 'CAMBIO', seconds: c1.change, color: 'bg-yellow-300', phaseId: 'calentamiento', r, tr: c1.rounds, cy: 1, tc: 1 });
+                    }
                 }
-                // --- CAMBIO DE 5 SEG DESPUES DEL CALENTAMIENTO ---
-                s.push({ label: 'CAMBIO', seconds: 5, color: 'bg-orange-500', phaseId: 'calentamiento-transition', r: 1, tr: 1, cy: 1, tc: 1 });
+                
+                // --- CAMBIO DE 10 SEG DESPUES DEL CALENTAMIENTO ---
+                s.push({ label: 'CAMBIO', seconds: 10, color: 'bg-orange-500', phaseId: 'calentamiento-transition', r: 1, tr: 1, cy: 1, tc: 1 });
 
                 // 3. Entrenamiento
                 const c2 = workout.phases.entrenamiento || DEFAULT_PARAMS.entrenamiento;
@@ -320,14 +322,22 @@
                     for(let r = 1; r <= c2.rounds; r++) {
                         const label = REGIONS[Math.floor((r-1)/3) % 3].toUpperCase();
                         s.push({ label, seconds: c2.action, color: 'bg-emerald-400', phaseId: 'entrenamiento', r, tr: c2.rounds, cy, tc: c2.cycles });
-                        if(r < c2.rounds) s.push({ label: 'CAMBIO', seconds: c2.change, color: 'bg-yellow-300', phaseId: 'entrenamiento', r, tr: c2.rounds, cy, tc: c2.cycles });
+                        
+                        // Si cambiamos de zona muscular (r=3 o r=6), la transición es de 10s
+                        const isStageChange = (r === 3 || r === 6);
+                        const changeTime = isStageChange ? 10 : c2.change;
+                        
+                        if(r < c2.rounds) {
+                            s.push({ label: 'CAMBIO', seconds: changeTime, color: 'bg-yellow-300', phaseId: 'entrenamiento', r, tr: c2.rounds, cy, tc: c2.cycles });
+                        }
                     }
                     if(cy < c2.cycles && c2.rest > 0) {
                         s.push({ label: 'DESCANSO', seconds: c2.rest, color: 'bg-rose-500', phaseId: 'entrenamiento', r: 'R', tr: c2.rounds, cy, tc: c2.cycles });
                     }
                 }
-                // --- CAMBIO DE 5 SEG DESPUES DEL ENTRENAMIENTO ---
-                s.push({ label: 'CAMBIO', seconds: 5, color: 'bg-blue-300', phaseId: 'entrenamiento-transition', r: 1, tr: 1, cy: 1, tc: 1 });
+                
+                // --- CAMBIO DE 10 SEG DESPUES DEL ENTRENAMIENTO ---
+                s.push({ label: 'CAMBIO', seconds: 10, color: 'bg-blue-300', phaseId: 'entrenamiento-transition', r: 1, tr: 1, cy: 1, tc: 1 });
 
                 // 4. Estiramientos
                 const c3 = workout.phases.estiramientos || DEFAULT_PARAMS.estiramientos;
@@ -364,19 +374,18 @@
                             const vKey = `${idx}_${remaining}`;
                             
                             if (lastSpokenKey.current !== vKey) {
-                                // --- LOGICA DE VOZ OPTIMIZADA (23.3.0) ---
+                                // --- LOGICA DE VOZ OPTIMIZADA (23.4.0) ---
 
-                                // 1. Anuncios de Anticipación: SÓLO durante CAMBIO / DESCANSO / PREPARACIÓN
+                                // 1. Anuncio durante el lapso de CAMBIO / DESCANSO / PREPARACIÓN
                                 if (remaining === 5) {
                                     if (['PREPÁRATE', 'CAMBIO', 'DESCANSO'].includes(current.label)) {
                                         if (next) {
                                             if (next.phaseId === 'calentamiento') {
                                                 speak("Calienta " + next.label.toLowerCase());
                                             } else if (next.phaseId === 'calentamiento-transition') {
-                                                // Nueva transición: Estamos terminando calentamiento
                                                 speak("Vamos a ejercitar piernas");
                                             } else if (next.phaseId === 'entrenamiento') {
-                                                // Anuncio de zonas internas de entrenamiento cada 3 rondas
+                                                // Bloques de entrenamiento
                                                 if ((next.r-1) % 3 === 0) {
                                                     const zone = next.r <= 3 ? "piernas" : (next.r <= 6 ? "brazos" : "tronco");
                                                     speak("Vamos a ejercitar " + zone);
@@ -384,7 +393,6 @@
                                                     speak("Cambio");
                                                 }
                                             } else if (next.phaseId === 'entrenamiento-transition') {
-                                                // Estamos terminando entrenamiento
                                                 speak("Vamos a estirar");
                                             } else if (next.phaseId === 'estiramientos') {
                                                 speak("Cambio");
@@ -393,13 +401,17 @@
                                             }
                                         }
                                     }
-                                    // NO anuncia mientras estás en acción (Entrena)
                                 }
 
-                                // 2. "Comienza" al iniciar la acción
+                                // 2. "Comienza" + Parte del cuerpo al iniciar la acción de ejercicio
                                 if (remaining === stepDurationRef.current) {
                                     if (idx > 0 && !['CAMBIO', 'DESCANSO', 'PREPÁRATE'].includes(current.label)) {
-                                        speak("Comienza");
+                                        if (current.phaseId === 'entrenamiento') {
+                                            const zone = current.label.toLowerCase();
+                                            speak(`Comienza... ${zone}`);
+                                        } else {
+                                            speak("Comienza");
+                                        }
                                     }
                                 }
 
