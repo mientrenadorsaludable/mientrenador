@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
+    <!-- PWA Mode -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="mobile-web-app-capable" content="yes">
@@ -73,6 +74,7 @@
 <body>
     <div id="root"></div>
 
+    <!-- Firebase Compat -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -94,7 +96,7 @@
         const db = firebase.firestore();
         const appId = "mientrenador-v3"; 
         const APP_TITLE = "Mi Entrenador";
-        const APP_VERSION = "22.6.0"; 
+        const APP_VERSION = "22.8.0"; 
 
         const WARMUP_STEPS = [
             'tobillo derecho', 'tobillo izquierdo', 
@@ -145,11 +147,11 @@
 
             useEffect(() => {
                 if (!user) return;
-                const path = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
-                const unsubW = path.collection('workouts').onSnapshot(s => {
+                const pathBase = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
+                const unsubW = pathBase.collection('workouts').onSnapshot(s => {
                     setWorkouts(s.docs.map(d => ({id: d.id, ...d.data()})));
                 });
-                const unsubH = path.collection('history').onSnapshot(s => {
+                const unsubH = pathBase.collection('history').onSnapshot(s => {
                     setHistory(s.docs.map(d => ({id: d.id, ...d.data()})));
                 });
                 return () => { unsubW(); unsubH(); };
@@ -162,7 +164,6 @@
                     if (el.requestFullscreen) await el.requestFullscreen();
                 } catch (err) {}
                 setView('play');
-                speak("Prepárate");
             };
 
             if (loading) return (
@@ -185,7 +186,7 @@
                                     <span className="text-[8px] font-black text-orange-500/50 border-l border-white/10 pl-2">V {APP_VERSION}</span>
                                 </div>
                             </div>
-                            <button onClick={() => auth.signOut()} className="p-2 bg-red-500/10 rounded-xl text-red-500 font-bold active:scale-90 text-sm px-4">SALIR</button>
+                            <button onClick={() => auth.signOut()} className="p-2 bg-red-500/10 rounded-xl text-red-500 font-bold active:scale-90 text-sm px-4 uppercase italic">Salir</button>
                         </header>
                     )}
 
@@ -200,7 +201,7 @@
                     </main>
 
                     {view !== 'play' && (
-                        <nav className="shrink-0 bg-slate-900 border-t border-white/5 p-4 flex justify-around items-center">
+                        <nav className="shrink-0 bg-slate-900 border-t border-white/5 p-4 flex justify-around items-center z-50">
                             <button onClick={() => setView('workouts')} className={`flex flex-col items-center text-[9px] font-black ${view === 'workouts' ? 'text-orange-500' : 'text-slate-500'}`}>
                                 <span className="text-xl mb-1">🏋️</span> RUTINAS
                             </button>
@@ -226,8 +227,8 @@
             };
             return (
                 <div className="h-full w-full flex flex-col items-center bg-slate-950 p-10 pt-20 text-center">
-                    <div className="text-7xl mb-6">🏃‍♂️</div>
-                    <h1 className="text-4xl font-black italic uppercase mb-1 tracking-tighter">{APP_TITLE}</h1>
+                    <div className="text-7xl mb-6 animate-pulse">🏃‍♂️</div>
+                    <h1 className="text-4xl font-black italic uppercase mb-1 tracking-tighter text-white">{APP_TITLE}</h1>
                     <p className="text-[8px] font-black text-slate-600 tracking-widest mb-8">VERSIÓN {APP_VERSION}</p>
                     <form onSubmit={handleAuth} className="space-y-4 w-full max-w-sm">
                         <input type="email" placeholder="EMAIL" className="w-full p-6 bg-slate-900 border border-white/5 rounded-3xl font-bold text-center text-white outline-none" value={email} onChange={e => setEmail(e.target.value)} required />
@@ -246,17 +247,17 @@
                         <div key={w.id} className="glass-card p-6 flex justify-between items-center text-left shadow-lg">
                             <div className="flex-1 cursor-pointer truncate mr-2" onClick={() => setWorkout(w)}>
                                 <h3 className="font-black uppercase italic truncate text-sm">{w.name}</h3>
-                                <span className="text-[10px] font-black text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded-lg">{formatTime(w.totalTime || 0)}</span>
+                                <span className="text-[10px] font-black text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded-lg italic">FLEXIBLE</span>
                             </div>
                             <div className="flex gap-2">
-                                <button onClick={() => setWorkout(w)} className="bg-white text-black p-4 rounded-xl font-black text-xl active:scale-90">▶</button>
-                                <button onClick={() => onEdit(w)} className="bg-slate-800 text-white p-4 rounded-xl active:scale-90 text-xs">📝</button>
+                                <button onClick={() => setWorkout(w)} className="bg-white text-black p-4 rounded-xl font-black text-xl active:scale-90 shadow-lg">▶</button>
+                                <button onClick={() => onEdit(w)} className="bg-slate-800 text-white p-4 rounded-xl active:scale-90 text-xs italic">EDIT</button>
                                 <button onClick={() => { if(confirm("¿Borrar rutina?")) db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('workouts').doc(w.id).delete(); }} className="bg-red-500/10 text-red-500 p-4 rounded-xl active:scale-90 text-xs">🗑️</button>
                             </div>
                         </div>
                     ))}
-                    <button onClick={onCreate} className="w-full bg-white/5 border border-white/10 py-6 rounded-full font-black uppercase flex items-center justify-center gap-2 mt-4 text-white active:scale-95 transition-all">
-                        <span className="text-xl">➕</span> NUEVA RUTINA
+                    <button onClick={onCreate} className="w-full bg-white/5 border border-white/10 py-6 rounded-full font-black uppercase flex items-center justify-center gap-2 mt-4 text-white active:scale-95 italic tracking-widest">
+                        <span>➕</span> NUEVA RUTINA
                     </button>
                 </div>
             );
@@ -268,15 +269,36 @@
             const [timeLeft, setTimeLeft] = useState(0);
             const [elapsed, setElapsed] = useState(0);
             const [steps, setSteps] = useState([]);
+            
             const lastSpokenKey = useRef(""); 
             const savedRef = useRef(false);
+            const wakeLockRef = useRef(null);
+            
+            const startTimeRef = useRef(null);
+            const stepStartTimeRef = useRef(null);
+            const stepDurationRef = useRef(0);
+
+            const requestWakeLock = async () => {
+                if ('wakeLock' in navigator && !wakeLockRef.current) {
+                    try { wakeLockRef.current = await navigator.wakeLock.request('screen'); } catch (err) {}
+                }
+            };
+            const releaseWakeLock = async () => {
+                if (wakeLockRef.current) { await wakeLockRef.current.release(); wakeLockRef.current = null; }
+            };
+
+            useEffect(() => {
+                const handleVisibility = () => {
+                    if (document.visibilityState === 'visible' && status === 'running') requestWakeLock();
+                };
+                document.addEventListener('visibilitychange', handleVisibility);
+                return () => document.removeEventListener('visibilitychange', handleVisibility);
+            }, [status]);
 
             useEffect(() => {
                 if (!workout || !workout.phases) return;
                 const s = [];
                 const REGIONS = ['piernas', 'brazos', 'tronco'];
-                
-                // Preparación Inicial (15s)
                 s.push({ label: 'PREPÁRATE', seconds: 15, color: 'bg-yellow-400', phaseId: 'inicio', r: 0, tr: 0, cy: 0, tc: 0 });
 
                 ['calentamiento', 'entrenamiento', 'estiramientos'].forEach((pId) => {
@@ -297,96 +319,94 @@
                     }
                 });
                 setSteps(s);
-                if (s.length > 0) setTimeLeft(s[0].seconds);
+                if (s.length > 0) { setTimeLeft(s[0].seconds); stepDurationRef.current = s[0].seconds; }
+                speak("Prepárate");
+                return () => releaseWakeLock();
             }, [workout]);
 
-            // --- Lógica de Voz Intelectual ---
-            useEffect(() => {
-                if (status !== 'running' || !steps[idx]) return;
-                const current = steps[idx];
-                const next = steps[idx + 1];
-                const key = `${idx}_${timeLeft}`;
-                if (lastSpokenKey.current === key) return;
-                lastSpokenKey.current = key;
-
-                // 1. ANUNCIO DE INICIO
-                if (timeLeft === current.seconds) {
-                    if (idx === 0) {
-                        // Ya se dijo Prepárate al presionar Play, pero por seguridad:
-                        // speak("Prepárate"); 
-                    } else if (current.label === 'CAMBIO' || current.label === 'DESCANSO') {
-                        // En descansos largos anunciamos la zona (Lógica 5s abajo)
-                    } else {
-                        // Inicio de Acción
-                        if (current.phaseId === 'calentamiento') speak("Calienta " + current.label.toLowerCase());
-                        else if (current.phaseId === 'entrenamiento') speak("Comienza");
-                        else speak("Comienza");
-                    }
-                }
-
-                // 2. ANTICIPACIÓN (5 SEGUNDOS ANTES)
-                if (timeLeft === 5) {
-                    if (current.label === 'PREPÁRATE') speak("Vamos a calentar");
-                    
-                    if (current.label === 'CAMBIO' || current.label === 'DESCANSO') {
-                        if (next) {
-                            if (next.phaseId === 'calentamiento') speak("Calienta " + next.label.toLowerCase());
-                            else if (next.phaseId === 'entrenamiento' && (next.r-1) % 3 === 0) speak("Vamos a ejercitar " + next.label.toLowerCase());
-                            else if (next.phaseId === 'estiramientos' && next.r === 1) speak("Vamos a estirar");
-                            else speak("Cambio");
-                        }
-                    }
-                    
-                    if (current.phaseId === 'entrenamiento' && current.label !== 'CAMBIO') {
-                        // Antes de terminar rondas clave para anunciar siguiente zona
-                        if (current.r === 3) speak("Vamos a ejercitar brazos");
-                        if (current.r === 6) speak("Vamos a ejercitar tronco");
-                        if (current.r === 9) speak("Vamos a estirar");
-                    }
-
-                    if (current.phaseId === 'calentamiento' && current.label !== 'CAMBIO') {
-                        if (next && next.label === 'CAMBIO' && steps[idx+2]) {
-                            speak("Sigue " + steps[idx+2].label.toLowerCase());
-                        }
-                    }
-                }
-
-                // 3. TRANSICIÓN FINAL
-                if (timeLeft <= 3 && timeLeft > 0) speak(timeLeft.toString());
-
-            }, [timeLeft, status, idx, steps]);
-
-            // Bucle del Cronómetro
             useEffect(() => {
                 let interval = null;
                 if (status === 'running') {
+                    requestWakeLock();
+                    if (!startTimeRef.current) startTimeRef.current = Date.now() - (elapsed * 1000);
+                    if (!stepStartTimeRef.current) stepStartTimeRef.current = Date.now();
+
                     interval = setInterval(() => {
-                        setElapsed(prev => prev + 1);
-                        setTimeLeft(prev => {
-                            if (prev > 1) return prev - 1;
+                        const now = Date.now();
+                        const totalPassed = Math.floor((now - startTimeRef.current) / 1000);
+                        setElapsed(totalPassed);
+
+                        const stepPassed = Math.floor((now - stepStartTimeRef.current) / 1000);
+                        const remaining = stepDurationRef.current - stepPassed;
+
+                        if (remaining > 0) {
+                            setTimeLeft(remaining);
+                            const current = steps[idx];
+                            const next = steps[idx + 1];
+                            const vKey = `${idx}_${remaining}`;
+                            
+                            if (lastSpokenKey.current !== vKey) {
+                                // Lógica de Anticipación (5s antes)
+                                if (remaining === 5) {
+                                    if (current.label === 'PREPÁRATE') speak("Vamos a calentar");
+                                    else if (current.phaseId === 'calentamiento' && current.label !== 'CAMBIO') {
+                                        if (next && steps[idx+2]) speak("Sigue " + steps[idx+2].label.toLowerCase());
+                                    }
+                                    else if (current.phaseId === 'entrenamiento' && current.label !== 'CAMBIO') {
+                                        if (current.r === 3) speak("Vamos a ejercitar brazos");
+                                        else if (current.r === 6) speak("Vamos a ejercitar tronco");
+                                        else if (current.r === 9) speak("Vamos a estirar");
+                                    }
+                                    
+                                    if (current.label === 'CAMBIO' || current.label === 'DESCANSO') {
+                                        if (next) {
+                                            if (next.phaseId === 'calentamiento') speak("Calienta " + next.label.toLowerCase());
+                                            else if (next.phaseId === 'entrenamiento' && (next.r-1) % 3 === 0) {
+                                                const zone = next.r <= 3 ? "piernas" : (next.r <= 6 ? "brazos" : "tronco");
+                                                speak("Vamos a ejercitar " + zone);
+                                            }
+                                            else if (next.phaseId === 'estiramientos' && next.r === 1) speak("Vamos a estirar");
+                                            else speak("Cambio");
+                                        }
+                                    }
+                                }
+
+                                // Al iniciar acción
+                                if (remaining === stepDurationRef.current) {
+                                    if (current.phaseId === 'calentamiento' && current.label !== 'CAMBIO' && current.label !== 'PREPÁRATE') speak("Calienta " + current.label.toLowerCase());
+                                    else if ((current.phaseId === 'entrenamiento' || current.phaseId === 'estiramientos') && current.label !== 'CAMBIO' && current.label !== 'DESCANSO') speak("Comienza");
+                                }
+
+                                if (remaining <= 3 && remaining > 0) speak(remaining.toString());
+                                lastSpokenKey.current = vKey;
+                            }
+                        } else {
                             if (idx < steps.length - 1) {
-                                setIdx(currIdx => currIdx + 1);
+                                const nextIdx = idx + 1;
+                                setIdx(nextIdx);
+                                setTimeLeft(steps[nextIdx].seconds);
+                                stepDurationRef.current = steps[nextIdx].seconds;
+                                stepStartTimeRef.current = Date.now();
                                 if ('vibrate' in navigator) navigator.vibrate(200);
-                                return steps[idx + 1].seconds;
                             } else {
                                 setStatus('finished');
-                                const min = Math.floor((elapsed + 1) / 60);
+                                releaseWakeLock();
+                                const min = Math.floor(totalPassed / 60);
                                 speak(`Bien hecho, hiciste ejercicio por ${min} ${min === 1 ? 'minuto' : 'minutos'}`);
-                                if (!savedRef.current) { onComplete(workout.name, elapsed + 1); savedRef.current = true; }
-                                return 0;
+                                if (!savedRef.current) { onComplete(workout.name, totalPassed); savedRef.current = true; }
                             }
-                        });
-                    }, 1000);
-                }
+                        }
+                    }, 200);
+                } else { releaseWakeLock(); startTimeRef.current = null; stepStartTimeRef.current = null; }
                 return () => clearInterval(interval);
-            }, [status, idx, steps.length]);
+            }, [status, idx, steps]);
 
             if (status === 'finished') return (
-                <div className="h-full flex flex-col items-center justify-center p-8 bg-slate-950 text-center animate-in zoom-in">
+                <div className="h-full flex flex-col items-center justify-center p-8 bg-slate-950 text-center">
                     <div className="text-9xl mb-10 animate-bounce">🏆</div>
                     <h1 className="text-6xl font-black mb-4 uppercase italic leading-none">¡LOGRADO!</h1>
                     <div className="glass-card p-10 w-full mb-12 shadow-2xl border-orange-500/20 text-center">
-                        <p className="text-[10px] font-black opacity-40 uppercase tracking-widest">Tiempo de Sesión</p>
+                        <p className="text-[10px] font-black opacity-40 uppercase tracking-widest italic mb-2">Tiempo Total</p>
                         <p className="text-7xl font-black text-orange-500 leading-none">{formatTime(elapsed)}</p>
                     </div>
                     <button onClick={onExit} className="w-full bg-white text-black py-6 rounded-full font-black uppercase italic shadow-xl active:scale-95">FINALIZAR</button>
@@ -407,18 +427,18 @@
                     </div>
                     <div className="bg-slate-950 p-6 pb-12 flex flex-col items-center shrink-0">
                         <div className="w-full max-w-md grid grid-cols-3 items-center mb-8">
-                            <div className="flex flex-col items-center"><span className="text-[18vw] font-black text-sky-400 leading-none">{curr?.r || 0}</span><span className="text-[8px] font-black uppercase text-slate-500 mt-1">RONDAS</span></div>
+                            <div className="flex flex-col items-center"><span className="text-[18vw] font-black text-sky-400 leading-none">{curr?.r || 0}</span><span className="text-[8px] font-black uppercase text-slate-500 mt-1 italic">RONDAS</span></div>
                             <div className="flex flex-col items-center gap-2">
                                 <button onClick={() => setStatus(s => s === 'running' ? 'paused' : 'running')} className="w-20 h-20 rounded-full border-4 border-yellow-400 flex items-center justify-center bg-transparent active:scale-95 transition-transform"><div className="text-yellow-400 text-4xl leading-none">{status === 'running' ? '❚❚' : '▶'}</div></button>
-                                <span className="text-[10px] font-black uppercase text-yellow-400/60 tracking-widest">{status === 'running' ? 'PAUSA' : 'INICIO'}</span>
+                                <span className="text-[10px] font-black uppercase text-yellow-400/60 tracking-widest italic">{status === 'running' ? 'PAUSA' : 'INICIO'}</span>
                             </div>
-                            <div className="flex flex-col items-center"><span className="text-[18vw] font-black text-yellow-400 leading-none">{curr?.cy || 0}</span><span className="text-[8px] font-black uppercase text-slate-500 mt-1">CICLOS</span></div>
+                            <div className="flex flex-col items-center"><span className="text-[18vw] font-black text-yellow-400 leading-none">{curr?.cy || 0}</span><span className="text-[8px] font-black uppercase text-slate-500 mt-1 italic">CICLOS</span></div>
                         </div>
                         <div className="w-full flex justify-center gap-6 pb-4">
-                            <button onClick={() => { setIdx(0); setTimeLeft(steps[0].seconds); setElapsed(0); setStatus('paused'); savedRef.current=false; speak("Reiniciado"); }} className="bg-slate-800 p-4 rounded-full text-yellow-400 text-xl btn-control">🔄</button>
-                            <button onClick={() => setStatus('finished')} className="bg-red-500/20 p-4 rounded-full text-red-500 text-xl btn-control">⏹</button>
-                            <button onClick={() => {const sid=steps.findIndex(s=>s.phaseId==='estiramientos'); if(sid!==-1){setIdx(sid); setTimeLeft(steps[sid].seconds); speak("Vamos a estirar");}}} className="bg-blue-500/20 p-4 rounded-full text-blue-400 text-xl btn-control">🧘</button>
-                            <button onClick={() => {if(idx < steps.length - 1) {setIdx(idx+1); setTimeLeft(steps[idx+1].seconds);}}} className="bg-slate-800 p-4 rounded-full text-white text-xl btn-control">⏭</button>
+                            <button onClick={() => { setIdx(0); setTimeLeft(steps[0].seconds); setElapsed(0); setStatus('paused'); startTimeRef.current=null; stepStartTimeRef.current=null; savedRef.current=false; speak("Reiniciado"); }} className="bg-slate-800 p-4 rounded-full text-yellow-400 text-xl btn-control shadow-xl border border-white/5">🔄</button>
+                            <button onClick={() => setStatus('finished')} className="bg-red-500/20 p-4 rounded-full text-red-500 text-xl btn-control shadow-xl border border-red-500/10">⏹</button>
+                            <button onClick={() => {const sid=steps.findIndex(s=>s.phaseId==='estiramientos'); if(sid!==-1){setIdx(sid); setTimeLeft(steps[sid].seconds); stepDurationRef.current=steps[sid].seconds; stepStartTimeRef.current=Date.now(); speak("Vamos a estirar");}}} className="bg-blue-500/20 p-4 rounded-full text-blue-400 text-xl btn-control shadow-xl border border-blue-500/10">🧘</button>
+                            <button onClick={() => {if(idx < steps.length - 1) { const n=idx+1; setIdx(n); setTimeLeft(steps[n].seconds); stepDurationRef.current=steps[n].seconds; stepStartTimeRef.current=Date.now();}}} className="bg-slate-800 p-4 rounded-full text-white text-xl btn-control shadow-xl border border-white/5">⏭</button>
                         </div>
                     </div>
                 </div>
@@ -447,7 +467,7 @@
                 chartRef.current = new Chart(ctx, {
                     type: 'bar',
                     data: { labels: last14, datasets: [{ label: 'Minutos', data, backgroundColor: '#f97316', borderRadius: 8 }] },
-                    options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } }, x: { grid: { display: false }, ticks: { color: '#64748b', autoSkip: false, font: { size: 9 } } } } }
+                    options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } }, x: { grid: { display: false }, ticks: { color: '#64748b' } } } }
                 });
                 return () => chartRef.current?.destroy();
             }, [history]);
@@ -455,11 +475,11 @@
             return (
                 <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-32 scrollbar-hide text-white text-center">
                     <div className="glass-card p-8 flex flex-col items-center shadow-2xl">
-                        <span className="text-[10px] font-black uppercase opacity-40 mb-2">TIEMPO TOTAL ENTRENADO</span>
+                        <span className="text-[10px] font-black uppercase opacity-40 mb-2 tracking-widest italic leading-none">TIEMPO TOTAL ENTRENADO</span>
                         <span className="text-4xl font-black text-orange-500 italic leading-none">{formatTotalTimeLong(totalSec)}</span>
                     </div>
                     <div className="glass-card p-6 shadow-xl">
-                        <span className="text-[10px] font-black uppercase opacity-40 mb-4 block text-center">PROGRESO 14 DÍAS (MIN)</span>
+                        <span className="text-[10px] font-black uppercase opacity-40 mb-4 block text-center italic tracking-widest">PROGRESO 14 DÍAS (MIN)</span>
                         <div className="chart-container-scroll"><div style={{ minWidth: '600px', height: '220px' }}><canvas id="advanceChart"></canvas></div></div>
                     </div>
                 </div>
@@ -491,7 +511,10 @@
                         <h2 className="text-xl font-black uppercase italic flex-1 text-center">{workoutToEdit ? 'EDITAR' : 'NUEVA'} RUTINA</h2>
                     </header>
                     <div className="flex-1 overflow-y-auto scrollbar-hide p-4 space-y-6">
-                        <input type="text" placeholder="NOMBRE DEL PLAN" className="w-full p-6 bg-slate-900 border border-white/10 rounded-[2rem] font-black uppercase italic outline-none focus:border-orange-500 shadow-inner text-white text-center" value={name} onChange={e => setName(e.target.value)} />
+                        <div className="px-1">
+                            <label className="text-[10px] font-black uppercase text-orange-500 block mb-2 italic tracking-widest leading-none text-center">Nombre del Plan</label>
+                            <input type="text" placeholder="EJ: RUTINA EXCEL" className="w-full p-6 bg-slate-900 border border-white/10 rounded-[2rem] font-black uppercase italic outline-none focus:border-orange-500 shadow-inner text-white text-center" value={name} onChange={e => setName(e.target.value)} />
+                        </div>
                         {['calentamiento', 'entrenamiento', 'estiramientos'].map((p) => (
                             <div key={p} className="glass-card p-6 italic space-y-6 border border-white/5 text-center shadow-xl">
                                 <span className="font-black uppercase text-xs tracking-widest text-orange-500 border-b border-white/5 block pb-2 mx-auto w-fit uppercase">{p}</span>
@@ -505,8 +528,8 @@
                         ))}
                         <div className="h-40 shrink-0"></div>
                     </div>
-                    <div className="shrink-0 p-6 bg-slate-950 border-t border-white/5 shadow-2xl z-[100]">
-                        <button onClick={save} disabled={saving} className="w-full bg-white text-black py-6 rounded-full font-black uppercase shadow-xl active:scale-95 text-center">
+                    <div className="shrink-0 p-6 bg-slate-950 border-t border-white/5 shadow-[0_-15px_30px_rgba(0,0,0,1)] z-[100]">
+                        <button onClick={save} disabled={saving} className="w-full bg-white text-black py-6 rounded-full font-black uppercase shadow-xl active:scale-95 text-center italic tracking-widest">
                             {saving ? 'GUARDANDO...' : 'GUARDAR RUTINA'}
                         </button>
                     </div>
@@ -517,7 +540,7 @@
         function InputField({ label, val, set }) {
             return (
                 <div className="flex flex-col items-center">
-                    <span className="text-[8px] font-bold uppercase opacity-40 text-white text-center leading-none mb-2">{label}</span>
+                    <span className="text-[8px] font-bold uppercase opacity-40 text-white text-center leading-none mb-2 tracking-widest italic">{label}</span>
                     <input type="number" className="w-full bg-slate-800/40 border border-white/5 p-4 rounded-xl text-center font-black text-lg outline-none focus:border-orange-500 text-white" value={val} onChange={e => set(e.target.value)} />
                 </div>
             );
