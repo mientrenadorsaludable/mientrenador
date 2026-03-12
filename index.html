@@ -96,7 +96,7 @@
         const db = firebase.firestore();
         const appId = "mientrenador-v3"; 
         const APP_TITLE = "Mi Entrenador";
-        const APP_VERSION = "23.7.0"; 
+        const APP_VERSION = "23.8.0"; 
 
         const WARMUP_STEPS = [
             'tobillo derecho', 'tobillo izquierdo', 
@@ -167,7 +167,7 @@
             };
 
             if (loading) return (
-                <div className="h-full w-full flex flex-col items-center justify-center bg-slate-950 text-white">
+                <div className="h-full w-full flex flex-col items-center justify-center bg-slate-950 text-white text-center p-10">
                     <div className="animate-pulse text-8xl mb-4">🏋️‍♂️</div>
                     <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
                 </div>
@@ -231,8 +231,8 @@
                     <h1 className="text-4xl font-black italic uppercase mb-1 tracking-tighter text-white">{APP_TITLE}</h1>
                     <p className="text-[8px] font-black text-slate-600 tracking-widest mb-8 uppercase">Versión {APP_VERSION}</p>
                     <form onSubmit={handleAuth} className="space-y-4 w-full max-w-sm">
-                        <input type="email" placeholder="EMAIL" className="w-full p-6 bg-slate-900 border border-white/5 rounded-3xl font-bold text-center text-white outline-none" value={email} onChange={e => setEmail(e.target.value)} required />
-                        <input type="password" placeholder="CLAVE" className="w-full p-6 bg-slate-900 border border-white/5 rounded-3xl font-bold text-center text-white outline-none" value={password} onChange={e => setPassword(e.target.value)} required />
+                        <input type="email" placeholder="EMAIL" className="w-full bg-slate-900 border border-white/5 rounded-3xl font-bold text-center text-white outline-none focus:border-orange-500 shadow-inner" value={email} onChange={e => setEmail(e.target.value)} required />
+                        <input type="password" placeholder="CLAVE" className="w-full bg-slate-900 border border-white/5 rounded-3xl font-bold text-center text-white outline-none focus:border-orange-500 shadow-inner" value={password} onChange={e => setPassword(e.target.value)} required />
                         <button type="submit" className="w-full bg-orange-500 py-6 rounded-full font-black uppercase shadow-xl italic text-white active:scale-95 transition-all">Entrar</button>
                     </form>
                     <button onClick={() => setIsRegister(!isRegister)} className="mt-8 text-slate-500 text-[10px] font-black uppercase border-b border-orange-500/30 pb-1 italic">{isRegister ? 'Ya tengo cuenta' : 'Crear cuenta nueva'}</button>
@@ -243,19 +243,23 @@
         function WorkoutsView({ workouts, setWorkout, appId, db, user, onEdit, onCreate }) {
             return (
                 <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-32 animate-fade-in scrollbar-hide text-white">
-                    {workouts.map(w => (
-                        <div key={w.id} className="glass-card p-6 flex justify-between items-center text-left shadow-lg">
-                            <div className="flex-1 cursor-pointer truncate pr-2" onClick={() => setWorkout(w)}>
-                                <h3 className="font-black uppercase italic truncate text-sm">{w.name}</h3>
-                                <span className="text-[10px] font-black text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded-lg italic tracking-widest uppercase">Activa</span>
+                    {workouts.length === 0 ? (
+                        <div className="text-center p-12 opacity-30 italic font-black uppercase text-[10px] tracking-widest leading-none">Sin rutinas personales</div>
+                    ) : (
+                        workouts.map(w => (
+                            <div key={w.id} className="glass-card p-6 flex justify-between items-center text-left shadow-lg">
+                                <div className="flex-1 cursor-pointer truncate pr-2" onClick={() => setWorkout(w)}>
+                                    <h3 className="font-black uppercase italic truncate text-sm">{w.name}</h3>
+                                    <span className="text-[10px] font-black text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded-lg italic tracking-widest uppercase">Activa</span>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button onClick={() => setWorkout(w)} className="bg-white text-black p-4 rounded-xl font-black text-xl active:scale-90 shadow-lg">▶</button>
+                                    <button onClick={() => onEdit(w)} className="bg-slate-800 text-white p-4 rounded-xl active:scale-90 text-xs italic uppercase">Edit</button>
+                                    <button onClick={() => { if(confirm("¿Borrar rutina?")) db.collection(`artifacts/${appId}/users/${user.uid}/workouts`).doc(w.id).delete(); }} className="bg-red-500/10 text-red-500 p-4 rounded-xl active:scale-90 text-xs">🗑️</button>
+                                </div>
                             </div>
-                            <div className="flex gap-2">
-                                <button onClick={() => setWorkout(w)} className="bg-white text-black p-4 rounded-xl font-black text-xl active:scale-90 shadow-lg">▶</button>
-                                <button onClick={() => onEdit(w)} className="bg-slate-800 text-white p-4 rounded-xl active:scale-90 text-xs italic uppercase">Edit</button>
-                                <button onClick={() => { if(confirm("¿Borrar rutina?")) db.collection(`artifacts/${appId}/users/${user.uid}/workouts`).doc(w.id).delete(); }} className="bg-red-500/10 text-red-500 p-4 rounded-xl active:scale-90 text-xs">🗑️</button>
-                            </div>
-                        </div>
-                    ))}
+                        ))
+                    )}
                     <button onClick={onCreate} className="w-full bg-white/5 border border-white/10 py-6 rounded-full font-black uppercase flex items-center justify-center gap-2 mt-4 text-white active:scale-95 italic tracking-widest">
                         <span>➕</span> NUEVA RUTINA
                     </button>
@@ -295,13 +299,13 @@
                 return () => document.removeEventListener('visibilitychange', handleVisibility);
             }, [status]);
 
-            // --- GENERADOR DE RUTINA CON TRANSICIONES ---
+            // --- GENERADOR DE RUTINA CON LOGICA DE TRANSICIÓN MEJORADA ---
             useEffect(() => {
                 if (!workout || !workout.phases) return;
                 const s = [];
                 const REGIONS = ['piernas', 'brazos', 'tronco'];
                 
-                // 1. Preparación 15s
+                // 1. Preparación 15s inicial
                 s.push({ label: 'PREPÁRATE', seconds: 15, color: 'bg-yellow-400', phaseId: 'inicio', r: 0, tr: 0, cy: 0, tc: 0 });
 
                 // 2. Calentamiento
@@ -314,7 +318,7 @@
                     }
                 }
                 
-                // --- CAMBIO DE 10 SEG DESPUES DEL CALENTAMIENTO ---
+                // --- CAMBIO DE 10 SEG DESPUES DEL CUELLO (CALENTAMIENTO COMPLETO) ---
                 s.push({ label: 'CAMBIO', seconds: 10, color: 'bg-orange-500', phaseId: 'calentamiento-transition', r: 1, tr: 1, cy: 1, tc: 1 });
 
                 // 3. Entrenamiento
@@ -324,7 +328,7 @@
                         const label = REGIONS[Math.floor((r-1)/3) % 3].toUpperCase();
                         s.push({ label, seconds: c2.action, color: 'bg-emerald-400', phaseId: 'entrenamiento', r, tr: c2.rounds, cy, tc: c2.cycles });
                         
-                        // Si cambiamos de zona muscular (r=3 o r=6) dentro del ciclo, transición de 10s
+                        // Transición de etapa interna (10s) o cambio normal (según config)
                         const isStageChange = (r === 3 || r === 6);
                         const changeTime = isStageChange ? 10 : c2.change;
                         
@@ -338,7 +342,7 @@
                     }
                 }
                 
-                // --- CAMBIO DE 10 SEG DESPUES DEL ENTRENAMIENTO COMPLETO ---
+                // --- CAMBIO DE 10 SEG DESPUES DEL ENTRENAMIENTO COMPLETO PARA ESTIRAR ---
                 s.push({ label: 'CAMBIO', seconds: 10, color: 'bg-blue-300', phaseId: 'entrenamiento-transition', r: 1, tr: 1, cy: 1, tc: 1 });
 
                 // 4. Estiramientos
@@ -349,7 +353,10 @@
                 }
 
                 setSteps(s);
-                if (s.length > 0) { setTimeLeft(s[0].seconds); stepDurationRef.current = s[0].seconds; }
+                if (s.length > 0) { 
+                    setTimeLeft(s[0].seconds); 
+                    stepDurationRef.current = s[0].seconds; 
+                }
                 speak("Prepárate");
                 return () => releaseWakeLock();
             }, [workout]);
@@ -376,20 +383,17 @@
                             const vKey = `${idx}_${remaining}`;
                             
                             if (lastSpokenKey.current !== vKey) {
-                                // --- LOGICA DE VOZ REFORZADA (23.7.0) ---
+                                // --- LOGICA DE VOZ REFORZADA (23.8.0) ---
 
-                                // 1. Al INICIAR cada lapso
+                                // 1. ACCIÓN AL INICIAR EL LAPSO (SEGUNDO CERO DEL CAMBIO / INICIO ACCION)
                                 if (remaining === stepDurationRef.current) {
                                     if (idx > 0) {
                                         if (current.phaseId === 'entrenamiento-rest') {
-                                            speak("Descanso");
+                                            speak("Descanso"); // Al terminar un ciclo
                                         } else if (['CAMBIO', 'PREPÁRATE'].includes(current.label)) {
-                                            // En el cambio tras el calentamiento, anunciar piernas de inmediato
-                                            if (current.phaseId === 'calentamiento-transition') speak("Vamos a ejercitar piernas");
-                                            // Al terminar entrenamiento, anunciar estiramiento de inmediato
-                                            else if (current.phaseId === 'entrenamiento-transition') speak("Vamos a estirarnos");
+                                            speak("Cambio"); // Siempre marca el cambio al inicio
                                         } else {
-                                            // Acción activa
+                                            // Es una acción real (Entrena/Calienta/Estira)
                                             if (current.phaseId === 'entrenamiento') {
                                                 speak(`Comienza... ${current.label.toLowerCase()}`);
                                             } else {
@@ -399,34 +403,35 @@
                                     }
                                 }
 
-                                // 2. Anticipación: SÓLO durante CAMBIO / DESCANSO / PREPARACIÓN
+                                // 2. ANTICIPACIÓN: ÚNICAMENTE DURANTE LAPSOS DE INTERVALO (A LOS 5 SEGUNDOS)
                                 if (remaining === 5) {
                                     if (['PREPÁRATE', 'CAMBIO', 'DESCANSO'].includes(current.label)) {
                                         if (next) {
                                             if (next.phaseId === 'calentamiento') {
                                                 speak("Calienta " + next.label.toLowerCase());
+                                            } else if (next.phaseId === 'calentamiento-transition') {
+                                                speak("Vamos a ejercitar piernas");
                                             } else if (next.phaseId === 'entrenamiento') {
+                                                // Bloques de zona muscular cada 3 rondas
                                                 if ((next.r-1) % 3 === 0) {
                                                     const zone = next.r <= 3 ? "piernas" : (next.r <= 6 ? "brazos" : "tronco");
                                                     speak("Vamos a ejercitar " + zone);
-                                                } else {
-                                                    speak("Cambio");
                                                 }
-                                            } else if (next.phaseId === 'estiramientos') {
-                                                speak("Cambio");
-                                            } else {
-                                                speak("Cambio");
+                                            } else if (next.phaseId === 'entrenamiento-transition') {
+                                                speak("Vamos a estirarnos");
                                             }
+                                            // No agregamos "Cambio" genérico a los 5s para evitar duplicidad si ya se dijo al inicio
                                         }
                                     }
                                 }
 
-                                // 3. Conteo regresivo final
+                                // 3. CONTEO REGRESIVO FINAL
                                 if (remaining <= 3 && remaining > 0) speak(remaining.toString());
 
                                 lastSpokenKey.current = vKey;
                             }
                         } else {
+                            // Cambio de paso
                             if (idx < steps.length - 1) {
                                 const nextIdx = idx + 1;
                                 setIdx(nextIdx);
@@ -435,6 +440,7 @@
                                 stepStartTimeRef.current = Date.now();
                                 if ('vibrate' in navigator) navigator.vibrate(200);
                             } else {
+                                // Rutina terminada
                                 setStatus('finished');
                                 releaseWakeLock();
                                 const min = Math.floor(totalPassed / 60);
@@ -443,19 +449,23 @@
                             }
                         }
                     }, 200);
-                } else { releaseWakeLock(); startTimeRef.current = null; stepStartTimeRef.current = null; }
+                } else { 
+                    releaseWakeLock(); 
+                    startTimeRef.current = null; 
+                    stepStartTimeRef.current = null; 
+                }
                 return () => clearInterval(interval);
             }, [status, idx, steps]);
 
             if (status === 'finished') return (
                 <div className="h-full flex flex-col items-center justify-center p-8 bg-slate-950 text-center text-white">
                     <div className="text-9xl mb-10 animate-bounce">🏆</div>
-                    <h1 className="text-6xl font-black mb-4 uppercase italic leading-none">¡LOGRADO!</h1>
+                    <h1 className="text-6xl font-black mb-4 uppercase italic leading-none tracking-tighter">¡LOGRADO!</h1>
                     <div className="glass-card p-10 w-full mb-12 shadow-2xl border-orange-500/20 text-center">
                         <p className="text-[10px] font-black opacity-40 uppercase tracking-widest italic mb-2">Tiempo de Sesión</p>
-                        <p className="text-7xl font-black text-orange-500 leading-none">{formatTime(elapsed)}</p>
+                        <p className="text-7xl font-black text-orange-500 leading-none tabular-nums">{formatTime(elapsed)}</p>
                     </div>
-                    <button onClick={onExit} className="w-full bg-white text-black py-6 rounded-full font-black uppercase italic shadow-xl active:scale-95 tracking-widest">Finalizar</button>
+                    <button onClick={onExit} className="w-full bg-white text-black py-6 rounded-full font-black uppercase italic shadow-xl active:scale-95 tracking-widest transition-all">Finalizar</button>
                 </div>
             );
 
@@ -471,7 +481,7 @@
                         <button onClick={onExit} className="text-white opacity-40 text-xl px-2 font-black">✕</button>
                     </div>
                     <div className="flex-1 flex flex-col items-center justify-center relative text-center">
-                        <h2 className="text-[12vw] font-black uppercase italic tracking-tighter text-black mb-1 leading-none">{curr?.label || 'LISTO'}</h2>
+                        <h2 className="text-[12vw] font-black uppercase italic tracking-tighter text-black mb-1 leading-none drop-shadow-sm">{curr?.label || 'LISTO'}</h2>
                         <span className="timer-huge tabular-nums">{timeLeft}</span>
                     </div>
                     <div className="bg-slate-950 p-6 pb-12 flex flex-col items-center shrink-0 text-white">
@@ -490,10 +500,31 @@
                             </div>
                         </div>
                         <div className="w-full flex justify-center gap-6 pb-4">
-                            <button onClick={() => { setIdx(0); setTimeLeft(steps[0].seconds); setElapsed(0); setStatus('paused'); startTimeRef.current=null; stepStartTimeRef.current=null; stepDurationRef.current=steps[0].seconds; savedRef.current=false; speak("Prepárate"); }} className="bg-slate-800 p-4 rounded-full text-yellow-400 text-xl btn-control shadow-xl border border-white/5">🔄</button>
+                            <button onClick={() => { 
+                                setIdx(0); setTimeLeft(steps[0].seconds); setElapsed(0); setStatus('paused'); 
+                                startTimeRef.current=null; stepStartTimeRef.current=null; 
+                                stepDurationRef.current=steps[0].seconds; savedRef.current=false; speak("Prepárate"); 
+                            }} className="bg-slate-800 p-4 rounded-full text-yellow-400 text-xl btn-control shadow-xl border border-white/5">🔄</button>
                             <button onClick={() => setStatus('finished')} className="bg-red-500/20 p-4 rounded-full text-red-500 text-xl btn-control shadow-xl border border-red-500/10">⏹</button>
-                            <button onClick={() => {const sid=steps.findIndex(s=>s.phaseId==='estiramientos'); if(sid!==-1){setIdx(sid); setTimeLeft(steps[sid].seconds); stepDurationRef.current=steps[sid].seconds; stepStartTimeRef.current=Date.now(); speak("Vamos a estirarnos");}}} className="bg-blue-500/20 p-4 rounded-full text-blue-400 text-xl btn-control shadow-xl border border-blue-500/10">🧘</button>
-                            <button onClick={() => {if(idx < steps.length - 1) { const n=idx+1; setIdx(n); setTimeLeft(steps[n].seconds); stepDurationRef.current=steps[n].seconds; stepStartTimeRef.current=Date.now();}}} className="bg-slate-800 p-4 rounded-full text-white text-xl btn-control shadow-xl border border-white/5">⏭</button>
+                            <button onClick={() => {
+                                const sid=steps.findIndex(s=>s.phaseId==='estiramientos'); 
+                                if(sid!==-1){
+                                    setIdx(sid); 
+                                    setTimeLeft(steps[sid].seconds); 
+                                    stepDurationRef.current=steps[sid].seconds; 
+                                    stepStartTimeRef.current=Date.now(); 
+                                    speak("Vamos a estirarnos");
+                                }
+                            }} className="bg-blue-500/20 p-4 rounded-full text-blue-400 text-xl btn-control shadow-xl border border-blue-500/10">🧘</button>
+                            <button onClick={() => {
+                                if(idx < steps.length - 1) { 
+                                    const n=idx+1; 
+                                    setIdx(n); 
+                                    setTimeLeft(steps[n].seconds); 
+                                    stepDurationRef.current=steps[n].seconds; 
+                                    stepStartTimeRef.current=Date.now();
+                                }
+                            }} className="bg-slate-800 p-4 rounded-full text-white text-xl btn-control shadow-xl border border-white/5">⏭</button>
                         </div>
                     </div>
                 </div>
@@ -534,7 +565,7 @@
                         <span className="text-4xl font-black text-orange-500 italic leading-none">{formatTotalTimeLong(totalSec)}</span>
                     </div>
                     <div className="glass-card p-6 shadow-xl">
-                        <span className="text-[10px] font-black uppercase opacity-40 mb-4 block text-center italic tracking-widest leading-none">PROGRESO 14 DÍAS (MIN)</span>
+                        <span className="text-[10px] font-black uppercase opacity-40 mb-4 block text-center italic tracking-widest leading-none uppercase">Progreso 14 Días (Min)</span>
                         <div className="chart-container-scroll"><div style={{ minWidth: '600px', height: '220px' }}><canvas id="advanceChart"></canvas></div></div>
                     </div>
                 </div>
